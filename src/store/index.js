@@ -1,0 +1,14 @@
+'use client';
+
+import { configureStore } from '@reduxjs/toolkit';
+import { publicApi } from './api/publicApi';
+import { adminApi } from './api/adminApi';
+
+export const store = configureStore({
+  reducer: {
+    [publicApi.reducerPath]: publicApi.reducer,
+    [adminApi.reducerPath]: adminApi.reducer
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(publicApi.middleware, adminApi.middleware)
+});

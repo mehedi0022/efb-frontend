@@ -1,0 +1,118 @@
+@import 'antd/dist/reset.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0b0f19;
+  --muted: #667085;
+  --accent: #10b981;
+  --accent-dark: #047857;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --line: #e5e7eb;
+  --frontend-footer-bg: #ffffff;
+  --frontend-btn-primary: #111827;
+  --frontend-btn-secondary: #374151;
+  --frontend-btn-text: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at top left, #ecfdf5 0%, #f8fafc 35%, #f3f4f6 100%);
+}
+
+.frontend-body {
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+  background-color: #f3f4f6;
+}
+
+.frontend-body .theme-footer-surface {
+  background-color: var(--frontend-footer-bg) !important;
+}
+
+.frontend-body .theme-footer-bar {
+  background-color: var(--frontend-footer-bg) !important;
+}
+
+.frontend-body button[class*='bg-black']:not(:disabled),
+.frontend-body button[class*='bg-gray-900']:not(:disabled),
+.frontend-body button[class*='bg-blue-600']:not(:disabled),
+.frontend-body button[class*='bg-green-600']:not(:disabled),
+.frontend-body button[class*='bg-black/']:not(:disabled),
+.frontend-body input[type='submit']:not(:disabled),
+.frontend-body input[type='button']:not(:disabled),
+.frontend-body a[class*='bg-black'],
+.frontend-body a[class*='bg-gray-900'],
+.frontend-body a[class*='bg-blue-600'] {
+  background-color: var(--frontend-btn-primary) !important;
+  border-color: var(--frontend-btn-primary) !important;
+  color: var(--frontend-btn-text) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.frontend-body button[class*='bg-black']:not(:disabled):hover,
+.frontend-body button[class*='bg-gray-900']:not(:disabled):hover,
+.frontend-body button[class*='bg-blue-600']:not(:disabled):hover,
+.frontend-body button[class*='bg-green-600']:not(:disabled):hover,
+.frontend-body button[class*='bg-black/']:not(:disabled):hover,
+.frontend-body input[type='submit']:not(:disabled):hover,
+.frontend-body input[type='button']:not(:disabled):hover,
+.frontend-body a[class*='bg-black']:hover,
+.frontend-body a[class*='bg-gray-900']:hover,
+.frontend-body a[class*='bg-blue-600']:hover {
+  background-color: var(--frontend-btn-secondary) !important;
+  border-color: var(--frontend-btn-secondary) !important;
+}
+
+@layer components {
+  .container-fluid {
+    width: 100%;
+    margin-inline: auto;
+    max-width: 1600px;
+    padding-inline: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-fluid {
+      padding-inline: 1rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-fluid {
+      padding-inline: 1.5rem;
+    }
+  }
+}
+
+.font-display {
+  font-family: 'Inter', sans-serif;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.left-side-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.left-side-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
