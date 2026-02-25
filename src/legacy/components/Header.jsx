@@ -15,6 +15,7 @@ import { useCart } from "../context/CartContext";
 import {
   useGetExternalMenuCategoriesQuery,
   useGetExternalSearchQuery,
+  useDeleteCartItemMutation,
 } from "../store/publicApi";
 import { resolveMediaUrl } from "../utils/media";
 
@@ -22,7 +23,7 @@ const Header = () => {
   const { user } = useAuth();
   const { setting, loading: isSettingsLoading } = useSettings();
   const { menuCategories } = useSiteData();
-  const { items, count, subtotal } = useCart();
+  const { items, count, subtotal, refreshCart } = useCart();
   const navigate = useNavigate();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -39,10 +40,12 @@ const Header = () => {
     useState({});
 
   const [activeDesktopCategoryId, setActiveDesktopCategoryId] = useState(null);
+  const [removingCartItemId, setRemovingCartItemId] = useState(null);
   const categoryPanelRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const desktopSearchRef = useRef(null);
   const desktopMenuCloseTimeoutRef = useRef(null);
+  const [deleteCartItem] = useDeleteCartItemMutation();
 
   useEffect(() => {
     const handleOpenMenu = () => {
@@ -78,6 +81,22 @@ const Header = () => {
       item?.product?.thumbnail ||
       item?.product?.image;
     return resolveMediaUrl(image, "https://placehold.co/64x64?text=Product");
+  };
+
+  const handleRemovePopupCartItem = async (itemId, event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!itemId || removingCartItemId !== null) return;
+
+    setRemovingCartItemId(itemId);
+    try {
+      await deleteCartItem(itemId).unwrap();
+      await refreshCart();
+    } catch (error) {
+      console.error("Failed to remove item from cart popup", error);
+    } finally {
+      setRemovingCartItemId(null);
+    }
   };
 
   const handleSearch = (event) => {
@@ -628,17 +647,6 @@ const Header = () => {
         className="hidden md:block border-b"
         style={{ backgroundColor: headerBgColor }}
       >
-        <div className="container mx-auto px-4 py-2">
-          <p className="text-center text-lg font-bold tracking-tight text-gray-900">
-            {siteName}
-          </p>
-        </div>
-      </div>
-
-      <div
-        className="hidden md:block border-b"
-        style={{ backgroundColor: headerBgColor }}
-      >
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2">
             {isSettingsLoading ? (
@@ -685,7 +693,6 @@ const Header = () => {
                 to="/cart"
                 className="flex items-center gap-2 text-gray-800"
               >
-                <FaShoppingCart />
                 <span className="font-semibold">Cart</span>
                 <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-xs font-semibold text-white">
                   {count}
@@ -697,30 +704,55 @@ const Header = () => {
                 ) : (
                   <>
                     <ul className="space-y-3">
-                      {cartItems.map((item) => (
-                        <li key={item.id} className="flex items-center gap-3">
-                          <img
-                            src={resolveCartImage(item)}
-                            alt={
-                              item.product?.name ||
-                              item.product_name ||
-                              "Product"
-                            }
-                            className="h-12 w-12 rounded object-cover"
-                          />
-                          <div className="flex-1 text-sm">
-                            <p className="font-semibold text-gray-800 line-clamp-1">
-                              {item.product?.name ||
+                      {cartItems.map((item, index) => {
+                        const itemId = item?.id || item?.cart_item_id || null;
+                        const isRemovingItem =
+                          itemId !== null &&
+                          String(removingCartItemId) === String(itemId);
+                        return (
+                          <li
+                            key={itemId || `cart-item-${index}`}
+                            className="flex items-start gap-3"
+                          >
+                            <img
+                              src={resolveCartImage(item)}
+                              alt={
+                                item.product?.name ||
                                 item.product_name ||
-                                "Product"}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Qty: {item.quantity}
-                            </p>
-                          </div>
-                          <p className="text-sm font-semibold">৳{item.price}</p>
-                        </li>
-                      ))}
+                                "Product"
+                              }
+                              className="h-12 w-12 rounded object-cover"
+                            />
+                            <div className="min-w-0 flex-1 text-sm">
+                              <p className="font-semibold text-gray-800 line-clamp-1">
+                                {item.product?.name ||
+                                  item.product_name ||
+                                  "Product"}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Qty: {item.quantity}
+                              </p>
+                              <div className="mt-1 flex items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-gray-800">
+                                  ৳{item.price}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={(event) =>
+                                    handleRemovePopupCartItem(itemId, event)
+                                  }
+                                  disabled={
+                                    itemId === null || removingCartItemId !== null
+                                  }
+                                  className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {isRemovingItem ? "Removing..." : "Remove"}
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                     <div className="mt-3 border-t pt-3 text-sm font-semibold">
                       Total: ৳{subtotal}

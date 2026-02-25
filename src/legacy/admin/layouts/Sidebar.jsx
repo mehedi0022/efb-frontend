@@ -142,6 +142,7 @@ const menuItems = [
     prefixes: ["/fraud-checker"],
     permission: "fraud-checker.view",
     iconClass: "text-emerald-400",
+    badge: "New",
   },
   {
     title: "IP Blocking",

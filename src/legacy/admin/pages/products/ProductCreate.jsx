@@ -72,6 +72,22 @@ const ProductCreate = () => {
         }));
     };
 
+    const handleYoutubeVideoChange = (value) => {
+        setFormData((prev) => ({
+            ...prev,
+            youtube_video_url: value,
+            facebook_video_url: String(value || '').trim() ? '' : prev.facebook_video_url,
+        }));
+    };
+
+    const handleFacebookVideoChange = (value) => {
+        setFormData((prev) => ({
+            ...prev,
+            facebook_video_url: value,
+            youtube_video_url: String(value || '').trim() ? '' : prev.youtube_video_url,
+        }));
+    };
+
     const addSizePricingRow = () => {
         setFormData((prev) => ({
             ...prev,
@@ -624,7 +640,7 @@ const ProductCreate = () => {
                                 <Input
                                     size="large"
                                     value={formData.youtube_video_url}
-                                    onChange={(event) => setField('youtube_video_url', event.target.value)}
+                                    onChange={(event) => handleYoutubeVideoChange(event.target.value)}
                                     placeholder="https://www.youtube.com/watch?v=... or YouTube video ID"
                                     style={{ width: '100%' }}
                                 />
@@ -636,7 +652,7 @@ const ProductCreate = () => {
                                 <Input
                                     size="large"
                                     value={formData.facebook_video_url}
-                                    onChange={(event) => setField('facebook_video_url', event.target.value)}
+                                    onChange={(event) => handleFacebookVideoChange(event.target.value)}
                                     placeholder="https://www.facebook.com/.../videos/..."
                                     style={{ width: '100%' }}
                                 />

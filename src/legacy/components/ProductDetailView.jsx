@@ -369,8 +369,8 @@ const ProductDetailView = ({
     return (
         <div className="bg-[#edf1f7]">
             <div className="mx-auto max-w-[1120px] px-3 py-4 md:py-5">
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[40%_60%]">
-                    <div>
+                <div className="grid grid-cols-1 gap-3 lg:auto-rows-auto lg:grid-cols-[minmax(0,1fr)_640px] lg:items-start">
+                    <div className="min-w-0 self-start">
                         <div className="rounded-2xl border border-[#d7dee9] bg-[#f3f6fb] p-2 shadow-sm">
                             <div
                                 className="relative overflow-hidden rounded-xl bg-[#efe3d9]"
@@ -467,7 +467,7 @@ const ProductDetailView = ({
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-[#d7dee9] bg-white p-3 shadow-sm md:p-4">
+                    <div className="min-w-0 w-full max-w-full self-start rounded-2xl border border-[#d7dee9] bg-white p-3 shadow-sm md:p-4 lg:h-auto lg:w-[640px]">
                         <h1 className="text-[18px] font-bold leading-tight text-[#161f2d] md:text-[24px] md:leading-[1.25]">
                             {product.name}
                         </h1>
@@ -670,7 +670,7 @@ const ProductDetailView = ({
                     </div>
                 </div>
 
-                <div className="mt-6 rounded-xl border border-[#c4cad6] bg-white p-4 shadow-sm md:p-6">
+                <div className="mt-6 h-auto rounded-xl border border-[#c4cad6] bg-white p-4 shadow-sm md:p-6">
                     <div className="mb-4 flex flex-wrap gap-2 border-b border-gray-200 pb-3">
                         {tabs.map((tab) => (
                             <button
@@ -685,7 +685,7 @@ const ProductDetailView = ({
                             </button>
                         ))}
                     </div>
-                    <div className="prose max-w-none text-sm leading-7 text-gray-700">{renderTabContent()}</div>
+                    <div className="product-detail-content prose h-auto max-w-none overflow-visible text-sm leading-7 text-gray-700">{renderTabContent()}</div>
                 </div>
 
                 {videoEmbedUrl ? (

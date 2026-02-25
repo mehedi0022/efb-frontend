@@ -14,7 +14,6 @@ const initialFormData = {
     shipping_area: '',
     shipping_charge_id: '',
     shipping_charge: 0,
-    discount: 0,
     order_status: '',
     note: '',
     admin_note: '',
@@ -63,16 +62,14 @@ const OrderCreate = () => {
             0
         );
         const shippingCharge = Number(formData.shipping_charge || 0);
-        const discount = Number(formData.discount || 0);
-        const grandTotal = Math.max(0, subTotal + shippingCharge - discount);
+        const grandTotal = Math.max(0, subTotal + shippingCharge);
 
         return {
             subTotal,
             shippingCharge,
-            discount,
             grandTotal,
         };
-    }, [formData.items, formData.shipping_charge, formData.discount]);
+    }, [formData.items, formData.shipping_charge]);
 
     const validate = () => {
         const nextErrors = {};
@@ -85,9 +82,6 @@ const OrderCreate = () => {
         }
         if (!formData.shipping_address.trim()) {
             nextErrors.shipping_address = 'Shipping address is required.';
-        }
-        if (Number(formData.discount) < 0) {
-            nextErrors.discount = 'Premium cannot be negative.';
         }
         if (!formData.order_status) {
             nextErrors.order_status = 'Order status is required.';
@@ -230,7 +224,7 @@ const OrderCreate = () => {
                     ).trim(),
                     shipping_charge_id: formData.shipping_charge_id ? Number(formData.shipping_charge_id) : null,
                     shipping_charge: Math.max(0, Number(formData.shipping_charge) || 0),
-                    discount: Math.max(0, Number(formData.discount) || 0),
+                    discount: 0,
                     order_status: Number(formData.order_status),
                     note: formData.note || '',
                     admin_note: formData.admin_note || '',
@@ -325,7 +319,7 @@ const OrderCreate = () => {
                         required
                     />
 
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2">
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">Delivery Charge Option</label>
                             <select
@@ -341,15 +335,6 @@ const OrderCreate = () => {
                                 ))}
                             </select>
                         </div>
-                        <Input
-                            label="Premium"
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={formData.discount}
-                            onChange={(e) => handleChange('discount', e.target.value)}
-                            error={errors.discount}
-                        />
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">Order Status</label>
                             <select
@@ -534,10 +519,6 @@ const OrderCreate = () => {
                         <div className="flex justify-between">
                             <span>Shipping</span>
                             <span>{formatCurrency(totals.shippingCharge)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="font-semibold text-[#1f4ea3]">Premium</span>
-                            <span>{formatCurrency(totals.discount)}</span>
                         </div>
                         <div className="border-t pt-2 text-base font-semibold text-gray-900">
                             <div className="flex justify-between">

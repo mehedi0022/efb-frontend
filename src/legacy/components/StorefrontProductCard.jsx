@@ -56,6 +56,9 @@ const StorefrontProductCard = ({ item, product }) => {
     const price = toNumber(priceValue, 0);
     const previousPrice = toNumber(previousPriceValue, 0);
     const discountAmount = previousPrice > price ? previousPrice - price : 0;
+    const discountPercent = previousPrice > 0 && discountAmount > 0
+        ? Math.round((discountAmount / previousPrice) * 100)
+        : 0;
     const rating = clampRating(source?.rating ?? info?.rating ?? 4);
     const stockValueRaw = [
         info?.available_stock,
@@ -146,12 +149,8 @@ const StorefrontProductCard = ({ item, product }) => {
                 </Link>
 
                 {discountAmount > 0 ? (
-                    <div className="absolute right-3 top-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-[#ef4444] bg-white text-center text-[10px] font-bold leading-3 text-[#111827] shadow-sm">
-                        <span>
-                            {formatMoney(discountAmount)}
-                            <br />
-                            OFF
-                        </span>
+                    <div className="absolute right-[0px] top-[0px] rounded-[0px] rounded-bl-[22px] bg-[#1196af] px-4 py-2 text-sm font-semibold text-white shadow-md">
+                        <span>{discountPercent > 0 ? `${discountPercent}% Off` : `${formatMoney(discountAmount)} Off`}</span>
                     </div>
                 ) : null}
             </div>

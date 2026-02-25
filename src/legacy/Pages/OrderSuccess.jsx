@@ -1,34 +1,67 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { FiCheckCircle, FiHome, FiShoppingBag } from 'react-icons/fi';
+import { FiCheckCircle, FiHome, FiPhoneCall } from 'react-icons/fi';
+import { useSettings } from '../context/SettingsContext';
+import { useSiteData } from '../context/SiteDataContext';
+
+const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
+
+const toDigits = (value) => String(value || '').replace(/\D/g, '');
+
+const pickFirstValue = (...candidates) => {
+    for (const candidate of candidates) {
+        const value = String(candidate || '').trim();
+        if (value) return value;
+    }
+    return '';
+};
 
 const OrderSuccess = () => {
+    const { setting } = useSettings();
+    const { contact } = useSiteData();
+
+    const hotlineNumber = useMemo(
+        () => pickFirstValue(
+            contact?.hotline,
+            contact?.phone,
+            setting?.hotline,
+            setting?.phone,
+            FALLBACK_HOTLINE
+        ),
+        [contact?.hotline, contact?.phone, setting?.hotline, setting?.phone]
+    );
+    const hotlineHref = toDigits(hotlineNumber) ? `tel:${toDigits(hotlineNumber)}` : '#';
+
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
-            <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-                <div className="flex justify-center mb-6">
-                    <div className="h-24 w-24 bg-green-100 rounded-full flex items-center justify-center">
-                        <FiCheckCircle className="h-12 w-12 text-green-600" />
+        <div className="min-h-[65vh] bg-[#edf1f7] px-4 py-10 md:py-14">
+            <div className="mx-auto w-full max-w-2xl rounded-[28px] border border-[#d7dee9] bg-white p-6 text-center shadow-[0_16px_50px_rgba(15,23,42,0.12)] md:p-10">
+                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#ecfdf3] ring-8 ring-[#f4fdf8]">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#dcfce7]">
+                        <FiCheckCircle className="h-10 w-10 text-[#15803d]" />
                     </div>
                 </div>
 
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Order Successful!</h2>
-                <p className="text-gray-600 mb-6 font-semibold">
-                    Your order has been placed successfully. Our representative will contact you shortly.
-                </p>
+                <h2 className="text-3xl font-bold text-[#111827] md:text-4xl">Order Successful!</h2>
 
-                <div className="space-y-3">
-                    <Link
-                        to="/order-track"
-                        className="block w-full bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-                    >
-                        <FiShoppingBag />
-                        Track Order
-                    </Link>
+                <div className="mt-5 space-y-3 rounded-2xl border border-[#d7e6ff] bg-gradient-to-br from-[#f8fbff] to-[#eef5ff] px-4 py-5 text-left text-[15px] leading-relaxed text-[#1f2937] md:px-6">
+                    <p>Your order has been successfully received.</p>
+                    <p>
+                        One of our representatives will contact you shortly at:{' '}
+                        <a
+                            href={hotlineHref}
+                            className="inline-flex items-center gap-1.5 font-bold text-[#1d4ed8] hover:text-[#1e40af]"
+                        >
+                            <FiPhoneCall className="text-sm" />
+                            {hotlineNumber}
+                        </a>
+                    </p>
+                    <p>Please wait a moment for our call. Thank you.</p>
+                </div>
 
+                <div className="mt-7">
                     <Link
                         to="/"
-                        className="block w-full bg-white text-gray-700 border border-gray-300 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#111827] bg-[#111827] px-6 py-3 font-semibold text-white transition hover:bg-[#1f2937] md:w-auto"
                     >
                         <FiHome />
                         Back to Home

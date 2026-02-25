@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    FiAlertTriangle,
     FiCheckCircle,
     FiClock,
     FiPhone,
@@ -134,8 +133,8 @@ const FraudChecker = () => {
         <div className="container-fluid space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-red-600">
-                        <FiAlertTriangle className="h-6 w-6" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                        <FiCheckCircle className="h-6 w-6" />
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Fraud Checker</h2>

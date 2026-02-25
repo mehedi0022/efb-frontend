@@ -140,3 +140,73 @@ body {
   box-shadow: 0 12px 30px rgba(22, 101, 52, 0.12);
   animation: smart-toast-pop 0.24s ease-out;
 }
+
+.frontend-body .product-detail-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  max-height: none;
+  overflow: visible !important;
+}
+
+.frontend-body .product-detail-content :where(img, video, iframe, canvas, svg, pre, table) {
+  max-width: 100% !important;
+}
+
+.frontend-body .product-detail-content :where(img, video, iframe) {
+  height: auto !important;
+}
+
+.frontend-body .product-detail-content :where(iframe, video) {
+  width: 100% !important;
+}
+
+.frontend-body .product-detail-content table {
+  display: table;
+  width: 100% !important;
+  table-layout: fixed;
+}
+
+.frontend-body .product-detail-content :where(
+  div,
+  section,
+  article,
+  p,
+  span,
+  a,
+  ul,
+  ol,
+  li,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  table,
+  thead,
+  tbody,
+  tr,
+  td,
+  th,
+  pre,
+  blockquote
+) {
+  width: auto !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.frontend-body .product-detail-content :where(p, li, span, a, h1, h2, h3, h4, h5, h6, td, th) {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.frontend-body .product-detail-content pre {
+  white-space: pre-wrap !important;
+  word-break: break-word;
+}
