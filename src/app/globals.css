@@ -44,6 +44,11 @@ body {
   background-color: var(--frontend-footer-bg) !important;
 }
 
+.frontend-body .theme-footer-panel {
+  background-color: color-mix(in srgb, var(--frontend-footer-bg) 88%, #ffffff 12%);
+  border-color: color-mix(in srgb, var(--frontend-footer-bg) 72%, #111827 18%);
+}
+
 .frontend-body button[class*='bg-black']:not(:disabled),
 .frontend-body button[class*='bg-gray-900']:not(:disabled),
 .frontend-body button[class*='bg-blue-600']:not(:disabled),

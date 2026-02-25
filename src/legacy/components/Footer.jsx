@@ -112,7 +112,7 @@ const Footer = () => {
 
     return (
         <footer style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>
-            <div className="theme-footer-surface border-t border-gray-500">
+            <div className="theme-footer-surface border-t border-black/10">
                 <div className="container mx-auto px-4 py-8">
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                         <div>
@@ -125,31 +125,20 @@ const Footer = () => {
                                     <span className="text-lg font-semibold">{siteName}</span>
                                 )}
                             </Link>
-                            <div className="mt-4 max-w-[360px] rounded-2xl border border-[#dbe4eb] bg-white px-4 py-4 text-[#3f4a59] shadow-sm">
-                                <div className="mb-3 flex items-center gap-3 border-b border-[#e8eef3] pb-3">
-                                    <span className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d5e2ee] bg-[#f1f7fd]">
-                                        {isSettingsLoading ? (
-                                            <span className="h-6 w-6 animate-pulse rounded-full bg-gray-200" />
-                                        ) : logoSrc ? (
-                                            <img src={logoSrc} alt={siteName} className="h-8 w-8 object-contain" />
-                                        ) : (
-                                            <span className="text-sm font-bold text-[#2c3f4f]">{siteName.slice(0, 1)}</span>
-                                        )}
-                                    </span>
-                                    <div className="min-w-0">
-                                        <p className="truncate text-base font-extrabold tracking-tight text-[#2c3f4f]">{siteName}</p>
-                                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2f9f90]">Customer Care</p>
-                                    </div>
+                            <div className="theme-footer-panel my-0 max-w-[360px] rounded-2xl px-0 py-0 text-gray-700">
+                                <div className="mb-3 border-b border-black/10 pb-3">
+                                    <p className="truncate text-base font-extrabold tracking-tight text-gray-900">{siteName}</p>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-600">Customer Care</p>
                                 </div>
 
-                                <p className="text-[16px] font-medium leading-[1.45] text-[#3f4a59]">
+                                <p className="text-[16px] font-medium leading-[1.45] text-gray-700">
                                     {contact?.address || 'Address not set'}
                                 </p>
 
-                                <p className="mt-3 text-[16px] leading-[1.45] text-[#3f4a59]">
-                                    <span className="font-semibold text-[#2f3b49]">E-mail: </span>
+                                <p className="mt-3 text-[16px] leading-[1.45] text-gray-700">
+                                    <span className="font-semibold text-gray-900">E-mail: </span>
                                     {supportEmail ? (
-                                        <a href={`mailto:${supportEmail}`} className="font-medium text-[#3f4a59] hover:text-[#2f9f90]">
+                                        <a href={`mailto:${supportEmail}`} className="font-medium text-gray-700 hover:text-gray-900">
                                             {supportEmail}
                                         </a>
                                     ) : (
@@ -157,10 +146,10 @@ const Footer = () => {
                                     )}
                                 </p>
 
-                                <p className="mt-2 text-[16px] leading-[1.45] text-[#3f4a59]">
-                                    <span className="font-semibold text-[#2f3b49]">Hotline: </span>
+                                <p className="mt-2 text-[16px] leading-[1.45] text-gray-700">
+                                    <span className="font-semibold text-gray-900">Hotline: </span>
                                     {supportPhone ? (
-                                        <a href={`tel:${supportPhone}`} className="font-medium text-[#3f4a59] hover:text-[#2f9f90]">
+                                        <a href={`tel:${supportPhone}`} className="font-medium text-gray-700 hover:text-gray-900">
                                             {supportPhone}
                                         </a>
                                     ) : (
@@ -221,7 +210,7 @@ const Footer = () => {
 
                         <div className="flex items-center justify-center">
                             {facebookLink ? (
-                                <div className="flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
+                                <div className="theme-footer-panel flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl border">
                                     {fbEmbedUrl ? (
                                         <iframe
                                             title="Facebook Page"
