@@ -182,6 +182,13 @@ const FraudChecker = () => {
 
             {result && (
                 <>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                        <p className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                            <FiCheckCircle className="h-4 w-4" />
+                            Fraud check completed successfully.
+                        </p>
+                    </div>
+
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <SummaryCard title="Total Parcel" value={summary.total} icon={FiTruck} bgClass="bg-cyan-50" iconClass="text-cyan-700" />
                         <SummaryCard title="Success Parcel" value={summary.success} icon={FiCheckCircle} bgClass="bg-emerald-50" iconClass="text-emerald-700" />

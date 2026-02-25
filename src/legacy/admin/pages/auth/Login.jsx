@@ -4,12 +4,9 @@ import { motion } from 'framer-motion';
 import {
     FiMail,
     FiUser,
-    FiLock,
     FiEye,
     FiEyeOff,
-    FiArrowRight
 } from 'react-icons/fi';
-import Button from '../../components/common/Button';
 import { useAdminFetchQuery, useAdminLoginMutation } from '../../../store/adminApi';
 import { getDefaultAdminRoute } from '../../utils/rbac';
 
@@ -64,7 +61,7 @@ const Login = () => {
     };
 
     const getFormattedTitle = () => {
-        const title = process.env.NEXT_PUBLIC_LOGIN_PAGE_TITLE || process.env.NEXT_PUBLIC_APP_NAME || 'Ecommerce';
+        const title = appTitle || process.env.NEXT_PUBLIC_LOGIN_PAGE_TITLE || process.env.NEXT_PUBLIC_APP_NAME || 'Ecommerce';
         const words = title.trim().split(/\s+/);
         if (words.length > 1) {
             return (
@@ -89,7 +86,7 @@ const Login = () => {
         <div className="min-h-screen flex w-full">
             {/* Left Side - Branding (Hidden on mobile) */}
             <div className="hidden lg:flex w-1/2 bg-[#2f80c0] items-center justify-center relative overflow-hidden">
-                <div className="absolute top-10 left-10">
+                <div className="absolute left-1/2 top-10 -translate-x-1/2 text-center">
                     <h1 className="text-4xl font-bold tracking-wide">{getFormattedTitle()}</h1>
                 </div>
 
@@ -128,6 +125,10 @@ const Login = () => {
                 </div>
 
                 <div className="w-full p-4 pt-6 sm:p-8">
+                    <div className="mx-auto mb-5 hidden w-full max-w-md text-center lg:block">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Shop Name</p>
+                        <h1 className="mt-1 truncate text-2xl font-bold text-gray-900">{appTitle}</h1>
+                    </div>
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -224,14 +225,14 @@ const Login = () => {
                                         Signing In...
                                     </span>
                                 ) : (
-                                    'Sign In'
+                                    'Admin Sign In'
                                 )}
                             </button>
                         </form>
 
                         <div className="mt-8 flex items-center justify-center space-x-4 text-xs text-gray-500">
                             <span className="flex items-center"><span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span> SSL Secured</span>
-                            <span className="flex items-center"><span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span> 9AM-1AM Support</span>
+                            <span className="flex items-center"><span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Support Time (10:00 AM – 8:00 PM)</span>
                         </div>
                     </motion.div>
                 </div>

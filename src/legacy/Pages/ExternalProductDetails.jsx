@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
 import { useAddExternalToCartMutation, useGetExternalProductQuery } from '../store/publicApi';
 import ProductDetailView from '../components/ProductDetailView';
+import { showSmartSuccessToast } from '../admin/utils/alerts';
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE || 'https://freelancerbangladesh.com/';
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
@@ -128,7 +129,7 @@ const ExternalProductDetails = () => {
     const availableStock = hasStockValue ? Number(stockRaw) : null;
     const outOfStock = hasStockValue ? Number(availableStock || 0) <= 0 : false;
     const stockText = hasStockValue
-        ? (outOfStock ? 'Out of stock' : `Current stock: ${availableStock}`)
+        ? (outOfStock ? 'Out of stock' : `In Stock: ${availableStock}`)
         : '';
 
     const relatedProducts = useMemo(
@@ -176,6 +177,8 @@ const ExternalProductDetails = () => {
                 window.location.href = '/checkout';
                 return;
             }
+
+            showSmartSuccessToast('Product successfully added to cart');
         } catch (requestError) {
             console.error('External add to cart failed', requestError);
             alert('Failed to add to cart.');

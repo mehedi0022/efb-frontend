@@ -21,7 +21,6 @@ import SizeList from './pages/sizes/SizeList';
 import ReviewList from './pages/reviews/ReviewList';
 import PixelList from './pages/pixels/PixelList';
 import TagManagerList from './pages/tagmanagers/TagManagerList';
-import BannerCategoryList from './pages/banners/BannerCategoryList';
 import BannerList from './pages/banners/BannerList';
 import UserList from './pages/users/UserList';
 import RoleList from './pages/roles/RoleList';
@@ -64,7 +63,6 @@ const titleMatchers = [
     { pattern: /^\/integrations(?:\/|$)/, title: 'Integrations' },
     { pattern: /^\/pixels(?:\/|$)/, title: 'Pixels' },
     { pattern: /^\/tag-managers(?:\/|$)/, title: 'Tag Managers' },
-    { pattern: /^\/banner-categories(?:\/|$)/, title: 'Banner Categories' },
     { pattern: /^\/banners(?:\/|$)/, title: 'Banners' },
     { pattern: /^\/reports(?:\/|$)/, title: 'Reports' },
     { pattern: /^\/incomplete-orders(?:\/|$)/, title: 'Incomplete' },
@@ -272,7 +270,7 @@ const App = () => {
                     <Route path="tag-managers" element={<RequirePermission permission="tag-managers.view"><TagManagerList /></RequirePermission>} />
 
                     {/* Banners */}
-                    <Route path="banner-categories" element={<RequirePermission permission="banner-categories.view"><BannerCategoryList /></RequirePermission>} />
+                    <Route path="banner-categories" element={<Navigate to="/banners" replace />} />
                     <Route path="banners" element={<RequirePermission permission="banners.view"><BannerList /></RequirePermission>} />
 
                     {/* Incomplete Orders */}

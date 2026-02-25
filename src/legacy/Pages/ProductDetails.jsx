@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
 import ProductDetailView from '../components/ProductDetailView';
 import { resolveMediaUrl } from '../utils/media';
+import { showSmartSuccessToast } from '../admin/utils/alerts';
 
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
 const FALLBACK_WHATSAPP_PHONE = process.env.NEXT_PUBLIC_NOGOD_PHONE || FALLBACK_CONTACT_PHONE;
@@ -185,11 +186,13 @@ const ProductDetails = () => {
     const previousPrice = product?.old_price ?? product?.previous_price ?? '';
     const categoryLabel = product?.category?.name || '';
 
-    const stockValue = Number(product?.available_stock ?? product?.stock ?? 0);
+    const stockRaw = product?.available_stock ?? product?.inventory?.available ?? product?.stock;
+    const hasStockValue = stockRaw !== null && stockRaw !== undefined && stockRaw !== '';
+    const stockValue = hasStockValue ? Number(stockRaw) : 0;
     const isDropShipping = product?.product_type === 'dropshipping_product';
-    const outOfStock = isDropShipping && stockValue <= 0;
-    const stockText = isDropShipping
-        ? (outOfStock ? 'Out of stock' : `Current stock: ${stockValue}`)
+    const outOfStock = isDropShipping && hasStockValue && stockValue <= 0;
+    const stockText = hasStockValue
+        ? (stockValue <= 0 ? 'Out of stock' : `In Stock: ${stockValue}`)
         : '';
 
     const relatedProducts = useMemo(
@@ -232,6 +235,8 @@ const ProductDetails = () => {
                 window.location.href = '/checkout';
                 return;
             }
+
+            showSmartSuccessToast('Product successfully added to cart');
         } catch (requestError) {
             console.error('Add to cart failed', requestError);
             alert('Failed to add to cart.');

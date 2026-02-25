@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useGetSettingsQuery } from '../store/publicApi';
+import { resolveMediaUrl } from '../utils/media';
 
 const SettingsContext = createContext({
     setting: null,
@@ -7,7 +8,11 @@ const SettingsContext = createContext({
 });
 
 export const SettingsProvider = ({ children }) => {
-    const { data: setting, isLoading, isFetching } = useGetSettingsQuery();
+    const { data: setting, isLoading, isFetching } = useGetSettingsQuery(undefined, {
+        refetchOnMountOrArgChange: true,
+        refetchOnFocus: true,
+        refetchOnReconnect: true,
+    });
 
     useEffect(() => {
         if (typeof document === 'undefined') return;
@@ -28,6 +33,32 @@ export const SettingsProvider = ({ children }) => {
         setting?.button_primary_color,
         setting?.button_secondary_color
     ]);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        const faviconPath = String(setting?.favicon || '').trim();
+        const faviconUrl = resolveMediaUrl(faviconPath, '');
+        if (!faviconUrl) return;
+
+        const versionSeed = [setting?.id ?? '', setting?.updated_at ?? '', faviconPath].join('-');
+        const version = encodeURIComponent(versionSeed || Date.now());
+        const separator = faviconUrl.includes('?') ? '&' : '?';
+        const cacheBustedUrl = `${faviconUrl}${separator}v=${version}`;
+
+        const ensureFavicon = (selector, relValue) => {
+            let linkElement = document.querySelector(selector);
+            if (!linkElement) {
+                linkElement = document.createElement('link');
+                linkElement.setAttribute('rel', relValue);
+                document.head.appendChild(linkElement);
+            }
+            linkElement.setAttribute('href', cacheBustedUrl);
+        };
+
+        ensureFavicon('link[rel="icon"]', 'icon');
+        ensureFavicon('link[rel="shortcut icon"]', 'shortcut icon');
+    }, [setting?.favicon, setting?.id, setting?.updated_at]);
 
     const value = useMemo(() => ({
         setting: setting || null,

@@ -19,6 +19,22 @@ export const showSuccessMessage = (content = 'Action completed successfully.') =
     console.info(text);
 };
 
+export const showSmartSuccessToast = (content = 'Action completed successfully.') => {
+    const text = resolveText(content, 'Action completed successfully.');
+    if (appMessageApi?.open) {
+        appMessageApi.open({
+            type: 'success',
+            content: text,
+            className: 'smart-success-toast',
+            duration: 2.4,
+        });
+        return;
+    }
+
+    if (!isBrowser) return;
+    console.info(text);
+};
+
 export const showErrorMessage = (content = 'Something went wrong. Please try again.') => {
     const text = resolveText(content, 'Something went wrong. Please try again.');
     if (appMessageApi?.error) {

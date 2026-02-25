@@ -65,14 +65,19 @@ const Header = () => {
   const cartBadgeCount = count > 99 ? "99+" : count;
 
   const resolveCartImage = (item) => {
+    const featureImage =
+      typeof item?.product?.feature_image === "string"
+        ? item.product.feature_image
+        : item?.product?.feature_image?.image;
+
     const image =
-      item?.product?.image?.image ||
       item?.product_image ||
+      item?.options?.product_image ||
+      item?.product?.image?.image ||
+      featureImage ||
       item?.product?.thumbnail ||
       item?.product?.image;
-    if (!image) return "https://placehold.co/64x64?text=Product";
-    if (/^https?:\/\//i.test(image)) return image;
-    return `/${String(image).replace(/^\/+/, "")}`;
+    return resolveMediaUrl(image, "https://placehold.co/64x64?text=Product");
   };
 
   const handleSearch = (event) => {
@@ -559,6 +564,11 @@ const Header = () => {
             </Link>
           </div>
         </div>
+        <div className="px-4 pb-1 text-center">
+          <p className="mx-auto max-w-[95%] truncate text-[13px] font-semibold text-gray-700">
+            {isSettingsLoading ? "Loading shop..." : siteName}
+          </p>
+        </div>
         <div className="px-4 pb-3">
           <form
             ref={mobileSearchRef}
@@ -611,6 +621,17 @@ const Header = () => {
               dangerouslySetInnerHTML={{ __html: marqueeHtml }}
             />
           ) : null}
+        </div>
+      </div>
+
+      <div
+        className="hidden md:block border-b"
+        style={{ backgroundColor: headerBgColor }}
+      >
+        <div className="container mx-auto px-4 py-2">
+          <p className="text-center text-lg font-bold tracking-tight text-gray-900">
+            {siteName}
+          </p>
         </div>
       </div>
 

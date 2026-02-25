@@ -126,11 +126,6 @@ const Footer = () => {
                                 )}
                             </Link>
                             <div className="theme-footer-panel my-0 max-w-[360px] rounded-2xl px-0 py-0 text-gray-700">
-                                <div className="mb-3 border-b border-black/10 pb-3">
-                                    <p className="truncate text-base font-extrabold tracking-tight text-gray-900">{siteName}</p>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-600">Customer Care</p>
-                                </div>
-
                                 <p className="text-[16px] font-medium leading-[1.45] text-gray-700">
                                     {contact?.address || 'Address not set'}
                                 </p>
@@ -210,7 +205,7 @@ const Footer = () => {
 
                         <div className="flex items-center justify-center">
                             {facebookLink ? (
-                                <div className="theme-footer-panel flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl border">
+                                <div className="theme-footer-panel flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl">
                                     {fbEmbedUrl ? (
                                         <iframe
                                             title="Facebook Page"

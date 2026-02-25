@@ -11,12 +11,10 @@ const BannerList = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentBanner, setCurrentBanner] = useState(null);
     const [formData, setFormData] = useState({
-        category_id: '',
         title: '',
         link: '',
         status: 1,
         image: null,
-        image_two: null,
     });
     const [selectedIds, setSelectedIds] = useState([]);
     const [keyword, setKeyword] = useState('');
@@ -27,8 +25,6 @@ const BannerList = () => {
     });
 
     const tagKey = 'banners';
-    const { data: metaResponse } = useAdminFetchQuery({ url: '/admin/banners/meta', tags: ['banner-meta'] });
-    const categories = metaResponse?.categories || [];
     const queryArgs = useMemo(() => ({
         url: '/admin/banners',
         params: {
@@ -53,12 +49,10 @@ const BannerList = () => {
         setIsEditing(false);
         setCurrentBanner(null);
         setFormData({
-            category_id: categories[0]?.id || '',
             title: '',
             link: '',
             status: 1,
             image: null,
-            image_two: null,
         });
         setIsModalOpen(true);
     };
@@ -67,12 +61,10 @@ const BannerList = () => {
         setIsEditing(true);
         setCurrentBanner(banner);
         setFormData({
-            category_id: banner.category_id,
             title: banner.title || '',
             link: banner.link,
             status: banner.status,
             image: null,
-            image_two: null,
         });
         setIsModalOpen(true);
     };
@@ -81,15 +73,11 @@ const BannerList = () => {
         e.preventDefault();
         try {
             const payload = new FormData();
-            payload.append('category_id', formData.category_id);
             payload.append('title', formData.title);
             payload.append('link', formData.link);
             payload.append('status', formData.status);
             if (formData.image) {
                 payload.append('image', formData.image);
-            }
-            if (formData.image_two) {
-                payload.append('image_two', formData.image_two);
             }
 
             if (isEditing && currentBanner) {
@@ -187,12 +175,6 @@ const BannerList = () => {
                     }}
                 />
             ),
-        },
-        {
-            header: 'Category',
-            accessor: 'category',
-            width: '16%',
-            render: (row) => row.category?.name || 'N/A',
         },
         { header: 'Title', accessor: 'title', width: '18%' },
         { header: 'Link', accessor: 'link', width: '28%' },
@@ -307,20 +289,6 @@ const BannerList = () => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={isEditing ? 'Edit Banner' : 'Add Banner'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <select
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                            value={formData.category_id}
-                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                            required
-                        >
-                            <option value="">Select Category</option>
-                            {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                         <Input
                             value={formData.title}
@@ -341,7 +309,7 @@ const BannerList = () => {
                         <select
                             className="w-full rounded-lg border border-gray-300 px-3 py-2"
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            onChange={(e) => setFormData({ ...formData, status: Number(e.target.value) })}
                             required
                         >
                             <option value={1}>Active</option>
@@ -355,15 +323,6 @@ const BannerList = () => {
                             className="w-full"
                             onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
                             required={!isEditing}
-                        />
-                        <p className="mt-1 text-xs text-gray-500">Recommended size: 1400 x 500 px</p>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Image Two (Optional)</label>
-                        <input
-                            type="file"
-                            className="w-full"
-                            onChange={(e) => setFormData({ ...formData, image_two: e.target.files[0] })}
                         />
                         <p className="mt-1 text-xs text-gray-500">Recommended size: 1400 x 500 px</p>
                     </div>

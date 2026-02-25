@@ -64,7 +64,6 @@ export const MODULE_VIEW_PERMISSIONS = [
     { path: '/integrations/payment', permission: 'integrations.view' },
     { path: '/pixels', permission: 'pixels.view' },
     { path: '/tag-managers', permission: 'tag-managers.view' },
-    { path: '/banner-categories', permission: 'banner-categories.view' },
     { path: '/banners', permission: 'banners.view' },
     { path: '/reports/orders', permission: 'reports.view' },
     { path: '/incomplete-orders', permission: 'incomplete-orders.view' },

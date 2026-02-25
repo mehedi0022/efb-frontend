@@ -21,8 +21,6 @@ const ContactSettings = () => {
         email: '',
         address: '',
         maplink: '',
-        bekash: '',
-        nogod: '',
         status: 1,
     });
 
@@ -58,8 +56,6 @@ const ContactSettings = () => {
             email: '',
             address: '',
             maplink: '',
-            bekash: '',
-            nogod: '',
             status: 1,
         });
         setIsModalOpen(true);
@@ -73,8 +69,6 @@ const ContactSettings = () => {
             email: contact.email || '',
             address: contact.address || '',
             maplink: contact.maplink || '',
-            bekash: contact.bekash || '',
-            nogod: contact.nogod || '',
             status: Number(contact.status ?? 1),
         });
         setIsModalOpen(true);
@@ -83,8 +77,6 @@ const ContactSettings = () => {
     const buildPayload = () => {
         return {
             hotline: String(formData.hotline || '').trim(),
-            bekash: String(formData.bekash || '').trim(),
-            nogod: String(formData.nogod || '').trim(),
             email: String(formData.email || '').trim(),
             address: String(formData.address || '').trim(),
             maplink: String(formData.maplink || '').trim(),
@@ -288,21 +280,6 @@ const ContactSettings = () => {
                             onChange={(e) => setFormData({ ...formData, maplink: e.target.value })}
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bkash</label>
-                        <Input
-                            value={formData.bekash}
-                            onChange={(e) => setFormData({ ...formData, bekash: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nagad</label>
-                        <Input
-                            value={formData.nogod}
-                            onChange={(e) => setFormData({ ...formData, nogod: e.target.value })}
-                        />
-                    </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                         <select

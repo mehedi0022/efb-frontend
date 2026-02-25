@@ -9,6 +9,7 @@ import {
     useTrackIncompleteOrderMutation,
     useUpdateCartItemMutation,
 } from '../store/publicApi';
+import { resolveMediaUrl } from '../utils/media';
 
 const Checkout = () => {
     const [formData, setFormData] = useState({
@@ -31,6 +32,24 @@ const Checkout = () => {
     const lastTrackedKeyRef = useRef('');
 
     const shippingCharges = shippingResponse?.data || [];
+
+    const resolveCheckoutImage = (item) => {
+        const featureImage = typeof item?.product?.feature_image === 'string'
+            ? item.product.feature_image
+            : item?.product?.feature_image?.image;
+
+        const candidates = [
+            item?.product_image,
+            item?.options?.product_image,
+            item?.product?.image?.image,
+            featureImage,
+            item?.product?.thumbnail,
+            item?.product?.image,
+        ];
+
+        const found = candidates.find((value) => String(value || '').trim() !== '');
+        return resolveMediaUrl(found, 'https://placehold.co/80x80?text=Product');
+    };
 
 
     useEffect(() => {
@@ -278,7 +297,7 @@ const Checkout = () => {
                             <tbody>
                                 {items.map((item) => {
                                     const productName = item.product_name || item.product?.name || 'Product';
-                                    const imageSrc = item.product_image || (item.product?.image?.image ? `/${item.product.image.image}` : 'https://placehold.co/80x80');
+                                    const imageSrc = resolveCheckoutImage(item);
                                     const lineTotal = Number(item.price) * item.quantity;
                                     return (
                                         <tr key={item.id} className="border-b">

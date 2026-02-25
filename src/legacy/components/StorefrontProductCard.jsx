@@ -5,6 +5,7 @@ import { FaStar, FaRegStar } from 'react-icons/fa';
 import { useCart } from '../context/CartContext';
 import { useAddExternalToCartMutation, useAddToCartMutation } from '../store/publicApi';
 import { resolveMediaUrl } from '../utils/media';
+import { showSmartSuccessToast } from '../admin/utils/alerts';
 
 const toNumber = (value, fallback = 0) => {
     const parsed = Number(value);
@@ -119,6 +120,8 @@ const StorefrontProductCard = ({ item, product }) => {
                 window.location.href = '/checkout';
                 return;
             }
+
+            showSmartSuccessToast('Product successfully added to cart');
         } catch (error) {
             const message = error?.data?.errors?.message || error?.data?.message || 'Failed to add cart.';
             window.alert(message);

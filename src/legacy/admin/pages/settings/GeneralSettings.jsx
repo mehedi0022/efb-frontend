@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiUploadCloud, FiImage } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiUploadCloud, FiImage } from 'react-icons/fi';
 import { Upload } from 'antd';
 import DataTable from '../../components/common/DataTable';
 import Button from '../../components/common/Button';
@@ -84,7 +84,6 @@ const GeneralSettings = () => {
     });
     const [fileErrors, setFileErrors] = useState({ logo: '', favicon: '' });
     const [uploadFileLists, setUploadFileLists] = useState({ logo: [], favicon: [] });
-    const [selectedIds, setSelectedIds] = useState([]);
 
     const tagKey = 'settings';
     const {
@@ -93,7 +92,8 @@ const GeneralSettings = () => {
         isFetching,
     } = useAdminFetchQuery({ url: '/admin/settings', tags: [tagKey] });
     const [adminAction] = useAdminActionMutation();
-    const settings = response?.data || [];
+    const allSettings = Array.isArray(response?.data) ? response.data : [];
+    const settings = allSettings.length > 0 ? [allSettings[0]] : [];
     const loading = isLoading || isFetching;
     const hasSetting = settings.length > 0;
     const canCreateSetting = !hasSetting;
@@ -237,65 +237,7 @@ const GeneralSettings = () => {
         }
     };
 
-    const handleDelete = async (ids) => {
-        if (!window.confirm('Are you sure you want to delete?')) return;
-        try {
-            await adminAction({
-                url: '/admin/settings/delete',
-                method: 'DELETE',
-                body: { ids },
-                invalidates: [tagKey],
-            }).unwrap();
-            setSelectedIds([]);
-        } catch (error) {
-            console.error('Error deleting settings:', error);
-        }
-    };
-
-    const handleStatusUpdate = async (ids, status) => {
-        try {
-            await adminAction({
-                url: '/admin/settings/update-status',
-                method: 'POST',
-                body: { ids, status },
-                invalidates: [tagKey],
-            }).unwrap();
-            setSelectedIds([]);
-        } catch (error) {
-            console.error('Error updating status:', error);
-        }
-    };
-
     const columns = [
-        {
-            header: (
-                <input
-                    type="checkbox"
-                    onChange={(e) => {
-                        if (e.target.checked) {
-                            setSelectedIds(settings.map((item) => item.id));
-                        } else {
-                            setSelectedIds([]);
-                        }
-                    }}
-                />
-            ),
-            accessor: 'checkbox',
-            width: '5%',
-            render: (row) => (
-                <input
-                    type="checkbox"
-                    checked={selectedIds.includes(row.id)}
-                    onChange={(e) => {
-                        if (e.target.checked) {
-                            setSelectedIds([...selectedIds, row.id]);
-                        } else {
-                            setSelectedIds(selectedIds.filter((id) => id !== row.id));
-                        }
-                    }}
-                />
-            ),
-        },
         { header: 'Name', accessor: 'name', width: '30%' },
         {
             header: 'Courier Charge',
@@ -374,12 +316,6 @@ const GeneralSettings = () => {
                     >
                         <FiEdit2 size={16} />
                     </button>
-                    <button
-                        onClick={() => handleDelete([row.id])}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
-                    >
-                        <FiTrash2 size={16} />
-                    </button>
                 </div>
             ),
         },
@@ -395,20 +331,6 @@ const GeneralSettings = () => {
                     </Button>
                 ) : null}
             </div>
-
-            {selectedIds.length > 0 && (
-                <div className="bg-white rounded-lg shadow-card p-4 mb-4 flex gap-2">
-                    <Button onClick={() => handleStatusUpdate(selectedIds, 1)} variant="success" size="sm" icon={FiCheck}>
-                        Activate
-                    </Button>
-                    <Button onClick={() => handleStatusUpdate(selectedIds, 0)} variant="warning" size="sm" icon={FiX}>
-                        Deactivate
-                    </Button>
-                    <Button onClick={() => handleDelete(selectedIds)} variant="danger" size="sm" icon={FiTrash2}>
-                        Delete ({selectedIds.length})
-                    </Button>
-                </div>
-            )}
 
             <div className="bg-white rounded-lg shadow-card">
                 <DataTable columns={columns} data={settings} loading={loading} />

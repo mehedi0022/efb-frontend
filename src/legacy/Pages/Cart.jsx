@@ -7,6 +7,8 @@ import {
     useGetCartQuery,
     useUpdateCartItemMutation,
 } from '../store/publicApi';
+import { resolveMediaUrl } from '../utils/media';
+import { showConfirmAlert } from '../admin/utils/alerts';
 
 const Cart = () => {
     const { refreshCart } = useCart();
@@ -25,7 +27,15 @@ const Cart = () => {
     };
 
     const removeItem = async (itemId) => {
-        if (!confirm('Are you sure?')) return;
+        const confirmed = await showConfirmAlert({
+            title: 'Remove Item',
+            content: 'Are you sure you want to remove this product from your cart?',
+            okText: 'Yes, Remove',
+            cancelText: 'Keep Item',
+            okType: 'danger',
+        });
+        if (!confirmed) return;
+
         try {
             await deleteCartItem(itemId).unwrap();
             refreshCart();
@@ -49,6 +59,24 @@ const Cart = () => {
 
     const subtotal = cart.items.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
 
+    const resolveCartItemImage = (item) => {
+        const featureImage = typeof item?.product?.feature_image === 'string'
+            ? item.product.feature_image
+            : item?.product?.feature_image?.image;
+
+        const candidates = [
+            item?.product_image,
+            item?.options?.product_image,
+            item?.product?.image?.image,
+            featureImage,
+            item?.product?.thumbnail,
+            item?.product?.image,
+        ];
+
+        const image = candidates.find((value) => String(value || '').trim() !== '');
+        return resolveMediaUrl(image, 'https://placehold.co/100x100?text=Product');
+    };
+
     return (
         <div className="container mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
@@ -61,8 +89,8 @@ const Cart = () => {
                             <div key={item.id} className="flex flex-col sm:flex-row items-center justify-between border-b last:border-0 py-4 gap-4">
                                 <div className="flex items-center gap-4 w-full sm:w-auto">
                                     <img
-                                        src={item.product_image || (item.product?.image?.image ? `/${item.product.image.image}` : 'https://placehold.co/100x100')}
-                                        alt={item.product_name || item.product?.name}
+                                        src={resolveCartItemImage(item)}
+                                        alt={item.product_name || item.product?.name || 'Product'}
                                         className="w-20 h-20 object-cover rounded"
                                     />
                                     <div>
