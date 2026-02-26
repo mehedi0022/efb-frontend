@@ -284,87 +284,167 @@ const Checkout = () => {
                     </div>
 
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead className="bg-white border-b">
-                                <tr className="text-left">
-                                    <th className="p-3 font-semibold">Product</th>
-                                    <th className="p-3 font-semibold">Price</th>
-                                    <th className="p-3 font-semibold">Qty</th>
-                                    <th className="p-3 font-semibold">Total</th>
-                                    <th className="p-3 font-semibold"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.map((item) => {
-                                    const productName = item.product_name || item.product?.name || 'Product';
-                                    const imageSrc = resolveCheckoutImage(item);
-                                    const lineTotal = Number(item.price) * item.quantity;
-                                    return (
-                                        <tr key={item.id} className="border-b">
-                                            <td className="p-3">
-                                                <div className="flex items-center gap-3">
-                                                    <img src={imageSrc} alt={productName} className="h-11 w-11 rounded border object-cover" />
-                                                    <div>
-                                                        <p className="font-semibold text-gray-800">{productName}</p>
-                                                        {item.options?.product_size && (
-                                                            <p className="text-xs text-gray-500">{item.options.product_size}, {item.options.product_color}</p>
-                                                        )}
+                        <div className="md:hidden">
+                            {items.map((item) => {
+                                const productName = item.product_name || item.product?.name || 'Product';
+                                const imageSrc = resolveCheckoutImage(item);
+                                const lineTotal = Number(item.price) * item.quantity;
+                                return (
+                                    <div key={item.id} className="border-b p-4">
+                                        <p className="mb-3 break-words text-sm font-semibold leading-5 text-gray-900">
+                                            {productName}
+                                        </p>
+                                        <div className="flex items-start gap-3">
+                                            <img src={imageSrc} alt={productName} className="h-14 w-14 rounded border object-cover" />
+                                            <div className="flex-1 space-y-2">
+                                                {item.options?.product_size ? (
+                                                    <p className="break-words text-xs text-gray-500">
+                                                        {item.options.product_size}, {item.options.product_color}
+                                                    </p>
+                                                ) : null}
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Price</span>
+                                                    <span className="font-medium text-gray-800">{Number(item.price)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Quantity</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleQty(item.id, item.quantity - 1)}
+                                                            className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white"
+                                                        >
+                                                            <FiMinus />
+                                                        </button>
+                                                        <input
+                                                            value={item.quantity}
+                                                            readOnly
+                                                            className="h-8 w-10 rounded border border-gray-300 text-center"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleQty(item.id, item.quantity + 1)}
+                                                            className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white"
+                                                        >
+                                                            <FiPlus />
+                                                        </button>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="p-3">{Number(item.price)}</td>
-                                            <td className="p-3">
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleQty(item.id, item.quantity - 1)}
-                                                        className="h-8 w-8 rounded bg-blue-600 text-white flex items-center justify-center"
-                                                    >
-                                                        <FiMinus />
-                                                    </button>
-                                                    <input
-                                                        value={item.quantity}
-                                                        readOnly
-                                                        className="w-10 h-8 border border-gray-300 text-center rounded"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleQty(item.id, item.quantity + 1)}
-                                                        className="h-8 w-8 rounded bg-blue-600 text-white flex items-center justify-center"
-                                                    >
-                                                        <FiPlus />
-                                                    </button>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-500">Total</span>
+                                                    <span className="font-semibold text-gray-900">{lineTotal}</span>
                                                 </div>
-                                            </td>
-                                            <td className="p-3 font-semibold">{lineTotal}</td>
-                                            <td className="p-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemove(item.id)}
-                                                    className="text-red-500"
-                                                >
-                                                    <FiTrash2 />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                            <tfoot>
-                                <tr className="border-t">
-                                    <th colSpan="3" className="p-3 text-right">Sub-Total</th>
-                                    <td colSpan="2" className="p-3 font-semibold">{subtotal}</td>
-                                </tr>
-                                <tr>
-                                    <th colSpan="3" className="p-3 text-right">Delivery Charges</th>
-                                    <td colSpan="2" className="p-3 font-semibold">{shippingCost}</td>
-                                </tr>
-                                <tr>
-                                    <th colSpan="3" className="p-3 text-right text-emerald-600">Total Amount</th>
-                                    <td colSpan="2" className="p-3 font-bold text-emerald-600">{total}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemove(item.id)}
+                                                className="text-red-500"
+                                            >
+                                                <FiTrash2 />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div className="bg-gray-50 p-4">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span>Sub-Total</span>
+                                    <span className="font-semibold">{subtotal}</span>
+                                </div>
+                                <div className="mt-2 flex items-center justify-between text-sm">
+                                    <span>Delivery Charges</span>
+                                    <span className="font-semibold">{shippingCost}</span>
+                                </div>
+                                <div className="mt-2 flex items-center justify-between text-base font-bold text-emerald-600">
+                                    <span>Total Amount</span>
+                                    <span>{total}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="hidden overflow-x-auto md:block">
+                            <table className="w-full text-sm">
+                                <thead className="bg-white border-b">
+                                    <tr className="text-left">
+                                        <th className="p-3 font-semibold">Product</th>
+                                        <th className="p-3 font-semibold">Price</th>
+                                        <th className="p-3 font-semibold">Qty</th>
+                                        <th className="p-3 font-semibold">Total</th>
+                                        <th className="p-3 font-semibold"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {items.map((item) => {
+                                        const productName = item.product_name || item.product?.name || 'Product';
+                                        const imageSrc = resolveCheckoutImage(item);
+                                        const lineTotal = Number(item.price) * item.quantity;
+                                        return (
+                                            <tr key={item.id} className="border-b">
+                                                <td className="p-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <img src={imageSrc} alt={productName} className="h-11 w-11 rounded border object-cover" />
+                                                        <div>
+                                                            <p className="font-semibold text-gray-800">{productName}</p>
+                                                            {item.options?.product_size && (
+                                                                <p className="text-xs text-gray-500">{item.options.product_size}, {item.options.product_color}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3">{Number(item.price)}</td>
+                                                <td className="p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleQty(item.id, item.quantity - 1)}
+                                                            className="h-8 w-8 rounded bg-blue-600 text-white flex items-center justify-center"
+                                                        >
+                                                            <FiMinus />
+                                                        </button>
+                                                        <input
+                                                            value={item.quantity}
+                                                            readOnly
+                                                            className="w-10 h-8 border border-gray-300 text-center rounded"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleQty(item.id, item.quantity + 1)}
+                                                            className="h-8 w-8 rounded bg-blue-600 text-white flex items-center justify-center"
+                                                        >
+                                                            <FiPlus />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 font-semibold">{lineTotal}</td>
+                                                <td className="p-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemove(item.id)}
+                                                        className="text-red-500"
+                                                    >
+                                                        <FiTrash2 />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="border-t">
+                                        <th colSpan="3" className="p-3 text-right">Sub-Total</th>
+                                        <td colSpan="2" className="p-3 font-semibold">{subtotal}</td>
+                                    </tr>
+                                    <tr>
+                                        <th colSpan="3" className="p-3 text-right">Delivery Charges</th>
+                                        <td colSpan="2" className="p-3 font-semibold">{shippingCost}</td>
+                                    </tr>
+                                    <tr>
+                                        <th colSpan="3" className="p-3 text-right text-emerald-600">Total Amount</th>
+                                        <td colSpan="2" className="p-3 font-bold text-emerald-600">{total}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

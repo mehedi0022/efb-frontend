@@ -34,6 +34,10 @@ const OrderList = () => {
     const [statusDraftByOrderId, setStatusDraftByOrderId] = useState({});
     const [sendingEfbOrderIds, setSendingEfbOrderIds] = useState([]);
     const [efbSentOrderIds, setEfbSentOrderIds] = useState([]);
+    const [selectedOrderIds, setSelectedOrderIds] = useState([]);
+    const [bulkAction, setBulkAction] = useState('');
+    const [bulkSubmitting, setBulkSubmitting] = useState(false);
+    const [selectionResetKey, setSelectionResetKey] = useState(0);
 
     const tagKey = `orders:${status}`;
     const queryArgs = useMemo(() => ({
@@ -111,6 +115,12 @@ const OrderList = () => {
     useEffect(() => {
         setPagination((prev) => ({ ...prev, current_page: 1 }));
     }, [status]);
+
+    useEffect(() => {
+        setSelectedOrderIds([]);
+        setBulkAction('');
+        setSelectionResetKey((prev) => prev + 1);
+    }, [status, pagination.current_page, appliedFilters]);
 
     const handleSendToEfb = async (order) => {
         const orderId = Number(order.id);
@@ -219,6 +229,138 @@ const OrderList = () => {
 
     const handlePageChange = (page) => {
         setPagination((prev) => ({ ...prev, current_page: page }));
+    };
+
+    const resetBulkSelection = () => {
+        setSelectedOrderIds([]);
+        setSelectionResetKey((prev) => prev + 1);
+    };
+
+    const handleBulkAction = async () => {
+        if (!bulkAction) {
+            showErrorMessage('Select a bulk action first.');
+            return;
+        }
+
+        if (!selectedOrderIds.length) {
+            showErrorMessage('Select at least one order.');
+            return;
+        }
+
+        const selectedCount = selectedOrderIds.length;
+        const isDelete = bulkAction === 'delete';
+        const isCourierAction = bulkAction === 'send_pathao' || bulkAction === 'send_steadfast';
+
+        if (isDelete || isCourierAction) {
+            const actionLabelMap = {
+                delete: 'delete',
+                send_pathao: 'send to Pathao',
+                send_steadfast: 'send to Steadfast',
+            };
+
+            const confirmed = await showConfirmAlert({
+                title: 'Confirm Bulk Action',
+                content: `You are about to ${actionLabelMap[bulkAction]} ${selectedCount} order(s).`,
+                okText: 'Yes, Continue',
+                cancelText: 'Cancel',
+                okType: isDelete ? 'danger' : 'primary',
+            });
+
+            if (!confirmed) return;
+        }
+
+        setBulkSubmitting(true);
+        try {
+            if (bulkAction === 'send_pathao') {
+                const result = await adminAction({
+                    url: '/admin/orders/courier/pathao',
+                    method: 'POST',
+                    body: { order_ids: selectedOrderIds },
+                    invalidates: [tagKey, 'orders'],
+                    notifySuccess: false,
+                }).unwrap();
+
+                showSuccessAlert({
+                    title: 'Pathao Dispatch Complete',
+                    content: result?.message || 'Selected orders sent to Pathao.',
+                });
+                resetBulkSelection();
+                return;
+            }
+
+            if (bulkAction === 'send_steadfast') {
+                const result = await adminAction({
+                    url: '/admin/orders/courier/steadfast',
+                    method: 'POST',
+                    body: { order_ids: selectedOrderIds },
+                    invalidates: [tagKey, 'orders'],
+                    notifySuccess: false,
+                }).unwrap();
+
+                showSuccessAlert({
+                    title: 'Steadfast Dispatch Complete',
+                    content: result?.message || 'Selected orders sent to Steadfast.',
+                });
+                resetBulkSelection();
+                return;
+            }
+
+            if (bulkAction === 'print_invoice') {
+                const result = await adminAction({
+                    url: '/admin/orders/print',
+                    method: 'POST',
+                    body: { order_ids: selectedOrderIds },
+                    notifySuccess: false,
+                }).unwrap();
+
+                const printView = result?.view || '';
+                if (!printView) {
+                    showErrorMessage('No printable content was returned.');
+                    return;
+                }
+
+                const printWindow = window.open('', '_blank', 'width=1200,height=800');
+                if (!printWindow) {
+                    showErrorMessage('Unable to open print window. Please allow popups and try again.');
+                    return;
+                }
+
+                printWindow.document.open();
+                printWindow.document.write(printView);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+
+                showSuccessAlert({
+                    title: 'Invoice Ready',
+                    content: `Print view opened for ${selectedCount} order(s).`,
+                });
+                return;
+            }
+
+            if (bulkAction === 'delete') {
+                const result = await adminAction({
+                    url: '/admin/orders/delete',
+                    method: 'DELETE',
+                    body: { order_ids: selectedOrderIds },
+                    invalidates: [tagKey, 'orders'],
+                    notifySuccess: false,
+                }).unwrap();
+
+                showSuccessAlert({
+                    title: 'Deleted',
+                    content: result?.message || 'Selected orders deleted successfully.',
+                });
+                resetBulkSelection();
+                return;
+            }
+
+            showErrorMessage('Unsupported bulk action selected.');
+        } catch (submitError) {
+            showErrorMessage(submitError?.data?.message || 'Bulk action failed.');
+        } finally {
+            setBulkSubmitting(false);
+        }
     };
 
     const filterRangeValue = useMemo(() => {
@@ -478,6 +620,44 @@ const OrderList = () => {
                                 />
                             </div>
                         </div>
+
+                        <div className="mt-4 rounded-lg border border-admin-gray-200 bg-white p-3">
+                            <div className="flex flex-wrap items-end gap-2">
+                                <div className="min-w-[220px] flex-1">
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Bulk Action</label>
+                                    <select
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                        value={bulkAction}
+                                        onChange={(e) => setBulkAction(e.target.value)}
+                                    >
+                                        <option value="">Select action</option>
+                                        <option value="send_pathao">Send to Pathao</option>
+                                        <option value="send_steadfast">Send to Steadfast</option>
+                                        <option value="print_invoice">Print Invoice</option>
+                                        <option value="delete">Delete Orders</option>
+                                    </select>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="primary"
+                                    rounded="md"
+                                    disabled={bulkSubmitting || selectedOrderIds.length === 0 || !bulkAction}
+                                    onClick={handleBulkAction}
+                                >
+                                    {bulkSubmitting ? 'Processing...' : 'Run Bulk Action'}
+                                </Button>
+                                {selectedOrderIds.length > 0 ? (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        rounded="md"
+                                        onClick={resetBulkSelection}
+                                    >
+                                        Clear Selection ({selectedOrderIds.length})
+                                    </Button>
+                                ) : null}
+                            </div>
+                        </div>
                     </div>
 
                     {error && (
@@ -490,6 +670,10 @@ const OrderList = () => {
                         columns={columns}
                         data={orders}
                         loading={loading}
+                        selectable
+                        selectedRowIds={selectedOrderIds}
+                        onSelectionChange={setSelectedOrderIds}
+                        selectionResetKey={selectionResetKey}
                         pagination={pagination}
                         onPageChange={handlePageChange}
                         className="rounded-xl border border-admin-gray-200 bg-white"

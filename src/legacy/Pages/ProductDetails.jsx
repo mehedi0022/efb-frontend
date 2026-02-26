@@ -6,6 +6,7 @@ import { useSettings } from '../context/SettingsContext';
 import ProductDetailView from '../components/ProductDetailView';
 import { resolveMediaUrl } from '../utils/media';
 import { showSmartSuccessToast } from '../admin/utils/alerts';
+import { resolveBrowserTabTitle } from '../utils/tabTitle';
 
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
 const FALLBACK_WHATSAPP_PHONE = process.env.NEXT_PUBLIC_NOGOD_PHONE || FALLBACK_CONTACT_PHONE;
@@ -56,10 +57,7 @@ const ProductDetails = () => {
     }, [response]);
 
     const product = productData?.product || null;
-    const siteTitle = setting?.name
-        || process.env.NEXT_PUBLIC_APP_NAME
-        || process.env.NEXT_PUBLIC_LOGIN_PAGE_TITLE
-        || 'Naxt Ecommerce';
+    const siteTitle = resolveBrowserTabTitle(setting);
 
     useEffect(() => {
         setQty(1);

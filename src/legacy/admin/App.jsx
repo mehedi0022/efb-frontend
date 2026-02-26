@@ -6,6 +6,7 @@ import OrderList from './pages/orders/OrderList';
 import OrderInvoice from './pages/orders/OrderInvoice';
 import OrderEdit from './pages/orders/OrderEdit';
 import OrderCreate from './pages/orders/OrderCreate';
+import CourierOrderList from './pages/orders/CourierOrderList';
 import OrderPlaceholder from './pages/orders/OrderPlaceholder';
 import FraudChecker from './pages/orders/FraudChecker';
 import Login from './pages/auth/Login';
@@ -211,6 +212,14 @@ const App = () => {
                         element={(
                             <RequirePermission permission="orders.edit">
                                 <OrderCreate />
+                            </RequirePermission>
+                        )}
+                    />
+                    <Route
+                        path="orders/courier/list"
+                        element={(
+                            <RequirePermission permission="orders.view">
+                                <CourierOrderList />
                             </RequirePermission>
                         )}
                     />

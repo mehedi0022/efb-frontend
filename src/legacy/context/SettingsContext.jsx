@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useGetSettingsQuery } from '../store/publicApi';
 import { resolveMediaUrl } from '../utils/media';
+import { resolveBrowserTabTitle } from '../utils/tabTitle';
 
 const SettingsContext = createContext({
     setting: null,
@@ -59,6 +60,25 @@ export const SettingsProvider = ({ children }) => {
         ensureFavicon('link[rel="icon"]', 'icon');
         ensureFavicon('link[rel="shortcut icon"]', 'shortcut icon');
     }, [setting?.favicon, setting?.id, setting?.updated_at]);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        const preferredTitle = resolveBrowserTabTitle(setting);
+        if (!preferredTitle) return;
+
+        const currentTitle = String(document.title || '').trim();
+        const knownDefaults = [
+            '',
+            'Naxt Ecommerce',
+            String(process.env.NEXT_PUBLIC_APP_NAME || '').trim(),
+            String(process.env.NEXT_PUBLIC_LOGIN_PAGE_TITLE || '').trim(),
+        ].filter(Boolean);
+
+        if (knownDefaults.includes(currentTitle)) {
+            document.title = preferredTitle;
+        }
+    }, [setting]);
 
     const value = useMemo(() => ({
         setting: setting || null,

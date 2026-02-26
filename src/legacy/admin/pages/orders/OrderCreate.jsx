@@ -14,6 +14,8 @@ const initialFormData = {
     shipping_area: '',
     shipping_charge_id: '',
     shipping_charge: 0,
+    discount_type: 'fixed',
+    discount_value: 0,
     order_status: '',
     note: '',
     admin_note: '',
@@ -23,6 +25,16 @@ const initialFormData = {
 const toNumber = (value, fallback = 0) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const calculateDiscountAmount = (subTotal, discountType, discountValue) => {
+    const safeSubtotal = Math.max(0, Number(subTotal || 0));
+    const safeValue = Math.max(0, Number(discountValue || 0));
+    if (discountType === 'percentage') {
+        const pct = Math.min(100, safeValue);
+        return Math.round((safeSubtotal * pct) / 100);
+    }
+    return Math.min(Math.round(safeValue), safeSubtotal);
 };
 
 const OrderCreate = () => {
@@ -62,14 +74,20 @@ const OrderCreate = () => {
             0
         );
         const shippingCharge = Number(formData.shipping_charge || 0);
-        const grandTotal = Math.max(0, subTotal + shippingCharge);
+        const discount = calculateDiscountAmount(
+            subTotal,
+            formData.discount_type || 'fixed',
+            formData.discount_value
+        );
+        const grandTotal = Math.max(0, subTotal + shippingCharge - discount);
 
         return {
             subTotal,
             shippingCharge,
+            discount,
             grandTotal,
         };
-    }, [formData.items, formData.shipping_charge]);
+    }, [formData.items, formData.shipping_charge, formData.discount_type, formData.discount_value]);
 
     const validate = () => {
         const nextErrors = {};
@@ -85,6 +103,15 @@ const OrderCreate = () => {
         }
         if (!formData.order_status) {
             nextErrors.order_status = 'Order status is required.';
+        }
+        if (toNumber(formData.discount_value, -1) < 0) {
+            nextErrors.discount_value = 'Discount value cannot be negative.';
+        }
+        if (
+            formData.discount_type === 'percentage'
+            && toNumber(formData.discount_value, 0) > 100
+        ) {
+            nextErrors.discount_value = 'Percentage discount cannot be greater than 100.';
         }
         if (!Array.isArray(formData.items) || formData.items.length === 0) {
             nextErrors.items = 'At least one order item is required.';
@@ -224,7 +251,9 @@ const OrderCreate = () => {
                     ).trim(),
                     shipping_charge_id: formData.shipping_charge_id ? Number(formData.shipping_charge_id) : null,
                     shipping_charge: Math.max(0, Number(formData.shipping_charge) || 0),
-                    discount: 0,
+                    discount_type: formData.discount_type || 'fixed',
+                    discount_value: Math.max(0, Number(formData.discount_value) || 0),
+                    discount: totals.discount,
                     order_status: Number(formData.order_status),
                     note: formData.note || '',
                     admin_note: formData.admin_note || '',
@@ -356,6 +385,29 @@ const OrderCreate = () => {
                                 <p className="mt-1 text-sm text-red-600">{errors.order_status}</p>
                             ) : null}
                         </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Discount Type</label>
+                            <select
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                                value={formData.discount_type}
+                                onChange={(e) => handleChange('discount_type', e.target.value)}
+                            >
+                                <option value="fixed">Fixed Amount</option>
+                                <option value="percentage">Percentage (%)</option>
+                            </select>
+                        </div>
+                        <Input
+                            label={formData.discount_type === 'percentage' ? 'Discount (%)' : 'Discount Amount'}
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={formData.discount_value}
+                            onChange={(e) => handleChange('discount_value', e.target.value)}
+                            error={errors.discount_value}
+                        />
                     </div>
 
                     <div>
@@ -519,6 +571,12 @@ const OrderCreate = () => {
                         <div className="flex justify-between">
                             <span>Shipping</span>
                             <span>{formatCurrency(totals.shippingCharge)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>
+                                Discount ({formData.discount_type === 'percentage' ? `${Number(formData.discount_value || 0)}%` : 'Fixed'})
+                            </span>
+                            <span>- {formatCurrency(totals.discount)}</span>
                         </div>
                         <div className="border-t pt-2 text-base font-semibold text-gray-900">
                             <div className="flex justify-between">

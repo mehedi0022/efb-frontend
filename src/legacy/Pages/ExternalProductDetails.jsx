@@ -5,6 +5,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useAddExternalToCartMutation, useGetExternalProductQuery } from '../store/publicApi';
 import ProductDetailView from '../components/ProductDetailView';
 import { showSmartSuccessToast } from '../admin/utils/alerts';
+import { resolveBrowserTabTitle } from '../utils/tabTitle';
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE || 'https://freelancerbangladesh.com/';
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
@@ -62,10 +63,7 @@ const ExternalProductDetails = () => {
         if (response?.data) return response.data;
         return response;
     }, [response]);
-    const siteTitle = setting?.name
-        || process.env.NEXT_PUBLIC_APP_NAME
-        || process.env.NEXT_PUBLIC_LOGIN_PAGE_TITLE
-        || 'Naxt Ecommerce';
+    const siteTitle = resolveBrowserTabTitle(setting);
 
     useEffect(() => {
         setQty(1);

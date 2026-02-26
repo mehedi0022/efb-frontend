@@ -68,6 +68,7 @@ const GeneralSettings = () => {
     const [currentSetting, setCurrentSetting] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
+        browser_tab_title: '',
         description: '',
         header_bg_color: '',
         footer_bg_color: '',
@@ -101,6 +102,7 @@ const GeneralSettings = () => {
     const resetForm = () => {
         setFormData({
             name: '',
+            browser_tab_title: '',
             description: '',
             header_bg_color: '',
             footer_bg_color: '',
@@ -132,6 +134,7 @@ const GeneralSettings = () => {
         setCurrentSetting(setting);
         setFormData({
             name: setting.name || '',
+            browser_tab_title: setting.browser_tab_title || '',
             description: setting.description || '',
             header_bg_color: setting.header_bg_color || '',
             footer_bg_color: setting.footer_bg_color || '',
@@ -191,6 +194,7 @@ const GeneralSettings = () => {
         try {
             const payload = new FormData();
             payload.append('name', formData.name);
+            payload.append('browser_tab_title', formData.browser_tab_title || '');
             payload.append('description', formData.description || '');
             payload.append('header_bg_color', formData.header_bg_color || '');
             payload.append('footer_bg_color', formData.footer_bg_color || '');
@@ -239,6 +243,12 @@ const GeneralSettings = () => {
 
     const columns = [
         { header: 'Name', accessor: 'name', width: '30%' },
+        {
+            header: 'Browser Tab Title',
+            accessor: 'browser_tab_title',
+            width: '20%',
+            render: (row) => row.browser_tab_title || '-',
+        },
         {
             header: 'Courier Charge',
             accessor: 'courier_charge',
@@ -361,6 +371,14 @@ const GeneralSettings = () => {
                                 <Input
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">Browser Tab Title</label>
+                                <Input
+                                    value={formData.browser_tab_title}
+                                    onChange={(e) => setFormData({ ...formData, browser_tab_title: e.target.value })}
+                                    placeholder="Shown in browser tab"
                                 />
                             </div>
                             <div>

@@ -13,7 +13,8 @@ const initialFormData = {
     shipping_area: '',
     shipping_charge_id: '',
     shipping_charge: 0,
-    discount: 0,
+    discount_type: 'fixed',
+    discount_value: 0,
     order_status: '',
     note: '',
     admin_note: '',
@@ -23,6 +24,16 @@ const initialFormData = {
 const toNumber = (value, fallback = 0) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const calculateDiscountAmount = (subTotal, discountType, discountValue) => {
+    const safeSubtotal = Math.max(0, Number(subTotal || 0));
+    const safeValue = Math.max(0, Number(discountValue || 0));
+    if (discountType === 'percentage') {
+        const pct = Math.min(100, safeValue);
+        return Math.round((safeSubtotal * pct) / 100);
+    }
+    return Math.min(Math.round(safeValue), safeSubtotal);
 };
 
 const normalizeOrderItems = (items = []) => {
@@ -98,7 +109,8 @@ const OrderEdit = () => {
             shipping_area: order.shipping?.area || '',
             shipping_charge_id: '',
             shipping_charge: Number(order.shipping_charge ?? 0),
-            discount: Number(order.discount ?? 0),
+            discount_type: order.discount_type || 'fixed',
+            discount_value: Number(order.discount_value ?? order.discount ?? 0),
             order_status: Number.isFinite(Number(order.order_status))
                 ? Number(order.order_status)
                 : (order.status?.id ? Number(order.status.id) : ''),
@@ -138,7 +150,11 @@ const OrderEdit = () => {
             0
         );
         const shippingCharge = Number(formData.shipping_charge || 0);
-        const discount = Number(formData.discount || 0);
+        const discount = calculateDiscountAmount(
+            subTotal,
+            formData.discount_type || 'fixed',
+            formData.discount_value
+        );
         const grandTotal = Math.max(0, subTotal + shippingCharge - discount);
 
         return {
@@ -147,7 +163,7 @@ const OrderEdit = () => {
             discount,
             grandTotal,
         };
-    }, [formData.items, formData.shipping_charge, formData.discount]);
+    }, [formData.items, formData.shipping_charge, formData.discount_type, formData.discount_value]);
 
     const validate = () => {
         const nextErrors = {};
@@ -161,8 +177,14 @@ const OrderEdit = () => {
         if (!formData.shipping_address.trim()) {
             nextErrors.shipping_address = 'Shipping address is required.';
         }
-        if (Number(formData.discount) < 0) {
-            nextErrors.discount = 'Premium cannot be negative.';
+        if (toNumber(formData.discount_value, -1) < 0) {
+            nextErrors.discount_value = 'Discount value cannot be negative.';
+        }
+        if (
+            formData.discount_type === 'percentage'
+            && toNumber(formData.discount_value, 0) > 100
+        ) {
+            nextErrors.discount_value = 'Percentage discount cannot be greater than 100.';
         }
         if (!formData.order_status) {
             nextErrors.order_status = 'Order status is required.';
@@ -307,7 +329,9 @@ const OrderEdit = () => {
                     ).trim(),
                     shipping_charge_id: formData.shipping_charge_id ? Number(formData.shipping_charge_id) : null,
                     shipping_charge: Math.max(0, Number(formData.shipping_charge) || 0),
-                    discount: Math.max(0, Number(formData.discount) || 0),
+                    discount_type: formData.discount_type || 'fixed',
+                    discount_value: Math.max(0, Number(formData.discount_value) || 0),
+                    discount: totals.discount,
                     order_status: Number(formData.order_status),
                     note: formData.note || '',
                     admin_note: formData.admin_note || '',
@@ -417,14 +441,25 @@ const OrderEdit = () => {
                                 ))}
                             </select>
                         </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Discount Type</label>
+                            <select
+                                className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                                value={formData.discount_type}
+                                onChange={(e) => handleChange('discount_type', e.target.value)}
+                            >
+                                <option value="fixed">Fixed Amount</option>
+                                <option value="percentage">Percentage (%)</option>
+                            </select>
+                        </div>
                         <Input
-                            label="Premium"
+                            label={formData.discount_type === 'percentage' ? 'Discount (%)' : 'Discount Amount'}
                             type="number"
                             min="0"
                             step="1"
-                            value={formData.discount}
-                            onChange={(e) => handleChange('discount', e.target.value)}
-                            error={errors.discount}
+                            value={formData.discount_value}
+                            onChange={(e) => handleChange('discount_value', e.target.value)}
+                            error={errors.discount_value}
                         />
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">Order Status</label>
@@ -612,8 +647,10 @@ const OrderEdit = () => {
                             <span>{formatCurrency(totals.shippingCharge)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="font-semibold text-[#1f4ea3]">Premium</span>
-                            <span>{formatCurrency(totals.discount)}</span>
+                            <span className="font-semibold text-[#1f4ea3]">
+                                Discount ({formData.discount_type === 'percentage' ? `${Number(formData.discount_value || 0)}%` : 'Fixed'})
+                            </span>
+                            <span>- {formatCurrency(totals.discount)}</span>
                         </div>
                         <div className="border-t pt-2 text-base font-semibold text-gray-900">
                             <div className="flex justify-between">

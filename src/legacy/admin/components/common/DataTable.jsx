@@ -8,6 +8,8 @@ const DataTable = ({
     loading = false,
     selectable = false,
     onSelectionChange,
+    selectedRowIds,
+    selectionResetKey,
     pagination = {},
     onPageChange,
     striped = true,
@@ -15,23 +17,61 @@ const DataTable = ({
 }) => {
     const [selectedRows, setSelectedRows] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
+    const isSelectionControlled = Array.isArray(selectedRowIds);
+    const activeSelection = isSelectionControlled ? selectedRowIds : selectedRows;
+
+    React.useEffect(() => {
+        if (!selectable) return;
+
+        if (isSelectionControlled) {
+            const checkedRows = Array.isArray(selectedRowIds) ? selectedRowIds : [];
+            setSelectAll(data.length > 0 && checkedRows.length === data.length);
+            return;
+        }
+
+        setSelectedRows((prev) => {
+            const visibleIds = new Set(data.map((item) => item.id));
+            const filtered = prev.filter((id) => visibleIds.has(id));
+            setSelectAll(data.length > 0 && filtered.length === data.length);
+
+            if (filtered.length !== prev.length) {
+                onSelectionChange?.(filtered);
+            }
+
+            return filtered;
+        });
+    }, [data, selectable, isSelectionControlled, selectedRowIds, onSelectionChange]);
+
+    React.useEffect(() => {
+        if (!selectable) return;
+        if (selectionResetKey === undefined || selectionResetKey === null) return;
+
+        if (!isSelectionControlled) {
+            setSelectedRows([]);
+            setSelectAll(false);
+        }
+    }, [selectionResetKey, selectable, isSelectionControlled]);
+
+    const applySelection = (nextSelection) => {
+        if (!isSelectionControlled) {
+            setSelectedRows(nextSelection);
+        }
+        setSelectAll(data.length > 0 && nextSelection.length === data.length);
+        onSelectionChange?.(nextSelection);
+    };
 
     const handleSelectAll = (e) => {
         const checked = e.target.checked;
-        setSelectAll(checked);
         const newSelection = checked ? data.map(item => item.id) : [];
-        setSelectedRows(newSelection);
-        onSelectionChange?.(newSelection);
+        applySelection(newSelection);
     };
 
     const handleSelectRow = (id) => {
-        const newSelection = selectedRows.includes(id)
-            ? selectedRows.filter(rowId => rowId !== id)
-            : [...selectedRows, id];
+        const newSelection = activeSelection.includes(id)
+            ? activeSelection.filter(rowId => rowId !== id)
+            : [...activeSelection, id];
 
-        setSelectedRows(newSelection);
-        setSelectAll(newSelection.length === data.length);
-        onSelectionChange?.(newSelection);
+        applySelection(newSelection);
     };
 
     if (loading) {
@@ -97,7 +137,7 @@ const DataTable = ({
                                     <td className="px-3 py-3 sm:px-4">
                                         <input
                                             type="checkbox"
-                                            checked={selectedRows.includes(row.id)}
+                                            checked={activeSelection.includes(row.id)}
                                             onChange={() => handleSelectRow(row.id)}
                                             className="rounded border-admin-gray-300 text-admin-primary focus:ring-admin-primary"
                                         />

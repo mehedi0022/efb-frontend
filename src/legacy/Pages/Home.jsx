@@ -12,6 +12,7 @@ import {
 import { resolveMediaUrl } from '../utils/media';
 import StorefrontProductCard from '../components/StorefrontProductCard';
 import { useSettings } from '../context/SettingsContext';
+import { resolveBrowserTabTitle } from '../utils/tabTitle';
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE || 'https://freelancerbangladesh.com/';
 
@@ -289,12 +290,9 @@ const Home = () => {
         : '';
 
     useEffect(() => {
-        const appTitle = setting?.name
-            || process.env.NEXT_PUBLIC_APP_NAME
-            || process.env.NEXT_PUBLIC_LOGIN_PAGE_TITLE
-            || 'Naxt Ecommerce';
+        const appTitle = resolveBrowserTabTitle(setting);
         document.title = `${appTitle} | Home`;
-    }, [setting?.name]);
+    }, [setting]);
 
     return (
         <div className="bg-[#f3f4f6]">

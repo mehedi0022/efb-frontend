@@ -63,6 +63,11 @@ const menuItems = [
         permission: "orders.view",
       },
       {
+        title: "Courier Orders List",
+        path: "/orders/courier/list",
+        permission: "orders.view",
+      },
+      {
         title: "Complete",
         path: "/orders/complete",
         permission: "orders.view",
