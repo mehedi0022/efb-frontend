@@ -74,15 +74,20 @@ export const debounce = (func, wait) => {
 // Get status badge color
 export const getStatusColor = (status) => {
     const colors = {
+        'new order': 'bg-yellow-100 text-yellow-800',
+        'new-order': 'bg-yellow-100 text-yellow-800',
         pending: 'bg-yellow-100 text-yellow-800',
-        processing: 'bg-blue-100 text-blue-800',
-        confirmed: 'bg-green-100 text-green-800',
-        delivered: 'bg-green-600 text-white',
         complete: 'bg-emerald-600 text-white',
         completed: 'bg-emerald-600 text-white',
-        cancelled: 'bg-red-100 text-red-800',
+        'no response': 'bg-slate-100 text-slate-800',
+        'no-response': 'bg-slate-100 text-slate-800',
         hold: 'bg-orange-100 text-orange-800',
-        returned: 'bg-gray-100 text-gray-800',
+        cancel: 'bg-red-100 text-red-800',
+        cancelled: 'bg-red-100 text-red-800',
+        canceled: 'bg-red-100 text-red-800',
+        'fb sent': 'bg-cyan-100 text-cyan-800',
+        'fb-sent': 'bg-cyan-100 text-cyan-800',
+        fb_sent: 'bg-cyan-100 text-cyan-800',
     };
     return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-800';
 };

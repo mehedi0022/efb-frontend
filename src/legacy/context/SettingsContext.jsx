@@ -23,16 +23,51 @@ export const SettingsProvider = ({ children }) => {
 
         const footerBg = isHexColor(setting?.footer_bg_color) ? setting.footer_bg_color : '#ffffff';
         const buttonPrimary = isHexColor(setting?.button_primary_color) ? setting.button_primary_color : '#111827';
-        const buttonSecondary = isHexColor(setting?.button_secondary_color) ? setting.button_secondary_color : '#374151';
+        const buttonPrimaryHover = isHexColor(setting?.button_secondary_color) ? setting.button_secondary_color : '#374151';
+        const buttonPrimaryText = isHexColor(setting?.button_primary_text_color) ? setting.button_primary_text_color : '#ffffff';
+        const buttonSecondaryBg = isHexColor(setting?.button_secondary_bg_color)
+            ? setting.button_secondary_bg_color
+            : buttonPrimaryHover;
+        const buttonSecondaryHover = isHexColor(setting?.button_secondary_hover_color)
+            ? setting.button_secondary_hover_color
+            : '#1f2937';
+        const buttonSecondaryText = isHexColor(setting?.button_secondary_text_color)
+            ? setting.button_secondary_text_color
+            : buttonPrimaryText;
+        const buttonInfoBg = isHexColor(setting?.button_info_bg_color)
+            ? setting.button_info_bg_color
+            : '#0ea5e9';
+        const buttonInfoHover = isHexColor(setting?.button_info_hover_color)
+            ? setting.button_info_hover_color
+            : '#0284c7';
+        const buttonInfoText = isHexColor(setting?.button_info_text_color)
+            ? setting.button_info_text_color
+            : '#ffffff';
 
         root.style.setProperty('--frontend-footer-bg', footerBg);
         root.style.setProperty('--frontend-btn-primary', buttonPrimary);
-        root.style.setProperty('--frontend-btn-secondary', buttonSecondary);
-        root.style.setProperty('--frontend-btn-text', '#ffffff');
+        root.style.setProperty('--frontend-btn-secondary', buttonPrimaryHover);
+        root.style.setProperty('--frontend-btn-text', buttonPrimaryText);
+        root.style.setProperty('--frontend-btn-primary-bg', buttonPrimary);
+        root.style.setProperty('--frontend-btn-primary-hover', buttonPrimaryHover);
+        root.style.setProperty('--frontend-btn-primary-text', buttonPrimaryText);
+        root.style.setProperty('--frontend-btn-secondary-bg', buttonSecondaryBg);
+        root.style.setProperty('--frontend-btn-secondary-hover', buttonSecondaryHover);
+        root.style.setProperty('--frontend-btn-secondary-text', buttonSecondaryText);
+        root.style.setProperty('--frontend-btn-info-bg', buttonInfoBg);
+        root.style.setProperty('--frontend-btn-info-hover', buttonInfoHover);
+        root.style.setProperty('--frontend-btn-info-text', buttonInfoText);
     }, [
         setting?.footer_bg_color,
         setting?.button_primary_color,
-        setting?.button_secondary_color
+        setting?.button_secondary_color,
+        setting?.button_primary_text_color,
+        setting?.button_secondary_bg_color,
+        setting?.button_secondary_hover_color,
+        setting?.button_secondary_text_color,
+        setting?.button_info_bg_color,
+        setting?.button_info_hover_color,
+        setting?.button_info_text_color
     ]);
 
     useEffect(() => {

@@ -216,15 +216,64 @@ const App = () => {
                         )}
                     />
                     <Route
-                        path="orders/courier/list"
+                        path="orders/in-courier"
                         element={(
                             <RequirePermission permission="orders.view">
                                 <CourierOrderList />
                             </RequirePermission>
                         )}
                     />
+                    <Route path="orders/courier/list" element={<Navigate to="/orders/in-courier" replace />} />
                     <Route
-                        path="orders/:status"
+                        path="orders/all"
+                        element={(
+                            <RequirePermission permission="orders.view">
+                                <OrderList />
+                            </RequirePermission>
+                        )}
+                    />
+                    <Route
+                        path="orders/new-order"
+                        element={(
+                            <RequirePermission permission="orders.view">
+                                <OrderList />
+                            </RequirePermission>
+                        )}
+                    />
+                    <Route
+                        path="orders/complete"
+                        element={(
+                            <RequirePermission permission="orders.view">
+                                <OrderList />
+                            </RequirePermission>
+                        )}
+                    />
+                    <Route
+                        path="orders/no-response"
+                        element={(
+                            <RequirePermission permission="orders.view">
+                                <OrderList />
+                            </RequirePermission>
+                        )}
+                    />
+                    <Route
+                        path="orders/hold"
+                        element={(
+                            <RequirePermission permission="orders.view">
+                                <OrderList />
+                            </RequirePermission>
+                        )}
+                    />
+                    <Route
+                        path="orders/cancel"
+                        element={(
+                            <RequirePermission permission="orders.view">
+                                <OrderList />
+                            </RequirePermission>
+                        )}
+                    />
+                    <Route
+                        path="orders/fb-sent"
                         element={(
                             <RequirePermission permission="orders.view">
                                 <OrderList />

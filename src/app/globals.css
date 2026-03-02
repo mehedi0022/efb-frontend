@@ -17,6 +17,18 @@
   --frontend-btn-primary: #111827;
   --frontend-btn-secondary: #374151;
   --frontend-btn-text: #ffffff;
+  --frontend-btn-primary-bg: #111827;
+  --frontend-btn-primary-hover: #374151;
+  --frontend-btn-primary-text: #ffffff;
+  --frontend-btn-secondary-bg: #374151;
+  --frontend-btn-secondary-hover: #1f2937;
+  --frontend-btn-secondary-text: #ffffff;
+  --frontend-btn-info-bg: #0ea5e9;
+  --frontend-btn-info-hover: #0284c7;
+  --frontend-btn-info-text: #ffffff;
+  --admin-btn-primary: #28c76f;
+  --admin-btn-secondary: #00cfe8;
+  --admin-btn-text: #ffffff;
 }
 
 * {
@@ -49,34 +61,120 @@ body {
   border-color: color-mix(in srgb, var(--frontend-footer-bg) 72%, #111827 18%);
 }
 
-.frontend-body button[class*='bg-black']:not(:disabled),
-.frontend-body button[class*='bg-gray-900']:not(:disabled),
-.frontend-body button[class*='bg-blue-600']:not(:disabled),
-.frontend-body button[class*='bg-green-600']:not(:disabled),
-.frontend-body button[class*='bg-black/']:not(:disabled),
-.frontend-body input[type='submit']:not(:disabled),
-.frontend-body input[type='button']:not(:disabled),
-.frontend-body a[class*='bg-black'],
-.frontend-body a[class*='bg-gray-900'],
-.frontend-body a[class*='bg-blue-600'] {
-  background-color: var(--frontend-btn-primary) !important;
-  border-color: var(--frontend-btn-primary) !important;
-  color: var(--frontend-btn-text) !important;
+.frontend-body :where(button.theme-btn-primary, input[type='submit'].theme-btn-primary, input[type='button'].theme-btn-primary, a.theme-btn-primary):not(:disabled) {
+  background-color: var(--frontend-btn-primary-bg) !important;
+  border-color: var(--frontend-btn-primary-bg) !important;
+  color: var(--frontend-btn-primary-text) !important;
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.frontend-body button[class*='bg-black']:not(:disabled):hover,
-.frontend-body button[class*='bg-gray-900']:not(:disabled):hover,
-.frontend-body button[class*='bg-blue-600']:not(:disabled):hover,
-.frontend-body button[class*='bg-green-600']:not(:disabled):hover,
-.frontend-body button[class*='bg-black/']:not(:disabled):hover,
-.frontend-body input[type='submit']:not(:disabled):hover,
-.frontend-body input[type='button']:not(:disabled):hover,
-.frontend-body a[class*='bg-black']:hover,
-.frontend-body a[class*='bg-gray-900']:hover,
-.frontend-body a[class*='bg-blue-600']:hover {
-  background-color: var(--frontend-btn-secondary) !important;
-  border-color: var(--frontend-btn-secondary) !important;
+.frontend-body :where(button.theme-btn-primary, input[type='submit'].theme-btn-primary, input[type='button'].theme-btn-primary, a.theme-btn-primary):not(:disabled):hover,
+.frontend-body :where(button.theme-btn-primary, input[type='submit'].theme-btn-primary, input[type='button'].theme-btn-primary, a.theme-btn-primary):not(:disabled):focus-visible,
+.frontend-body :where(button.theme-btn-primary, input[type='submit'].theme-btn-primary, input[type='button'].theme-btn-primary, a.theme-btn-primary):not(:disabled):active {
+  background-color: var(--frontend-btn-primary-hover) !important;
+  border-color: var(--frontend-btn-primary-hover) !important;
+}
+
+.frontend-body :where(button.theme-btn-secondary, input[type='submit'].theme-btn-secondary, input[type='button'].theme-btn-secondary, a.theme-btn-secondary):not(:disabled) {
+  background-color: var(--frontend-btn-secondary-bg) !important;
+  border-color: var(--frontend-btn-secondary-bg) !important;
+  color: var(--frontend-btn-secondary-text) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.frontend-body :where(button.theme-btn-secondary, input[type='submit'].theme-btn-secondary, input[type='button'].theme-btn-secondary, a.theme-btn-secondary):not(:disabled):hover,
+.frontend-body :where(button.theme-btn-secondary, input[type='submit'].theme-btn-secondary, input[type='button'].theme-btn-secondary, a.theme-btn-secondary):not(:disabled):focus-visible,
+.frontend-body :where(button.theme-btn-secondary, input[type='submit'].theme-btn-secondary, input[type='button'].theme-btn-secondary, a.theme-btn-secondary):not(:disabled):active {
+  background-color: var(--frontend-btn-secondary-hover) !important;
+  border-color: var(--frontend-btn-secondary-hover) !important;
+}
+
+.frontend-body :where(button.theme-btn-info, input[type='submit'].theme-btn-info, input[type='button'].theme-btn-info, a.theme-btn-info):not(:disabled) {
+  background-color: var(--frontend-btn-info-bg) !important;
+  border-color: var(--frontend-btn-info-bg) !important;
+  color: var(--frontend-btn-info-text) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.frontend-body :where(button.theme-btn-info, input[type='submit'].theme-btn-info, input[type='button'].theme-btn-info, a.theme-btn-info):not(:disabled):hover,
+.frontend-body :where(button.theme-btn-info, input[type='submit'].theme-btn-info, input[type='button'].theme-btn-info, a.theme-btn-info):not(:disabled):focus-visible,
+.frontend-body :where(button.theme-btn-info, input[type='submit'].theme-btn-info, input[type='button'].theme-btn-info, a.theme-btn-info):not(:disabled):active {
+  background-color: var(--frontend-btn-info-hover) !important;
+  border-color: var(--frontend-btn-info-hover) !important;
+}
+
+.frontend-body :where(button.theme-btn-primary, button.theme-btn-secondary, button.theme-btn-info, input[type='submit'].theme-btn-primary, input[type='submit'].theme-btn-secondary, input[type='submit'].theme-btn-info, input[type='button'].theme-btn-primary, input[type='button'].theme-btn-secondary, input[type='button'].theme-btn-info):disabled {
+  opacity: 0.65;
+}
+
+.frontend-body .theme-product-card {
+  border-color: color-mix(in srgb, var(--frontend-btn-primary) 20%, #e2e8f0 80%) !important;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--frontend-btn-primary) 14%, transparent 86%);
+}
+
+.frontend-body .theme-product-card .theme-product-badge {
+  background-color: var(--frontend-btn-primary) !important;
+}
+
+.admin-body .ant-btn-primary {
+  background-color: var(--admin-btn-primary) !important;
+  border-color: var(--admin-btn-primary) !important;
+  color: var(--admin-btn-text) !important;
+}
+
+.admin-body .ant-btn-primary:not(:disabled):hover,
+.admin-body .ant-btn-primary:not(:disabled):focus,
+.admin-body .ant-btn-primary:not(:disabled):active {
+  background-color: var(--admin-btn-secondary) !important;
+  border-color: var(--admin-btn-secondary) !important;
+  color: var(--admin-btn-text) !important;
+}
+
+.admin-body button.bg-admin-primary:not(:disabled),
+.admin-body a.bg-admin-primary {
+  background-color: var(--admin-btn-primary) !important;
+  border-color: var(--admin-btn-primary) !important;
+  color: var(--admin-btn-text) !important;
+}
+
+.admin-body button.bg-admin-secondary:not(:disabled),
+.admin-body a.bg-admin-secondary,
+.admin-body button.bg-admin-accent:not(:disabled),
+.admin-body a.bg-admin-accent {
+  background-color: var(--admin-btn-secondary) !important;
+  border-color: var(--admin-btn-secondary) !important;
+  color: var(--admin-btn-text) !important;
+}
+
+.admin-body button.bg-admin-primary:not(:disabled):hover,
+.admin-body a.bg-admin-primary:hover,
+.admin-body button[class*='hover:bg-admin-primary']:not(:disabled):hover,
+.admin-body a[class*='hover:bg-admin-primary']:hover {
+  background-color: var(--admin-btn-secondary) !important;
+  border-color: var(--admin-btn-secondary) !important;
+  color: var(--admin-btn-text) !important;
+}
+
+.admin-body button.bg-admin-secondary:not(:disabled):hover,
+.admin-body a.bg-admin-secondary:hover,
+.admin-body button.bg-admin-accent:not(:disabled):hover,
+.admin-body a.bg-admin-accent:hover {
+  background-color: color-mix(in srgb, var(--admin-btn-secondary) 85%, #000000 15%) !important;
+  border-color: color-mix(in srgb, var(--admin-btn-secondary) 85%, #000000 15%) !important;
+  color: var(--admin-btn-text) !important;
+}
+
+.admin-body button.border-admin-primary,
+.admin-body a.border-admin-primary {
+  border-color: var(--admin-btn-primary) !important;
+  color: var(--admin-btn-primary) !important;
+}
+
+.admin-body button.border-admin-primary:not(:disabled):hover,
+.admin-body a.border-admin-primary:hover {
+  background-color: var(--admin-btn-primary) !important;
+  border-color: var(--admin-btn-primary) !important;
+  color: var(--admin-btn-text) !important;
 }
 
 @layer components {
@@ -120,6 +218,74 @@ body {
 .left-side-menu::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 9999px;
+}
+
+.admin-settings-page {
+  font-size: 0.9375rem;
+}
+
+.admin-settings-page h2.text-2xl {
+  font-size: 1.375rem;
+  line-height: 1.9rem;
+}
+
+.admin-settings-page :where(.text-sm, label, input, select, textarea, .ant-input, .ant-select-selector, .ant-btn) {
+  font-size: 0.875rem;
+}
+
+.admin-settings-page :where(.text-xs) {
+  font-size: 0.75rem;
+}
+
+.admin-settings-page .ant-table-thead > tr > th,
+.admin-settings-page .ant-table-tbody > tr > td {
+  font-size: 0.84rem;
+}
+
+.admin-orders-table .ant-table-thead > tr > th {
+  background: #1e1e2d !important;
+  color: #ffffff !important;
+  border-bottom-color: #2f3144 !important;
+  font-weight: 600;
+}
+
+.admin-orders-table .ant-table-thead > tr > th.ant-table-cell-fix-right,
+.admin-orders-table .ant-table-thead > tr > th.ant-table-cell-fix-left {
+  background: #1e1e2d !important;
+}
+
+.admin-orders-table .ant-table-thead > tr > th.ant-table-column-sort {
+  background: #26263a !important;
+}
+
+.admin-orders-table .ant-table-thead > tr > th::before {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.admin-orders-table .ant-table-container {
+  border: 1px solid #edf1f7 !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-orders-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #edf1f7 !important;
+  background: #ffffff;
+  transition: background-color 0.2s ease;
+}
+
+.admin-orders-table .ant-table-tbody > tr:hover > td {
+  background: #f8fafc !important;
+}
+
+.admin-orders-table .ant-table-cell-fix-right,
+.admin-orders-table .ant-table-cell-fix-left {
+  background: #ffffff;
+}
+
+.admin-orders-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-right,
+.admin-orders-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-left {
+  background: #f8fafc !important;
 }
 
 @keyframes smart-toast-pop {

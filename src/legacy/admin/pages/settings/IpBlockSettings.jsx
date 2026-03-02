@@ -162,7 +162,7 @@ const IpBlockSettings = () => {
     ];
 
     return (
-        <div className="container-fluid">
+        <div className="container-fluid admin-settings-page">
             <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">IP Blocking</h2>
                 <Button onClick={handleCreate} variant="primary" icon={FiPlus}>

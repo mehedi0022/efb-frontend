@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiMinus, FiPlus, FiTrash2 } from 'react-icons/fi';
 import {
     useCheckoutMutation,
     useDeleteCartItemMutation,
@@ -10,6 +9,9 @@ import {
     useUpdateCartItemMutation,
 } from '../store/publicApi';
 import { resolveMediaUrl } from '../utils/media';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiMinus, FiPlus, FiTrash2, FiShoppingBag, FiMapPin, FiPhone, FiUser, FiInfo } from 'react-icons/fi';
+import { useSettings } from '../context/SettingsContext';
 
 const Checkout = () => {
     const [formData, setFormData] = useState({
@@ -27,6 +29,7 @@ const Checkout = () => {
     const [updateCartItem] = useUpdateCartItemMutation();
     const [deleteCartItem] = useDeleteCartItemMutation();
     const [checkoutMutation] = useCheckoutMutation();
+    const { setting } = useSettings();
     const [trackIncompleteOrder] = useTrackIncompleteOrderMutation();
     const navigate = useNavigate();
     const lastTrackedKeyRef = useRef('');
@@ -201,6 +204,9 @@ const Checkout = () => {
     const isInitialCartLoad = cartLoading && !cart;
     const isInitialShippingLoad = shippingLoading && !shippingResponse;
 
+    const primaryColor = setting?.button_primary_color || '#10b981';
+    const secondaryColor = setting?.button_secondary_color || '#059669';
+
     if (isInitialCartLoad || isInitialShippingLoad) {
         return <div className="max-w-4xl mx-auto px-4 py-12 text-center">Loading...</div>;
     }
@@ -210,243 +216,262 @@ const Checkout = () => {
     }
 
     return (
-        <div className="bg-gray-100">
-            <div className="max-w-6xl mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-lg shadow-sm p-6">
-                        <p className="text-center text-sm text-gray-600 mb-6">
-                            To confirm your order, fill in your name, mobile number, and address, then click
-                            <span className="text-red-600 font-semibold"> Confirm Order</span>.
-                        </p>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Your Name *</label>
-                                <input
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    placeholder="Enter your name"
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Mobile Number *</label>
-                                <input
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    placeholder="Enter your mobile number"
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Full Address *</label>
-                                <input
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                    placeholder="Enter your full address"
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Courier Charge</label>
-                                <div className="space-y-2">
-                                    {shippingCharges.map((charge) => (
-                                        <label
-                                            key={charge.id}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded border cursor-pointer ${String(formData.area) === String(charge.id) ? 'bg-green-600 text-white border-green-600' : 'bg-gray-200 border-gray-200'}`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="area"
-                                                value={charge.id}
-                                                checked={String(formData.area) === String(charge.id)}
-                                                onChange={handleChange}
-                                            />
-                                            <span className="text-sm font-semibold">{charge.name}</span>
-                                        </label>
-                                    ))}
+        <div className="bg-[#f9fafb] min-h-screen">
+            <div className="max-w-[1200px] mx-auto px-4 py-8 lg:py-12">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col lg:flex-row gap-8 items-start"
+                >
+                    {/* Left Column: Form Section */}
+                    <div className="flex-1 w-full space-y-6">
+                        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="p-3 bg-brand-50 rounded-xl text-brand-600">
+                                    <FiInfo size={24} />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Delivery Information</h1>
+                                    <p className="text-sm text-gray-500 mt-1">Fill in details for quick delivery</p>
                                 </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                className="w-full bg-black text-white py-3 rounded font-semibold"
-                            >
-                                Confirm Order
-                            </button>
-                        </form>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                            <FiUser className="text-gray-400" /> Full Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            placeholder="John Doe"
+                                            className="w-full bg-gray-50 border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                            <FiPhone className="text-gray-400" /> Mobile Number <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            name="phone"
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            placeholder="01XXXXXXXXX"
+                                            className="w-full bg-gray-50 border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                        <FiMapPin className="text-gray-400" /> Full Address <span className="text-red-500">*</span>
+                                        <span className="text-xs font-normal text-gray-400">(House, Road, Area)</span>
+                                    </label>
+                                    <textarea
+                                        name="address"
+                                        rows="3"
+                                        value={formData.address}
+                                        onChange={handleChange}
+                                        placeholder="Enter your detailed address"
+                                        className="w-full bg-gray-50 border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none resize-none"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                        <FiMapPin className="text-brand-500" /> Delivery Area
+                                    </label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {shippingCharges.map((charge) => {
+                                            const isActive = String(formData.area) === String(charge.id);
+                                            return (
+                                                <label
+                                                    key={charge.id}
+                                                    style={{
+                                                        borderColor: isActive ? primaryColor : undefined,
+                                                        backgroundColor: isActive ? `${primaryColor}10` : undefined,
+                                                        boxShadow: isActive ? `0 0 0 4px ${primaryColor}10` : undefined,
+                                                    }}
+                                                    className={`relative flex items-center justify-between gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${!isActive ? 'border-gray-100 bg-white hover:border-gray-200' : ''
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <input
+                                                            type="radio"
+                                                            name="area"
+                                                            value={charge.id}
+                                                            checked={isActive}
+                                                            onChange={handleChange}
+                                                            style={{ color: primaryColor }}
+                                                            className="w-4 h-4 bg-gray-100 border-gray-300 focus:ring-0"
+                                                        />
+                                                        <span
+                                                            style={{ color: isActive ? primaryColor : undefined }}
+                                                            className={`text-sm font-bold ${!isActive ? 'text-gray-700' : ''}`}
+                                                        >
+                                                            {charge.name}
+                                                        </span>
+                                                    </div>
+                                                    <span
+                                                        style={{ color: isActive ? primaryColor : undefined }}
+                                                        className={`text-sm font-medium ${!isActive ? 'text-gray-500' : ''}`}
+                                                    >
+                                                        ৳{charge.amount}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 lg:hidden">
+                                    <button
+                                        type="submit"
+                                        style={{ backgroundColor: primaryColor }}
+                                        className="w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 hover:brightness-95"
+                                    >
+                                        Confirm Order • ৳{total}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        <div className="md:hidden">
-                            {items.map((item) => {
-                                const productName = item.product_name || item.product?.name || 'Product';
-                                const imageSrc = resolveCheckoutImage(item);
-                                const lineTotal = Number(item.price) * item.quantity;
-                                return (
-                                    <div key={item.id} className="border-b p-4">
-                                        <p className="mb-3 break-words text-sm font-semibold leading-5 text-gray-900">
-                                            {productName}
-                                        </p>
-                                        <div className="flex items-start gap-3">
-                                            <img src={imageSrc} alt={productName} className="h-14 w-14 rounded border object-cover" />
-                                            <div className="flex-1 space-y-2">
-                                                {item.options?.product_size ? (
-                                                    <p className="break-words text-xs text-gray-500">
-                                                        {item.options.product_size}, {item.options.product_color}
-                                                    </p>
-                                                ) : null}
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-gray-500">Price</span>
-                                                    <span className="font-medium text-gray-800">{Number(item.price)}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-gray-500">Quantity</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleQty(item.id, item.quantity - 1)}
-                                                            className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white"
-                                                        >
-                                                            <FiMinus />
-                                                        </button>
-                                                        <input
-                                                            value={item.quantity}
-                                                            readOnly
-                                                            className="h-8 w-10 rounded border border-gray-300 text-center"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleQty(item.id, item.quantity + 1)}
-                                                            className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white"
-                                                        >
-                                                            <FiPlus />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-gray-500">Total</span>
-                                                    <span className="font-semibold text-gray-900">{lineTotal}</span>
-                                                </div>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemove(item.id)}
-                                                className="text-red-500"
-                                            >
-                                                <FiTrash2 />
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            <div className="bg-gray-50 p-4">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Sub-Total</span>
-                                    <span className="font-semibold">{subtotal}</span>
-                                </div>
-                                <div className="mt-2 flex items-center justify-between text-sm">
-                                    <span>Delivery Charges</span>
-                                    <span className="font-semibold">{shippingCost}</span>
-                                </div>
-                                <div className="mt-2 flex items-center justify-between text-base font-bold text-emerald-600">
-                                    <span>Total Amount</span>
-                                    <span>{total}</span>
+                    {/* Right Column: Order Summary Section */}
+                    <div className="w-full lg:w-[420px] sticky top-8 space-y-6">
+                        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="p-6 border-b border-gray-50">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                        <FiShoppingBag className="text-brand-500" /> Order Summary
+                                    </h2>
+                                    <span className="px-2.5 py-1 bg-brand-50 text-brand-600 text-xs font-bold rounded-lg uppercase tracking-wider">
+                                        {items.length} {items.length === 1 ? 'Item' : 'Items'}
+                                    </span>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="hidden overflow-x-auto md:block">
-                            <table className="w-full text-sm">
-                                <thead className="bg-white border-b">
-                                    <tr className="text-left">
-                                        <th className="p-3 font-semibold">Product</th>
-                                        <th className="p-3 font-semibold">Price</th>
-                                        <th className="p-3 font-semibold">Qty</th>
-                                        <th className="p-3 font-semibold">Total</th>
-                                        <th className="p-3 font-semibold"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <div className="max-h-[500px] overflow-y-auto overflow-x-hidden px-6 py-4 space-y-4 no-scrollbar">
+                                <AnimatePresence mode="popLayout">
                                     {items.map((item) => {
                                         const productName = item.product_name || item.product?.name || 'Product';
                                         const imageSrc = resolveCheckoutImage(item);
                                         const lineTotal = Number(item.price) * item.quantity;
+
                                         return (
-                                            <tr key={item.id} className="border-b">
-                                                <td className="p-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <img src={imageSrc} alt={productName} className="h-11 w-11 rounded border object-cover" />
-                                                        <div>
-                                                            <p className="font-semibold text-gray-800">{productName}</p>
-                                                            {item.options?.product_size && (
-                                                                <p className="text-xs text-gray-500">{item.options.product_size}, {item.options.product_color}</p>
-                                                            )}
+                                            <motion.div
+                                                layout
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                key={item.id}
+                                                className="flex gap-4 group"
+                                            >
+                                                <div className="relative flex-shrink-0">
+                                                    <img
+                                                        src={imageSrc}
+                                                        alt={productName}
+                                                        className="h-20 w-20 rounded-xl border border-gray-100 object-cover bg-gray-50 group-hover:scale-105 transition-transform duration-300"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0 py-1">
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <h3 className="text-[13px] font-bold text-gray-900 line-clamp-2 leading-tight">
+                                                            {productName}
+                                                        </h3>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemove(item.id)}
+                                                            className="text-gray-300 hover:text-red-500 p-1 transition-colors"
+                                                            title="Remove Item"
+                                                        >
+                                                            <FiTrash2 size={16} />
+                                                        </button>
+                                                    </div>
+
+                                                    {item.options?.product_size && (
+                                                        <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-semibold">
+                                                            {item.options.product_size} • {item.options.product_color}
+                                                        </p>
+                                                    )}
+
+                                                    <div className="flex items-center justify-between mt-3">
+                                                        <div className="flex items-center bg-gray-50 rounded-lg p-0.5 border border-gray-100">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleQty(item.id, item.quantity - 1)}
+                                                                style={{ color: primaryColor }}
+                                                                className="w-6 h-6 flex items-center justify-center text-gray-500 hover:bg-white rounded transition-all shadow-none hover:shadow-sm"
+                                                            >
+                                                                <FiMinus size={12} />
+                                                            </button>
+                                                            <span className="w-8 text-center text-[12px] font-bold text-gray-700">
+                                                                {item.quantity}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleQty(item.id, item.quantity + 1)}
+                                                                style={{ color: primaryColor }}
+                                                                className="w-6 h-6 flex items-center justify-center text-gray-500 hover:bg-white rounded transition-all shadow-none hover:shadow-sm"
+                                                            >
+                                                                <FiPlus size={12} />
+                                                            </button>
                                                         </div>
+                                                        <p className="text-sm font-bold text-gray-900">
+                                                            ৳{lineTotal}
+                                                        </p>
                                                     </div>
-                                                </td>
-                                                <td className="p-3">{Number(item.price)}</td>
-                                                <td className="p-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleQty(item.id, item.quantity - 1)}
-                                                            className="h-8 w-8 rounded bg-blue-600 text-white flex items-center justify-center"
-                                                        >
-                                                            <FiMinus />
-                                                        </button>
-                                                        <input
-                                                            value={item.quantity}
-                                                            readOnly
-                                                            className="w-10 h-8 border border-gray-300 text-center rounded"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleQty(item.id, item.quantity + 1)}
-                                                            className="h-8 w-8 rounded bg-blue-600 text-white flex items-center justify-center"
-                                                        >
-                                                            <FiPlus />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                                <td className="p-3 font-semibold">{lineTotal}</td>
-                                                <td className="p-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemove(item.id)}
-                                                        className="text-red-500"
-                                                    >
-                                                        <FiTrash2 />
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                                </div>
+                                            </motion.div>
                                         );
                                     })}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="border-t">
-                                        <th colSpan="3" className="p-3 text-right">Sub-Total</th>
-                                        <td colSpan="2" className="p-3 font-semibold">{subtotal}</td>
-                                    </tr>
-                                    <tr>
-                                        <th colSpan="3" className="p-3 text-right">Delivery Charges</th>
-                                        <td colSpan="2" className="p-3 font-semibold">{shippingCost}</td>
-                                    </tr>
-                                    <tr>
-                                        <th colSpan="3" className="p-3 text-right text-emerald-600">Total Amount</th>
-                                        <td colSpan="2" className="p-3 font-bold text-emerald-600">{total}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                </AnimatePresence>
+                            </div>
+
+                            <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
+                                <div className="flex justify-between text-sm text-gray-500">
+                                    <span>Subtotal</span>
+                                    <span className="font-semibold text-gray-900">৳{subtotal}</span>
+                                </div>
+                                <div className="flex justify-between text-sm text-gray-500 pb-1">
+                                    <span>Shipping</span>
+                                    <span className="font-semibold text-gray-900">৳{shippingCost}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                                    <span className="text-base font-bold text-gray-900">Total Payable</span>
+                                    <span style={{ color: primaryColor }} className="text-xl font-black">৳{total}</span>
+                                </div>
+                            </div>
+
+                            <div className="p-6 pt-0">
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handleSubmit(e);
+                                    }}
+                                    style={{ backgroundColor: primaryColor }}
+                                    className="hidden lg:flex w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] items-center justify-center gap-2 group shadow-lg hover:brightness-95"
+                                >
+                                    Confirm Order
+                                    <motion.div
+                                        animate={{ x: [0, 4, 0] }}
+                                        transition={{ repeat: Infinity, duration: 1.5 }}
+                                    >
+                                        →
+                                    </motion.div>
+                                </button>
+                                <p className="text-[11px] text-center text-gray-400 mt-4 px-4 uppercase tracking-tighter font-medium">
+                                    secure checkout • items are reserved for 15 minutes
+                                </p>
+                            </div>
+                        </section>
                     </div>
-                </div>
+                </motion.div>
             </div>
         </div>
     );

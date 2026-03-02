@@ -420,7 +420,7 @@ const Header = () => {
             type="button"
             onClick={() => handleMenuPage(externalMenuMeta.page - 1)}
             disabled={externalMenuMeta.page <= 1 || isExternalMenuLoadingState}
-            className="inline-flex items-center justify-center rounded border border-gray-300 p-2 text-gray-700 disabled:opacity-50"
+            className="theme-btn-skip inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
             aria-label="Previous categories"
           >
             <FaChevronLeft />
@@ -432,7 +432,7 @@ const Header = () => {
               externalMenuMeta.page >= externalMenuMeta.last_page ||
               isExternalMenuLoadingState
             }
-            className="inline-flex items-center justify-center rounded border border-gray-300 p-2 text-gray-700 disabled:opacity-50"
+            className="theme-btn-skip inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
             aria-label="Next categories"
           >
             <FaChevronRight />
@@ -552,7 +552,7 @@ const Header = () => {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <button
             type="button"
-            className="text-gray-700"
+            className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
             onClick={openMobileDrawer}
           >
             <FaBars size={20} />
@@ -583,11 +583,7 @@ const Header = () => {
             </Link>
           </div>
         </div>
-        <div className="px-4 pb-1 text-center">
-          <p className="mx-auto max-w-[95%] truncate text-[13px] font-semibold text-gray-700">
-            {isSettingsLoading ? "Loading shop..." : siteName}
-          </p>
-        </div>
+        <div className="px-4 pb-1 text-center"></div>
         <div className="px-4 pb-3">
           <form
             ref={mobileSearchRef}
@@ -618,7 +614,7 @@ const Header = () => {
           <button
             type="button"
             onClick={openMobileCategoryModal}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-gray-100 px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-gray-800"
+            className="theme-btn-skip flex w-full items-center justify-center gap-2 rounded-md bg-[#2563eb] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-[#1d4ed8]"
           >
             <FaBars />
             <span>Category</span>
@@ -742,7 +738,8 @@ const Header = () => {
                                     handleRemovePopupCartItem(itemId, event)
                                   }
                                   disabled={
-                                    itemId === null || removingCartItemId !== null
+                                    itemId === null ||
+                                    removingCartItemId !== null
                                   }
                                   className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
@@ -759,7 +756,7 @@ const Header = () => {
                     </div>
                     <Link
                       to="/checkout"
-                      className="mt-3 block rounded bg-black px-4 py-2 text-center text-sm font-semibold text-white"
+                      className="theme-btn-info mt-3 block rounded border px-4 py-2 text-center text-sm font-semibold"
                     >
                       Order Now
                     </Link>
@@ -803,7 +800,7 @@ const Header = () => {
             <button
               type="button"
               onClick={toggleCategoryPanel}
-              className="flex items-center gap-2 rounded bg-gray-200 px-4 py-2 text-sm font-bold uppercase text-gray-800"
+              className="theme-btn-skip flex items-center gap-2 rounded bg-gray-200 px-4 py-2 text-sm font-bold uppercase text-gray-800 hover:bg-gray-300"
             >
               <FaBars />
               Category
@@ -893,7 +890,7 @@ const Header = () => {
               <button
                 type="button"
                 onClick={() => setMobileDrawerOpen(false)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-700"
+                className="theme-btn-skip inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200"
                 aria-label="Close category drawer"
               >
                 <FaTimes />
@@ -935,7 +932,7 @@ const Header = () => {
                         {subcategories.length > 0 && (
                           <button
                             type="button"
-                            className="text-sm font-semibold text-gray-500"
+                            className="theme-btn-skip inline-flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-100"
                             onClick={() => toggleDrawerCategory(categoryKey)}
                           >
                             {expandedDrawerCategories[categoryKey] ? "-" : "+"}
@@ -979,7 +976,7 @@ const Header = () => {
                                     {childcategories.length > 0 && (
                                       <button
                                         type="button"
-                                        className="text-xs font-semibold text-gray-500"
+                                        className="theme-btn-skip inline-flex h-5 w-5 items-center justify-center rounded border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100"
                                         onClick={() =>
                                           toggleDrawerSubcategory(subKey)
                                         }
@@ -1051,7 +1048,7 @@ const Header = () => {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow"
+                className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow hover:bg-gray-100"
                 aria-label="Close categories modal"
               >
                 <FaTimes />

@@ -11,6 +11,7 @@ const Button = ({
     iconPosition = 'left',
     loading = false,
     disabled = false,
+    style,
     ...props
 }) => {
     const variants = {
@@ -49,6 +50,10 @@ const Button = ({
                 roundedClasses[rounded],
                 className
             )}
+            style={{
+                ...(style || {}),
+                borderRadius: '30px',
+            }}
             disabled={disabled || loading}
             {...props}
         >

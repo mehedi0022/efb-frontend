@@ -158,7 +158,7 @@ const Cart = () => {
 
                         <Link
                             to="/checkout"
-                            className="block w-full bg-blue-600 text-white text-center py-3 rounded font-semibold hover:bg-blue-700 transition"
+                            className="theme-btn-info block w-full rounded border py-3 text-center font-semibold transition"
                         >
                             Proceed to Checkout
                         </Link>
