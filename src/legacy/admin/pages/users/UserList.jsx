@@ -1,12 +1,29 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FiEdit2, FiPlus, FiTrash2, FiUser } from 'react-icons/fi';
+import { Button as AntButton, Input as AntInput, Modal as AntModal } from 'antd';
 import DataTable from '../../components/common/DataTable';
 import Button from '../../components/common/Button';
-import Modal from '../../components/common/Modal';
+import AppModal from '../../components/common/Modal';
 import Input from '../../components/common/Input';
 import { formatDateTime } from '../../utils/helpers';
 import { hasPermission } from '../../utils/rbac';
 import { useAdminActionMutation, useAdminFetchQuery } from '../../../store/adminApi';
+
+const normalizeRoleToken = (value) => String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-');
+
+const isSuperAdminUser = (user) => {
+    const roleTokens = [
+        ...(Array.isArray(user?.roles) ? user.roles : []),
+        user?.primary_role,
+    ]
+        .map((role) => normalizeRoleToken(role))
+        .filter(Boolean);
+
+    return roleTokens.includes('super-admin');
+};
 
 const UserList = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +38,12 @@ const UserList = () => {
         password: '',
         password_confirmation: '',
     });
+    const [isSellerCodeModalOpen, setIsSellerCodeModalOpen] = useState(false);
+    const [sellerCodeUser, setSellerCodeUser] = useState(null);
+    const [sellerCodeInput, setSellerCodeInput] = useState('');
+    const [securityCodeInput, setSecurityCodeInput] = useState('');
+    const [sellerCodeError, setSellerCodeError] = useState('');
+    const [isSellerCodeSubmitting, setIsSellerCodeSubmitting] = useState(false);
     const [pagination, setPagination] = useState({
         current_page: 1,
         last_page: 1,
@@ -46,6 +69,7 @@ const UserList = () => {
     const users = response?.data || [];
     const roles = response?.roles || [];
     const loading = isLoading || isFetching;
+    const hasExistingSellerCode = Boolean(String(sellerCodeUser?.seller_code || '').trim());
 
     useEffect(() => {
         if (response?.pagination) {
@@ -143,6 +167,65 @@ const UserList = () => {
         }
     };
 
+    const handleOpenSellerCodeModal = (user) => {
+        setSellerCodeUser(user);
+        setSellerCodeInput(user?.seller_code || '');
+        setSecurityCodeInput('');
+        setSellerCodeError('');
+        setIsSellerCodeModalOpen(true);
+    };
+
+    const handleCloseSellerCodeModal = () => {
+        setIsSellerCodeModalOpen(false);
+        setSellerCodeUser(null);
+        setSellerCodeInput('');
+        setSecurityCodeInput('');
+        setSellerCodeError('');
+    };
+
+    const handleSellerCodeSubmit = async (e) => {
+        e.preventDefault();
+
+        const nextSellerCode = sellerCodeInput.trim();
+        const nextSecurityCode = securityCodeInput.trim();
+
+        if (!nextSellerCode) {
+            setSellerCodeError('Seller code is required.');
+            return;
+        }
+
+        if (hasExistingSellerCode && !nextSecurityCode) {
+            setSellerCodeError('Security code is required to update existing seller code.');
+            return;
+        }
+
+        if (!sellerCodeUser?.id) {
+            setSellerCodeError('Invalid employee selected.');
+            return;
+        }
+
+        setIsSellerCodeSubmitting(true);
+        setSellerCodeError('');
+
+        try {
+            await adminAction({
+                url: `/admin/users/${sellerCodeUser.id}/seller-code`,
+                method: 'PUT',
+                body: {
+                    seller_code: nextSellerCode,
+                    security_code: hasExistingSellerCode ? nextSecurityCode : undefined,
+                },
+                invalidates: ['users'],
+            }).unwrap();
+
+            handleCloseSellerCodeModal();
+        } catch (error) {
+            setSellerCodeError(error?.data?.message || 'Failed to save seller code.');
+        } finally {
+            setIsSellerCodeSubmitting(false);
+        }
+    };
+
     const columns = [
         { header: 'ID', accessor: 'id', width: '6%' },
         { header: 'Name', accessor: 'name', width: '20%' },
@@ -172,9 +255,9 @@ const UserList = () => {
         {
             header: 'Actions',
             accessor: 'actions',
-            width: '12%',
+            width: '18%',
             render: (row) => (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {canEdit && (
                         <button
                             onClick={() => handleEdit(row)}
@@ -191,6 +274,15 @@ const UserList = () => {
                             title="Delete"
                         >
                             <FiTrash2 size={16} />
+                        </button>
+                    )}
+                    {canEdit && isSuperAdminUser(row) && (
+                        <button
+                            onClick={() => handleOpenSellerCodeModal(row)}
+                            className="rounded border border-emerald-300 px-2 py-1 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-50"
+                            title="Add Seller Code"
+                        >
+                            Add Seller Code
                         </button>
                     )}
                     {!canEdit && !canDelete && <span className="text-xs text-gray-400">Restricted</span>}
@@ -239,7 +331,59 @@ const UserList = () => {
                 />
             </div>
 
-            <Modal
+            <AntModal
+                open={isSellerCodeModalOpen}
+                title="Add Seller Code"
+                onCancel={handleCloseSellerCodeModal}
+                footer={null}
+                destroyOnClose
+                maskClosable={!isSellerCodeSubmitting}
+                closable={!isSellerCodeSubmitting}
+                keyboard={!isSellerCodeSubmitting}
+            >
+                <form onSubmit={handleSellerCodeSubmit} className="space-y-4">
+                    {sellerCodeError && (
+                        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                            {sellerCodeError}
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Seller Code</label>
+                        <AntInput
+                            value={sellerCodeInput}
+                            placeholder="Write Seller Code"
+                            onChange={(e) => setSellerCodeInput(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+
+                    {hasExistingSellerCode && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Security Code</label>
+                            <AntInput.Password
+                                value={securityCodeInput}
+                                placeholder="Write Security Code"
+                                onChange={(e) => setSecurityCodeInput(e.target.value)}
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                                Security code is required to update an existing seller code.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 pt-2">
+                        <AntButton onClick={handleCloseSellerCodeModal} disabled={isSellerCodeSubmitting}>
+                            Cancel
+                        </AntButton>
+                        <AntButton type="primary" htmlType="submit" loading={isSellerCodeSubmitting}>
+                            Submit
+                        </AntButton>
+                    </div>
+                </form>
+            </AntModal>
+
+            <AppModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={isEditing ? 'Edit Employee' : 'Create Employee'}
@@ -310,7 +454,7 @@ const UserList = () => {
                         </Button>
                     </div>
                 </form>
-            </Modal>
+            </AppModal>
         </div>
     );
 };
