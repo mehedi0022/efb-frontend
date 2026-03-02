@@ -45,44 +45,46 @@ const menuItems = [
         path: "/orders/create",
         permission: "orders.edit",
       },
-      { title: "All Order", path: "/orders/all", permission: "orders.view" },
-      { title: "Pending", path: "/orders/pending", permission: "orders.view" },
       {
-        title: "Processing",
-        path: "/orders/processing",
+        title: "All Orders",
+        path: "/orders/all",
         permission: "orders.view",
       },
       {
-        title: "Confirmed",
-        path: "/orders/confirmed",
+        title: "New Order",
+        path: "/orders/new-order",
         permission: "orders.view",
       },
       {
-        title: "Delivered",
-        path: "/orders/delivered",
-        permission: "orders.view",
-      },
-      {
-        title: "Courier Orders List",
-        path: "/orders/courier/list",
-        permission: "orders.view",
-      },
-      {
-        title: "Complete",
+        title: "Complete Orders",
         path: "/orders/complete",
         permission: "orders.view",
       },
       {
-        title: "Cancelled",
-        path: "/orders/cancelled",
+        title: "No Response",
+        path: "/orders/no-response",
         permission: "orders.view",
       },
       {
-        title: "Returned",
-        path: "/orders/returned",
+        title: "Hold Orders",
+        path: "/orders/hold",
         permission: "orders.view",
       },
-      { title: "Hold", path: "/orders/hold", permission: "orders.view" },
+      {
+        title: "Cancel Orders",
+        path: "/orders/cancel",
+        permission: "orders.view",
+      },
+      {
+        title: "In Courier",
+        path: "/orders/in-courier",
+        permission: "orders.view",
+      },
+      {
+        title: "Sent FB",
+        path: "/orders/fb-sent",
+        permission: "orders.view",
+      },
     ],
   },
   {
@@ -225,12 +227,6 @@ const menuItems = [
     prefixes: ["/integrations"],
     children: [
       {
-        title: "Payment Gateway",
-        path: "/integrations/payment",
-        permission: "integrations.view",
-      },
-      // { title: 'SMS Gateway', path: '/integrations/sms', permission: 'integrations.view' },
-      {
         title: "Courier API",
         path: "/integrations/courier",
         permission: "integrations.view",
@@ -356,7 +352,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
   return (
     <div
       className={clsx(
-        "left-side-menu fixed inset-y-0 left-0 z-40 h-screen w-72 shrink-0 transform overflow-y-auto bg-admin-dark text-gray-300 shadow-xl transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:w-64 lg:translate-x-0",
+        "left-side-menu fixed inset-y-0 left-0 z-40 h-screen w-72 shrink-0 transform overflow-y-auto bg-admin-dark text-[13px] text-gray-300 shadow-xl transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:w-64 lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full",
       )}
     >
@@ -375,7 +371,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                 className="h-10 w-auto max-w-[220px] object-contain"
               />
             ) : (
-              <h1 className="max-w-[220px] truncate text-center text-lg font-bold tracking-wide text-white sm:text-xl">
+              <h1 className="max-w-[220px] truncate text-center text-base font-bold tracking-wide text-white sm:text-lg">
                 {sidebarBrandName}
               </h1>
             )}
@@ -383,9 +379,9 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
         </div>
 
         {/* User Info (Optional, but kept for structure) */}
-        <div className="p-4 border-b border-gray-700 bg-white/5">
+        <div className="border-b border-gray-700 bg-white/5 p-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-admin-primary bg-admin-primary/20 text-sm font-bold text-white">
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-admin-primary bg-admin-primary/20 text-[13px] font-bold text-white">
               {avatarImage ? (
                 <img
                   src={avatarImage}
@@ -397,10 +393,10 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
               )}
             </div>
             <div>
-              <p className="text-white font-semibold text-sm m-0">
+              <p className="m-0 text-[13px] font-semibold text-white">
                 {displayName}
               </p>
-              <p className="text-xs text-gray-400 m-0">{displayRole}</p>
+              <p className="m-0 text-[11px] text-gray-400">{displayRole}</p>
             </div>
           </div>
         </div>
@@ -408,7 +404,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
         {/* Sidebar Menu */}
         <div
           id="sidebar-menu"
-          className="min-h-0 flex-1 overflow-y-auto py-3 pb-24"
+          className="min-h-0 flex-1 overflow-y-auto py-2.5 pb-24"
         >
           <ul className="space-y-1 px-3">
             {visibleMenuItems.map((item, index) => {
@@ -422,7 +418,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                       <button
                         onClick={() => toggleMenu(item.key)}
                         className={clsx(
-                          "group flex w-full items-center justify-between rounded-lg px-4 py-3 transition-all duration-200",
+                          "group flex w-full items-center justify-between rounded-lg px-3.5 py-2.5 transition-all duration-200",
                           menuOpen || isMenuActive
                             ? "bg-white/5 text-white"
                             : "text-gray-400 hover:bg-white/5 hover:text-white",
@@ -437,7 +433,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                                 : "text-gray-400 group-hover:text-white",
                             )}
                           />
-                          <span className="flex items-center gap-2 text-sm font-medium">
+                          <span className="flex items-center gap-2 text-[13px] font-medium">
                             {item.title}
                             {item.badge && (
                               <span className="inline-flex items-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
@@ -464,7 +460,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                                 to={child.path}
                                 onClick={onNavigate}
                                 className={clsx(
-                                  "flex items-center justify-between gap-3 rounded-lg px-4 py-2.5 text-sm transition-all",
+                                  "flex items-center justify-between gap-3 rounded-lg px-3.5 py-2 text-[13px] transition-all",
                                   isActive(child.path)
                                     ? "bg-gradient-to-r from-admin-primary to-green-400 text-white shadow-lg"
                                     : "text-gray-400 hover:pl-5 hover:text-white",
@@ -504,7 +500,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                       to={item.path}
                       onClick={onNavigate}
                       className={clsx(
-                        "group flex items-center gap-3 rounded-lg px-4 py-3 transition-all",
+                        "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all",
                         isActive(item.path)
                           ? "bg-gradient-to-r from-admin-primary to-green-400 text-white shadow-lg"
                           : "text-gray-400 hover:bg-white/5 hover:text-white",
@@ -520,7 +516,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                               : "text-gray-400 group-hover:text-white",
                         )}
                       />
-                      <span className="flex items-center gap-2 text-sm font-medium">
+                      <span className="flex items-center gap-2 text-[13px] font-medium">
                         {item.title}
                         {item.badge && (
                           <span className="inline-flex items-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">

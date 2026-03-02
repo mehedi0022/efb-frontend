@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiPrinter } from 'react-icons/fi';
 import { useAdminFetchQuery } from '../../../store/adminApi';
 import { resolveMediaUrl } from '../../../utils/media';
 
@@ -255,12 +254,13 @@ const OrderInvoice = () => {
                         border: 0;
                         background: #198754;
                         color: #fff;
-                        width: 32px;
-                        height: 28px;
-                        border-radius: 3px;
+                        padding: 6px 12px;
+                        border-radius: 6px;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
+                        font-size: 14px;
+                        font-weight: 600;
                         cursor: pointer;
                     }
                     .invoice-controls .invoice-print-btn:hover {
@@ -324,8 +324,7 @@ const OrderInvoice = () => {
             <section className="customer-invoice">
                 <div className="container">
                     <div className="invoice-controls no-print">
-                        <Link to="/orders/all" className="inline-flex items-center gap-2 font-semibold text-gray-700">
-                            <FiArrowLeft />
+                        <Link to="/orders/all" className="inline-flex items-center font-semibold text-gray-700">
                             Back To Order
                         </Link>
                         <button
@@ -334,7 +333,7 @@ const OrderInvoice = () => {
                             className="invoice-print-btn"
                             aria-label="Print invoice"
                         >
-                            <FiPrinter />
+                            Print
                         </button>
                     </div>
 

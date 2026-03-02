@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiPlus, FiSave, FiTrash2 } from 'react-icons/fi';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useAdminActionMutation, useAdminFetchQuery } from '../../../store/adminApi';
@@ -383,7 +382,7 @@ const OrderEdit = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <Link to={`/orders/invoice/${invoiceId}`}>
-                        <Button variant="outline" rounded="md" icon={FiArrowLeft}>
+                        <Button variant="outline" rounded="md">
                             Back to Invoice
                         </Button>
                     </Link>
@@ -509,7 +508,6 @@ const OrderEdit = () => {
                             <h4 className="text-base font-semibold text-gray-900">Order Items</h4>
                             <div className="flex gap-2">
                                 <Button type="button" variant="outline" rounded="md" onClick={handleAddCustomItem}>
-                                    <FiPlus className="h-4 w-4" />
                                     Add Custom Item
                                 </Button>
                             </div>
@@ -548,7 +546,6 @@ const OrderEdit = () => {
                                     disabled={!selectedProductId}
                                     className="w-full"
                                 >
-                                    <FiPlus className="h-4 w-4" />
                                     Add Product
                                 </Button>
                             </div>
@@ -615,10 +612,10 @@ const OrderEdit = () => {
                                             <td className="px-3 py-2 align-top">
                                                 <button
                                                     type="button"
-                                                    className="rounded p-2 text-red-600 transition hover:bg-red-50"
+                                                    className="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
                                                     onClick={() => handleRemoveItem(item.row_key)}
                                                 >
-                                                    <FiTrash2 className="h-4 w-4" />
+                                                    Remove
                                                 </button>
                                             </td>
                                         </tr>
@@ -629,7 +626,7 @@ const OrderEdit = () => {
                     </div>
 
                     <div className="flex justify-end">
-                        <Button type="submit" variant="primary" rounded="md" icon={FiSave} loading={isSaving}>
+                        <Button type="submit" variant="primary" rounded="md" loading={isSaving}>
                             Save Changes
                         </Button>
                     </div>

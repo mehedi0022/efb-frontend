@@ -2,8 +2,12 @@
   "name": "naxt-ecommerce",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
+    "install": "if [ \"$npm_command\" = \"run-script\" ]; then npm ci --include=dev; else echo \"Skipping install lifecycle for npm $npm_command\"; fi",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

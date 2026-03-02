@@ -152,7 +152,7 @@ const Topbar = ({ toggleSidebar, notifications = [], showMenuButton = true, user
                                         </div>
 
                                         <Link
-                                            to="/orders/pending"
+                                            to="/orders/new-order"
                                             className="block p-3 text-center text-admin-primary font-medium hover:bg-gray-50 border-t border-gray-100 transition-colors text-sm"
                                             onClick={() => setShowNotifications(false)}
                                         >

@@ -62,6 +62,36 @@ const makeExistingFileList = (url, keyPrefix) => {
     }];
 };
 
+const BUTTON_COLOR_ROWS = [
+    {
+        key: 'primary',
+        title: 'Primary Button',
+        fields: [
+            { key: 'button_primary_color', label: 'Background', fallback: '#111827', placeholder: '#111827' },
+            { key: 'button_secondary_color', label: 'Hover', fallback: '#374151', placeholder: '#374151' },
+            { key: 'button_primary_text_color', label: 'Text', fallback: '#ffffff', placeholder: '#ffffff' },
+        ],
+    },
+    {
+        key: 'secondary',
+        title: 'Secondary Button',
+        fields: [
+            { key: 'button_secondary_bg_color', label: 'Background', fallback: '#374151', placeholder: '#374151' },
+            { key: 'button_secondary_hover_color', label: 'Hover', fallback: '#1f2937', placeholder: '#1f2937' },
+            { key: 'button_secondary_text_color', label: 'Text', fallback: '#ffffff', placeholder: '#ffffff' },
+        ],
+    },
+    {
+        key: 'info',
+        title: 'Info Button',
+        fields: [
+            { key: 'button_info_bg_color', label: 'Background', fallback: '#0ea5e9', placeholder: '#0ea5e9' },
+            { key: 'button_info_hover_color', label: 'Hover', fallback: '#0284c7', placeholder: '#0284c7' },
+            { key: 'button_info_text_color', label: 'Text', fallback: '#ffffff', placeholder: '#ffffff' },
+        ],
+    },
+];
+
 const GeneralSettings = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -74,11 +104,19 @@ const GeneralSettings = () => {
         footer_bg_color: '',
         button_primary_color: '',
         button_secondary_color: '',
+        button_primary_text_color: '',
+        button_secondary_bg_color: '',
+        button_secondary_hover_color: '',
+        button_secondary_text_color: '',
+        button_info_bg_color: '',
+        button_info_hover_color: '',
+        button_info_text_color: '',
         fb_link: '',
         hotline: '',
         whatsapp: '',
         messenger: '',
         footer_payment_enabled: 1,
+        is_stock_visible: 1,
         status: 1,
         logo: null,
         favicon: null,
@@ -108,11 +146,19 @@ const GeneralSettings = () => {
             footer_bg_color: '',
             button_primary_color: '',
             button_secondary_color: '',
+            button_primary_text_color: '',
+            button_secondary_bg_color: '',
+            button_secondary_hover_color: '',
+            button_secondary_text_color: '',
+            button_info_bg_color: '',
+            button_info_hover_color: '',
+            button_info_text_color: '',
             fb_link: '',
             hotline: '',
             whatsapp: '',
             messenger: '',
             footer_payment_enabled: 1,
+            is_stock_visible: 1,
             status: 1,
             logo: null,
             favicon: null,
@@ -140,11 +186,19 @@ const GeneralSettings = () => {
             footer_bg_color: setting.footer_bg_color || '',
             button_primary_color: setting.button_primary_color || '',
             button_secondary_color: setting.button_secondary_color || '',
+            button_primary_text_color: setting.button_primary_text_color || '',
+            button_secondary_bg_color: setting.button_secondary_bg_color || '',
+            button_secondary_hover_color: setting.button_secondary_hover_color || '',
+            button_secondary_text_color: setting.button_secondary_text_color || '',
+            button_info_bg_color: setting.button_info_bg_color || '',
+            button_info_hover_color: setting.button_info_hover_color || '',
+            button_info_text_color: setting.button_info_text_color || '',
             fb_link: setting.fb_link || '',
             hotline: setting.hotline || '',
             whatsapp: setting.whatsapp || '',
             messenger: setting.messenger || '',
             footer_payment_enabled: Number(setting.footer_payment_enabled ?? 1),
+            is_stock_visible: Number(setting.is_stock_visible ?? 1),
             status: setting.status ?? 1,
             logo: null,
             favicon: null,
@@ -200,11 +254,19 @@ const GeneralSettings = () => {
             payload.append('footer_bg_color', formData.footer_bg_color || '');
             payload.append('button_primary_color', formData.button_primary_color || '');
             payload.append('button_secondary_color', formData.button_secondary_color || '');
+            payload.append('button_primary_text_color', formData.button_primary_text_color || '');
+            payload.append('button_secondary_bg_color', formData.button_secondary_bg_color || '');
+            payload.append('button_secondary_hover_color', formData.button_secondary_hover_color || '');
+            payload.append('button_secondary_text_color', formData.button_secondary_text_color || '');
+            payload.append('button_info_bg_color', formData.button_info_bg_color || '');
+            payload.append('button_info_hover_color', formData.button_info_hover_color || '');
+            payload.append('button_info_text_color', formData.button_info_text_color || '');
             payload.append('fb_link', formData.fb_link || '');
             payload.append('hotline', formData.hotline || '');
             payload.append('whatsapp', formData.whatsapp || '');
             payload.append('messenger', formData.messenger || '');
             payload.append('footer_payment_enabled', String(Number(formData.footer_payment_enabled ?? 1)));
+            payload.append('is_stock_visible', String(Number(formData.is_stock_visible ?? 1)));
             payload.append('status', String(formData.status));
 
             if (formData.logo) {
@@ -299,6 +361,22 @@ const GeneralSettings = () => {
             ),
         },
         {
+            header: 'Show Stock',
+            accessor: 'is_stock_visible',
+            width: '12%',
+            render: (row) => (
+                <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        Number(row.is_stock_visible ?? 1) === 1
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-200 text-gray-700'
+                    }`}
+                >
+                    {Number(row.is_stock_visible ?? 1) === 1 ? 'Visible' : 'Hidden'}
+                </span>
+            ),
+        },
+        {
             header: 'Footer Payment',
             accessor: 'footer_payment_enabled',
             width: '12%',
@@ -332,7 +410,7 @@ const GeneralSettings = () => {
     ];
 
     return (
-        <div className="container-fluid">
+        <div className="container-fluid admin-settings-page">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">General Settings</h2>
                 {canCreateSetting ? (
@@ -440,37 +518,52 @@ const GeneralSettings = () => {
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">Button Primary Color</label>
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="color"
-                                        value={formData.button_primary_color || '#111827'}
-                                        onChange={(e) => setFormData({ ...formData, button_primary_color: e.target.value })}
-                                        className="h-10 w-14 rounded border border-gray-300 p-1"
-                                    />
-                                    <Input
-                                        value={formData.button_primary_color}
-                                        onChange={(e) => setFormData({ ...formData, button_primary_color: e.target.value })}
-                                        placeholder="#111827"
-                                    />
-                                </div>
+                        </div>
+
+                        <div className="mt-5 rounded-lg border border-gray-200">
+                            <div className="hidden grid-cols-[180px_repeat(3,minmax(0,1fr))] gap-3 border-b border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600 md:grid">
+                                <span>Button Variant</span>
+                                <span>Background</span>
+                                <span>Hover</span>
+                                <span>Text</span>
                             </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">Button Secondary Color (Hover)</label>
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="color"
-                                        value={formData.button_secondary_color || '#374151'}
-                                        onChange={(e) => setFormData({ ...formData, button_secondary_color: e.target.value })}
-                                        className="h-10 w-14 rounded border border-gray-300 p-1"
-                                    />
-                                    <Input
-                                        value={formData.button_secondary_color}
-                                        onChange={(e) => setFormData({ ...formData, button_secondary_color: e.target.value })}
-                                        placeholder="#374151"
-                                    />
-                                </div>
+
+                            <div className="space-y-0">
+                                {BUTTON_COLOR_ROWS.map((row) => (
+                                    <div
+                                        key={row.key}
+                                        className="grid grid-cols-1 gap-3 border-b border-gray-100 px-3 py-3 last:border-b-0 md:grid-cols-[180px_repeat(3,minmax(0,1fr))]"
+                                    >
+                                        <div className="flex items-center">
+                                            <span className="text-sm font-semibold text-gray-700">{row.title}</span>
+                                        </div>
+
+                                        {row.fields.map((field) => (
+                                            <div key={field.key}>
+                                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">
+                                                    {field.label}
+                                                </label>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={formData[field.key] || field.fallback}
+                                                        onChange={(e) =>
+                                                            setFormData((prev) => ({ ...prev, [field.key]: e.target.value }))
+                                                        }
+                                                        className="h-10 w-14 rounded border border-gray-300 p-1"
+                                                    />
+                                                    <Input
+                                                        value={formData[field.key]}
+                                                        onChange={(e) =>
+                                                            setFormData((prev) => ({ ...prev, [field.key]: e.target.value }))
+                                                        }
+                                                        placeholder={field.placeholder}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -519,6 +612,17 @@ const GeneralSettings = () => {
                                 >
                                     <option value={1}>Active</option>
                                     <option value={0}>Inactive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">Show Stock</label>
+                                <select
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                                    value={Number(formData.is_stock_visible ?? 1)}
+                                    onChange={(e) => setFormData({ ...formData, is_stock_visible: Number(e.target.value) })}
+                                >
+                                    <option value={1}>Visible</option>
+                                    <option value={0}>Hidden</option>
                                 </select>
                             </div>
                         </div>

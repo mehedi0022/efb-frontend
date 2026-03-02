@@ -3,7 +3,6 @@ import {
     FiActivity,
     FiBox,
     FiCheckCircle,
-    FiClock,
     FiTruck,
     FiXCircle,
 } from 'react-icons/fi';
@@ -39,7 +38,7 @@ const DashboardCard = ({ title, metric, icon: Icon, colorClass, iconBgClass, loa
     </div>
 );
 
-const HourlyOrdersChart = ({ data = [], loading }) => {
+const HourlyOrdersChart = ({ data = [], loading, windowHours = 24 }) => {
     const maxOrderCount = useMemo(
         () => Math.max(1, ...data.map((item) => toNumber(item.order_count))),
         [data]
@@ -53,7 +52,9 @@ const HourlyOrdersChart = ({ data = [], loading }) => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="mb-6 flex items-center justify-between gap-3">
-                <h5 className="text-lg font-bold text-gray-800">Orders in Last 12 Hours</h5>
+                <h5 className="text-lg font-bold text-gray-800">
+                    Orders in Last {windowHours} Hours
+                </h5>
                 <span className="text-sm text-gray-500">
                     {loading ? 'Refreshing...' : `${totalOrders.toLocaleString()} orders`}
                 </span>
@@ -114,8 +115,8 @@ const MonthlyOrdersPieChart = ({ data = [], loading }) => {
         [data]
     );
 
-    const chartSize = 220;
-    const strokeWidth = 30;
+    const chartSize = 188;
+    const strokeWidth = 24;
     const radius = (chartSize - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
 
@@ -147,8 +148,8 @@ const MonthlyOrdersPieChart = ({ data = [], loading }) => {
                     {loading ? 'Loading monthly analytics...' : 'No monthly order data found'}
                 </div>
             ) : (
-                <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start">
-                    <div className="relative mx-auto w-[220px] h-[220px] shrink-0">
+                <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start">
+                    <div className="relative mx-auto h-[188px] w-[188px] shrink-0 2xl:mx-0">
                         <svg viewBox={`0 0 ${chartSize} ${chartSize}`} className="h-full w-full">
                             <circle
                                 cx={chartSize / 2}
@@ -177,27 +178,36 @@ const MonthlyOrdersPieChart = ({ data = [], loading }) => {
 
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <span className="text-xs uppercase tracking-wide text-gray-500">Total</span>
-                            <span className="text-2xl font-bold text-gray-800">{totalOrders.toLocaleString()}</span>
+                            <span className="text-xl font-bold text-gray-800">{totalOrders.toLocaleString()}</span>
                             <span className="text-xs text-gray-500">orders</span>
                         </div>
                     </div>
 
-                    <div className="max-h-64 w-full overflow-y-auto pr-1">
-                        <ul className="space-y-2">
-                            {data.map((item, index) => (
-                                <li key={item.month || index} className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2 text-sm">
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        <span
-                                            className="h-2.5 w-2.5 rounded-full"
-                                            style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
-                                        />
-                                        <span>{item.month_label || '-'}</span>
-                                    </div>
-                                    <span className="font-semibold text-gray-800">
-                                        {toNumber(item.order_count).toLocaleString()}
-                                    </span>
-                                </li>
-                            ))}
+                    <div className="w-full min-w-0">
+                        <ul className="grid grid-flow-col grid-rows-2 auto-cols-[minmax(170px,1fr)] gap-2 overflow-x-auto pb-1 pr-1 no-scrollbar">
+                            {data.map((item, index) => {
+                                const count = toNumber(item.order_count);
+                                const percentage = totalOrders > 0 ? Math.round((count / totalOrders) * 100) : 0;
+
+                                return (
+                                    <li key={item.month || index} className="rounded-md bg-gray-50 px-3 py-2 text-sm">
+                                        <div className="flex items-start gap-2">
+                                            <span
+                                                className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                                                style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                                            />
+                                            <div className="min-w-0">
+                                                <p className="text-[13px] leading-tight text-gray-700 break-words">
+                                                    {item.month_label || '-'}
+                                                </p>
+                                                <p className="mt-1 text-xs font-semibold text-gray-800">
+                                                    {count.toLocaleString()} <span className="font-medium text-gray-500">({percentage}%)</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 </div>
@@ -215,7 +225,7 @@ const Dashboard = () => {
     } = useAdminFetchQuery(
         {
             url: '/admin/dashboard',
-            params: { hours: 12 },
+            params: { hours: 24 },
             tags: ['dashboard'],
         },
         {
@@ -234,9 +244,9 @@ const Dashboard = () => {
             total: toMetric(apiStats.total_order),
             active: toMetric(apiStats.active_order),
             completed: toMetric(apiStats.completed_order),
-            delivered: toMetric(apiStats.delivered_order),
+            noResponse: toMetric(apiStats.no_response_order),
+            inCourier: toMetric(apiStats.in_courier_order),
             cancelled: toMetric(apiStats.cancelled_order),
-            today: toMetric(apiStats.today_order),
         };
     }, [response]);
 
@@ -253,6 +263,11 @@ const Dashboard = () => {
             amount: toNumber(item?.amount),
         }));
     }, [response]);
+
+    const hourlyWindowHours = useMemo(
+        () => Math.max(1, toNumber(response?.hourly_orders?.window_hours) || 24),
+        [response?.hourly_orders?.window_hours]
+    );
 
     const latestOrders = useMemo(() => {
         const source = response?.latest_orders;
@@ -315,12 +330,20 @@ const Dashboard = () => {
                         iconBgClass="bg-blue-500"
                     />
                     <DashboardCard
-                        title="Delivered Orders"
-                        metric={stats.delivered}
+                        title="No Response Orders"
+                        metric={stats.noResponse}
                         icon={FiTruck}
                         loading={loading}
                         colorClass="bg-[#f5f3ff]"
                         iconBgClass="bg-violet-500"
+                    />
+                    <DashboardCard
+                        title="In Courier (FB Sent)"
+                        metric={stats.inCourier}
+                        icon={FiCheckCircle}
+                        loading={loading}
+                        colorClass="bg-[#eefcf5]"
+                        iconBgClass="bg-teal-500"
                     />
                     <DashboardCard
                         title="Cancelled Orders"
@@ -330,24 +353,16 @@ const Dashboard = () => {
                         colorClass="bg-[#fef2f2]"
                         iconBgClass="bg-red-500"
                     />
-                    <DashboardCard
-                        title="Today Orders"
-                        metric={stats.today}
-                        icon={FiClock}
-                        loading={loading}
-                        colorClass="bg-[#fffbeb]"
-                        iconBgClass="bg-amber-500"
-                    />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
-                <div className="xl:col-span-2">
-                    <HourlyOrdersChart data={hourlyData} loading={isFetching} />
-                </div>
-                <div className="xl:col-span-1">
-                    <MonthlyOrdersPieChart data={monthlyData} loading={isFetching} />
-                </div>
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                <HourlyOrdersChart
+                    data={hourlyData}
+                    loading={isFetching}
+                    windowHours={hourlyWindowHours}
+                />
+                <MonthlyOrdersPieChart data={monthlyData} loading={isFetching} />
             </div>
 
             <div className="grid grid-cols-1 gap-8">

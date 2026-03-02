@@ -19,8 +19,12 @@ const emptyCourier = (type) => ({
     token_expires_at: '',
     has_api_key: false,
     has_secret_key: false,
+    has_client_id: false,
     has_client_secret: false,
+    has_username: false,
     has_password: false,
+    has_token: false,
+    managed_by_backend: false,
 });
 
 const CourierApiSettings = () => {
@@ -42,22 +46,36 @@ const CourierApiSettings = () => {
 
         const pathaoConfig = response?.pathao || response?.couriers?.pathao || emptyCourier('pathao');
         const steadfastConfig = response?.steadfast || response?.couriers?.steadfast || emptyCourier('steadfast');
+        const pathaoHasCredentials = Boolean(
+            pathaoConfig?.has_client_id
+            || pathaoConfig?.has_client_secret
+            || pathaoConfig?.has_username
+            || pathaoConfig?.has_password
+            || pathaoConfig?.managed_by_backend
+        );
 
         setCouriers({
             pathao: { ...emptyCourier('pathao'), ...pathaoConfig, type: 'pathao' },
             steadfast: { ...emptyCourier('steadfast'), ...steadfastConfig, type: 'steadfast' },
         });
-        setActiveCourier(response.active_courier || 'pathao');
+        setActiveCourier(pathaoHasCredentials ? 'pathao' : (response.active_courier || 'pathao'));
     }, [response]);
 
     const selectedCourier = couriers[activeCourier] || emptyCourier(activeCourier);
     const isPathao = activeCourier === 'pathao';
+    const credentialsManagedByBackend = isPathao && Boolean(selectedCourier?.managed_by_backend);
+    const apiKeyLabel = isPathao
+        ? `Store ID ${selectedCourier.has_api_key ? '(Already saved)' : ''}`
+        : `API Key ${selectedCourier.has_api_key ? '(Already saved)' : ''}`;
+    const apiKeyPlaceholder = isPathao
+        ? (selectedCourier.has_api_key ? 'Already saved' : 'Enter Pathao store ID')
+        : (selectedCourier.has_api_key ? '********' : 'Optional API key');
 
     const tokenInfo = useMemo(() => {
-        if (!selectedCourier?.token) return 'No token generated yet.';
+        if (!selectedCourier?.has_token) return 'No token generated yet.';
         if (!selectedCourier?.token_expires_at) return 'Token generated.';
         return `Expires at: ${selectedCourier.token_expires_at}`;
-    }, [selectedCourier?.token, selectedCourier?.token_expires_at]);
+    }, [selectedCourier?.has_token, selectedCourier?.token_expires_at]);
 
     const updateCourierField = (field, value) => {
         setCouriers((prev) => ({
@@ -163,6 +181,12 @@ const CourierApiSettings = () => {
                     </span>
                 </div>
 
+                {credentialsManagedByBackend ? (
+                    <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                        Pathao credentials are available from backend environment. You can still save new credentials from this form.
+                    </div>
+                ) : null}
+
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
@@ -178,10 +202,10 @@ const CourierApiSettings = () => {
                     />
 
                     <Input
-                        label="Client ID"
+                        label={`Client ID ${selectedCourier.has_client_id ? '(Already saved)' : ''}`}
                         value={selectedCourier.client_id || ''}
                         onChange={(e) => updateCourierField('client_id', e.target.value)}
-                        placeholder="Enter client ID"
+                        placeholder={credentialsManagedByBackend ? 'Managed in backend environment' : 'Enter client ID'}
                     />
 
                     <Input
@@ -189,14 +213,16 @@ const CourierApiSettings = () => {
                         type="password"
                         value={selectedCourier.client_secret || ''}
                         onChange={(e) => updateCourierField('client_secret', e.target.value)}
-                        placeholder={selectedCourier.has_client_secret ? '********' : 'Enter client secret'}
+                        placeholder={credentialsManagedByBackend
+                            ? 'Managed in backend environment'
+                            : (selectedCourier.has_client_secret ? '********' : 'Enter client secret')}
                     />
 
                     <Input
-                        label="Username"
+                        label={`Username ${selectedCourier.has_username ? '(Already saved)' : ''}`}
                         value={selectedCourier.username || ''}
                         onChange={(e) => updateCourierField('username', e.target.value)}
-                        placeholder="Enter username"
+                        placeholder={credentialsManagedByBackend ? 'Managed in backend environment' : 'Enter username'}
                     />
 
                     <Input
@@ -204,15 +230,17 @@ const CourierApiSettings = () => {
                         type="password"
                         value={selectedCourier.password || ''}
                         onChange={(e) => updateCourierField('password', e.target.value)}
-                        placeholder={selectedCourier.has_password ? '********' : 'Enter password'}
+                        placeholder={credentialsManagedByBackend
+                            ? 'Managed in backend environment'
+                            : (selectedCourier.has_password ? '********' : 'Enter password')}
                     />
 
                     <Input
-                        label={`API Key ${selectedCourier.has_api_key ? '(Already saved)' : ''}`}
+                        label={apiKeyLabel}
                         type="password"
                         value={selectedCourier.api_key || ''}
                         onChange={(e) => updateCourierField('api_key', e.target.value)}
-                        placeholder={selectedCourier.has_api_key ? '********' : 'Optional API key'}
+                        placeholder={apiKeyPlaceholder}
                     />
 
                     <Input
@@ -225,7 +253,7 @@ const CourierApiSettings = () => {
 
                     <Input
                         label="Generated Token"
-                        value={selectedCourier.token || ''}
+                        value={selectedCourier.has_token ? 'Stored securely in backend' : ''}
                         readOnly
                     />
 
@@ -255,4 +283,3 @@ const CourierApiSettings = () => {
 };
 
 export default CourierApiSettings;
-

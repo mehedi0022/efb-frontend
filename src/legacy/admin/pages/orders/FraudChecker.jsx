@@ -4,7 +4,6 @@ import {
     FiCheckCircle,
     FiClock,
     FiPhone,
-    FiSearch,
     FiTruck,
     FiXCircle,
 } from 'react-icons/fi';
@@ -171,7 +170,6 @@ const FraudChecker = () => {
                             rounded="md"
                             className="w-full md:w-auto"
                             loading={submitting}
-                            icon={FiSearch}
                         >
                             {submitting ? 'Checking...' : 'Check Fraud'}
                         </Button>
