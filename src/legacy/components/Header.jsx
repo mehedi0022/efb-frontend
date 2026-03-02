@@ -18,6 +18,10 @@ import {
   useDeleteCartItemMutation,
 } from "../store/publicApi";
 import { resolveMediaUrl } from "../utils/media";
+import {
+  resolveExternalProductSlug,
+  toExternalProductPath,
+} from "../utils/externalProduct";
 
 const Header = () => {
   const { user } = useAuth();
@@ -196,7 +200,7 @@ const Header = () => {
             {searchResults.map((item, index) => {
               const info = item?.product_info || item || {};
               const name = info?.name || "Unknown product";
-              const slug = info?.slug || "";
+              const slug = resolveExternalProductSlug(item);
               const price = item?.price ?? info?.price ?? info?.new_price ?? "";
               const prevPrice =
                 item?.previous_price ??
@@ -209,7 +213,7 @@ const Header = () => {
                   className="border-b border-gray-100 last:border-b-0"
                 >
                   <Link
-                    to={`/products/external/${slug}`}
+                    to={toExternalProductPath(slug)}
                     onClick={() => setSearchOpenTarget(null)}
                     className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
                   >

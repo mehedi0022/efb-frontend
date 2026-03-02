@@ -9,6 +9,10 @@ import {
   useAddToCartMutation,
 } from "../store/publicApi";
 import { resolveMediaUrl } from "../utils/media";
+import {
+  resolveExternalProductSlug,
+  toExternalProductPath,
+} from "../utils/externalProduct";
 import { showSmartSuccessToast } from "../admin/utils/alerts";
 
 const toNumber = (value, fallback = 0) => {
@@ -55,11 +59,13 @@ const StorefrontProductCard = ({ item, product }) => {
   const isExternal = Boolean(
     source?.product_info || source?.external_product_id,
   );
-  const slug = String(info?.slug || source?.slug || "").trim();
+  const slug = isExternal
+    ? resolveExternalProductSlug(source)
+    : String(info?.slug || source?.slug || "").trim();
   const detailPath = slug
     ? isExternal
-      ? `/products/external/${slug}`
-      : `/products/${slug}`
+      ? toExternalProductPath(slug)
+      : `/products/${encodeURIComponent(slug)}`
     : "/products";
   const name = info?.name || source?.product_name || "Unnamed product";
   const sku = String(

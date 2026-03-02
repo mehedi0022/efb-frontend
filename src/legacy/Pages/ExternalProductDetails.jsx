@@ -5,6 +5,11 @@ import { useSettings } from '../context/SettingsContext';
 import { useAddExternalToCartMutation, useGetExternalProductQuery } from '../store/publicApi';
 import ProductDetailView from '../components/ProductDetailView';
 import { showSmartSuccessToast } from '../admin/utils/alerts';
+import {
+    normalizeExternalProductSlug,
+    resolveExternalProductSlug,
+    toExternalProductPath,
+} from '../utils/externalProduct';
 import { resolveBrowserTabTitle } from '../utils/tabTitle';
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE || 'https://freelancerbangladesh.com/';
@@ -25,7 +30,7 @@ const mapRelatedProducts = (items) => {
 
     return items.map((item) => {
         const info = item?.product_info || item || {};
-        const slug = info?.slug || item?.slug || '';
+        const slug = resolveExternalProductSlug(item);
 
         return {
             id: item?.id || info?.id || slug,
@@ -34,13 +39,14 @@ const mapRelatedProducts = (items) => {
             price: Number(item?.price ?? info?.price ?? info?.new_price ?? 0),
             oldPrice: item?.previous_price ?? info?.previous_price ?? info?.old_price ?? null,
             image: resolveImage(info?.thumbnail || info?.image || item?.image),
-            href: slug ? `/products/external/${slug}` : '/products',
+            href: toExternalProductPath(slug),
         };
     });
 };
 
 const ExternalProductDetails = () => {
-    const { slug } = useParams();
+    const { slug: routeSlug } = useParams();
+    const slug = useMemo(() => normalizeExternalProductSlug(routeSlug), [routeSlug]);
     const { refreshCart } = useCart();
     const { setting } = useSettings();
 
