@@ -201,7 +201,7 @@ export const publicApi = createApi({
       invalidatesTags: ['User', 'Cart']
     }),
     getExternalProduct: builder.query({
-      query: (slug) => `/external/product/${slug}`,
+      query: (slug) => `/external/product/${encodeURIComponent(String(slug || '').trim())}`,
       providesTags: ['External']
     }),
     getExternalFeaturedCategories: builder.query({
