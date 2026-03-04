@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   FiFilter,
   FiEdit2,
   FiEye,
+  FiMoreVertical,
   FiPrinter,
   FiPlus,
   FiRefreshCw,
@@ -17,6 +18,7 @@ import {
 import {
   Button as AntButton,
   DatePicker,
+  Dropdown,
   Input as AntInput,
   Modal as AntModal,
   Select,
@@ -103,6 +105,7 @@ const canonicalStatusRouteKey = (value) => {
 const OrderList = () => {
   const { status } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
@@ -147,6 +150,7 @@ const OrderList = () => {
   const [pathaoAreaLoading, setPathaoAreaLoading] = useState(false);
   const [pathaoDispatching, setPathaoDispatching] = useState(false);
   const [pathaoModalError, setPathaoModalError] = useState("");
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   const normalizedStatus = useMemo(() => {
     if (status) {
@@ -285,6 +289,19 @@ const OrderList = () => {
     setPathaoAreaLoading(false);
     setPathaoDispatching(false);
   }, [normalizedStatus, pagination.current_page, appliedFilters]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const syncViewport = () => {
+      setIsMobileViewport(window.innerWidth < 768);
+    };
+
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
 
   const handleSendToFb = async (order) => {
     const orderId = Number(order.id);
@@ -1121,8 +1138,11 @@ const OrderList = () => {
     {
       header: "Action",
       accessor: "actions",
-      width: 420,
+      width: isMobileViewport ? 68 : 420,
       fixed: "right",
+      className: "orders-action-cell",
+      onCell: () => ({ style: { whiteSpace: "nowrap" } }),
+      onHeaderCell: () => ({ style: { whiteSpace: "nowrap" } }),
       render: (row) => {
         const orderId = Number(row.id);
         const isSendingEfb = sendingEfbOrderIds.includes(orderId);
@@ -1131,10 +1151,78 @@ const OrderList = () => {
           efbSentOrderIds.includes(orderId);
         const isCompleted = queryStatus === "complete" && isCompletedOrder(row);
         const isFbSentList = queryStatus === "fb-sent";
+        const mobileMenuItems = [
+          {
+            key: `invoice-${orderId}`,
+            label: "Invoice",
+            icon: <FiEye size={14} />,
+            onClick: () => navigate(`/orders/invoice/${row.invoice_id}`),
+          },
+        ];
+
+        if (!isFbSentList) {
+          mobileMenuItems.push(
+            {
+              key: `edit-${orderId}`,
+              label: "Edit",
+              icon: <FiEdit2 size={14} />,
+              onClick: () => navigate(`/orders/edit/${row.invoice_id}`),
+            },
+            {
+              key: `update-${orderId}`,
+              label: "Update",
+              icon: <FiRefreshCw size={14} />,
+              disabled: statusUpdateOptions.length === 0,
+              onClick: () => openStatusUpdateModal(row),
+            },
+          );
+
+          if (isCompleted) {
+            mobileMenuItems.push({
+              key: `send-fb-${orderId}`,
+              label: isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB",
+              icon: <FiSend size={14} />,
+              disabled: isEfbSent || isSendingEfb,
+              onClick: () => handleSendToFb(row),
+            });
+          }
+        }
 
         if (isFbSentList) {
           return (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              <div className="hidden md:flex flex-nowrap items-center gap-2">
+                <Link to={`/orders/invoice/${row.invoice_id}`}>
+                  <AntButton
+                    size="small"
+                    type="primary"
+                    icon={<FiEye size={13} />}
+                  >
+                    Invoice
+                  </AntButton>
+                </Link>
+              </div>
+              <div className="md:hidden">
+                <Dropdown
+                  trigger={["click"]}
+                  placement="bottomRight"
+                  menu={{ items: mobileMenuItems }}
+                >
+                  <AntButton
+                    size="small"
+                    icon={<FiMoreVertical size={14} />}
+                    className="!h-7 !w-7 !min-w-[28px] !px-0 !flex !items-center !justify-center"
+                    aria-label="Order actions"
+                  />
+                </Dropdown>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <div className="hidden md:flex flex-nowrap items-center gap-2">
               <Link to={`/orders/invoice/${row.invoice_id}`}>
                 <AntButton
                   size="small"
@@ -1144,50 +1232,54 @@ const OrderList = () => {
                   Invoice
                 </AntButton>
               </Link>
+              <Link to={`/orders/edit/${row.invoice_id}`}>
+                <AntButton
+                  size="small"
+                  icon={<FiEdit2 size={13} />}
+                  className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+                >
+                  Edit
+                </AntButton>
+              </Link>
+              <AntButton
+                size="small"
+                icon={<FiRefreshCw size={13} />}
+                onClick={() => openStatusUpdateModal(row)}
+                disabled={statusUpdateOptions.length === 0}
+              >
+                Update
+              </AntButton>
+              {isCompleted ? (
+                <AntButton
+                  size="small"
+                  type={isEfbSent ? "default" : "primary"}
+                  icon={<FiSend size={13} />}
+                  disabled={isEfbSent || isSendingEfb}
+                  className={
+                    isEfbSent
+                      ? "!border-emerald-500 !text-emerald-600"
+                      : "!bg-admin-accent hover:!bg-admin-accent/90"
+                  }
+                  onClick={() => handleSendToFb(row)}
+                >
+                  {isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB"}
+                </AntButton>
+              ) : null}
             </div>
-          );
-        }
-
-        return (
-          <div className="flex flex-wrap items-center gap-2">
-            <Link to={`/orders/invoice/${row.invoice_id}`}>
-              <AntButton size="small" type="primary" icon={<FiEye size={13} />}>
-                Invoice
-              </AntButton>
-            </Link>
-            <Link to={`/orders/edit/${row.invoice_id}`}>
-              <AntButton
-                size="small"
-                icon={<FiEdit2 size={13} />}
-                className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+            <div className="md:hidden">
+              <Dropdown
+                trigger={["click"]}
+                placement="bottomRight"
+                menu={{ items: mobileMenuItems }}
               >
-                Edit
-              </AntButton>
-            </Link>
-            <AntButton
-              size="small"
-              icon={<FiRefreshCw size={13} />}
-              onClick={() => openStatusUpdateModal(row)}
-              disabled={statusUpdateOptions.length === 0}
-            >
-              Update
-            </AntButton>
-            {isCompleted ? (
-              <AntButton
-                size="small"
-                type={isEfbSent ? "default" : "primary"}
-                icon={<FiSend size={13} />}
-                disabled={isEfbSent || isSendingEfb}
-                className={
-                  isEfbSent
-                    ? "!border-emerald-500 !text-emerald-600"
-                    : "!bg-admin-accent hover:!bg-admin-accent/90"
-                }
-                onClick={() => handleSendToFb(row)}
-              >
-                {isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB"}
-              </AntButton>
-            ) : null}
+                <AntButton
+                  size="small"
+                  icon={<FiMoreVertical size={14} />}
+                  className="!h-7 !w-7 !min-w-[28px] !px-0 !flex !items-center !justify-center"
+                  aria-label="Order actions"
+                />
+              </Dropdown>
+            </div>
           </div>
         );
       },
@@ -1202,6 +1294,9 @@ const OrderList = () => {
         key: column.accessor,
         width: column.width,
         fixed: column.fixed,
+        className: column.className,
+        onCell: column.onCell,
+        onHeaderCell: column.onHeaderCell,
         render: (_, row, index) =>
           column.render ? column.render(row, index) : row?.[column.accessor],
       })),
