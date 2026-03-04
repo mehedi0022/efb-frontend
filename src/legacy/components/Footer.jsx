@@ -19,11 +19,26 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { resolveMediaUrl } from "../utils/media";
 
+const FALLBACK_CONTACT_PHONE =
+  process.env.NEXT_PUBLIC_CONTACT_PHONE || "01700-000000";
+const FALLBACK_WHATSAPP_PHONE =
+  process.env.NEXT_PUBLIC_NOGOD_PHONE || FALLBACK_CONTACT_PHONE;
+
 const normalizeExternalUrl = (value) => {
   const raw = String(value || "").trim();
   if (!raw || raw === "#") return "#";
   if (/^https?:\/\//i.test(raw)) return raw;
   return `https://${raw.replace(/^\/+/, "")}`;
+};
+
+const toDigits = (value) => String(value || "").replace(/\D/g, "");
+
+const toBdIntlPhone = (value) => {
+  const digits = toDigits(value);
+  if (!digits) return "";
+  if (digits.startsWith("880")) return digits;
+  if (digits.startsWith("0")) return `880${digits.slice(1)}`;
+  return digits;
 };
 
 const toSocialKey = (value) =>
@@ -109,22 +124,44 @@ const Footer = () => {
   const fbEmbedUrl = useMemo(() => {
     if (!facebookLink) return "";
     const href = encodeURIComponent(facebookLink);
-    return `https://www.facebook.com/plugins/page.php?href=${href}&tabs=timeline&width=100&height=100&small_header=true&adapt_container_width=false&hide_cover=true&show_facepile=false`;
+    return `https://www.facebook.com/plugins/page.php?href=${href}&tabs=timeline&width=300&height=300&small_header=false&adapt_container_width=false&hide_cover=true&show_facepile=true`;
   }, [facebookLink]);
 
   const supportPhone = String(
     contact?.hotline || setting?.hotline || "",
   ).trim();
   const supportEmail = String(contact?.email || "").trim();
-  const phoneDigits =
-    contact?.phone || supportPhone
-      ? String(contact?.phone || supportPhone).replace(/\D/g, "")
-      : "";
-  const whatsappLink =
-    process.env.NEXT_PUBLIC_MESSENGER_URL ||
-    (phoneDigits ? `https://wa.me/${phoneDigits}` : "#");
+  const productDetailHotline = String(
+    setting?.hotline || FALLBACK_CONTACT_PHONE,
+  ).trim();
+  const productDetailWhatsapp = String(
+    setting?.whatsapp || setting?.hotline || FALLBACK_WHATSAPP_PHONE,
+  ).trim();
+  const whatsappNumber = toBdIntlPhone(
+    productDetailWhatsapp || productDetailHotline,
+  );
+  const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber}` : "#";
   const footerPaymentEnabled =
     Number(setting?.footer_payment_enabled ?? 1) === 1;
+  const howToOrderPage = useMemo(() => {
+    const candidates = [
+      ...(Array.isArray(footerUsefulLinks) ? footerUsefulLinks : []),
+      ...(Array.isArray(footerReferenceLinks) ? footerReferenceLinks : []),
+      ...(Array.isArray(pages) ? pages : []),
+      ...(Array.isArray(pagesRight) ? pagesRight : []),
+    ];
+
+    return (
+      candidates.find((page) => {
+        const label = String(page?.name || page?.title || "").toLowerCase();
+        return /how\s*to\s*order|order/.test(label);
+      }) || null
+    );
+  }, [footerUsefulLinks, footerReferenceLinks, pages, pagesRight]);
+  const howToOrderHref = useMemo(() => {
+    const slug = String(howToOrderPage?.slug || "").trim();
+    return slug ? `/page/${slug}` : "";
+  }, [howToOrderPage]);
 
   const renderPageLink = (page) => {
     const label = String(page?.name || page?.title || "").trim();
@@ -255,13 +292,13 @@ const Footer = () => {
 
             <div className="flex items-center justify-center">
               {facebookLink ? (
-                <div className="theme-footer-panel flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl">
+                <div className="theme-footer-panel flex h-[300px] w-[300px] items-center justify-center overflow-hidden rounded-xl">
                   {fbEmbedUrl ? (
                     <iframe
                       title="Facebook Page"
                       src={fbEmbedUrl}
-                      width="100"
-                      height="100"
+                      width="300"
+                      height="300"
                       style={{ border: "none", overflow: "hidden" }}
                       scrolling="no"
                       frameBorder="0"
@@ -303,7 +340,7 @@ const Footer = () => {
           ) : null}
         </div>
 
-        <div className="theme-footer-bar border-t border-black/10 py-4 pb-[50px]">
+        <div className="theme-footer-bar border-t border-black/10 py-4 pb-[100px] md:pb-4">
           <div className="container mx-auto px-4">
             <p className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-700">
               <span>{new Date().getFullYear()}</span> | Powered by
@@ -325,37 +362,77 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="theme-footer-surface fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 md:hidden">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-2 text-xs text-gray-700">
-          <button
-            type="button"
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent("open-mobile-menu"))
-            }
-            className="theme-btn-skip flex flex-col items-center gap-1 bg-transparent text-gray-700 hover:text-gray-900"
-          >
-            <FaBars />
-            <span>Categories</span>
-          </button>
-          <a href={whatsappLink} className="flex flex-col items-center gap-1">
-            <FaCommentDots />
-            <span>Message</span>
-          </a>
-          <Link to="/" className="flex flex-col items-center gap-1">
-            <FaHome />
-            <span>Home</span>
-          </Link>
-          <Link to="/cart" className="flex flex-col items-center gap-1">
-            <FaShoppingCart />
-            <span>Cart ({count})</span>
-          </Link>
-          <Link
-            to={user ? "/account" : "/login"}
-            className="flex flex-col items-center gap-1"
-          >
-            <FaUser />
-            <span>{user ? "Account" : "Login"}</span>
-          </Link>
+      <div className="theme-footer-surface fixed bottom-0 left-0 right-0 z-40 border-t border-gray-300 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] md:hidden">
+        <div className="mx-auto max-w-lg">
+          {/* <div className="relative border-b border-gray-300 py-1 text-center">
+            {howToOrderHref ? (
+              <Link
+                to={howToOrderHref}
+                className="text-sm font-medium leading-none text-[#111827] underline underline-offset-2"
+              >
+                How To Order
+              </Link>
+            ) : (
+              <span className="text-sm font-medium leading-none text-[#111827] underline underline-offset-2">
+                How To Order
+              </span>
+            )}
+            <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              <span className="h-5 w-5 rounded-full bg-[#ef4444]" />
+              <span className="h-3 w-3 rounded-full bg-[#4ade80]" />
+            </div>
+          </div> */}
+
+          <div className="relative h-[68px]">
+            <div className="grid h-full grid-cols-5 items-center px-2 text-[11px] font-medium text-[#111827]">
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("open-mobile-menu"))
+                }
+                className="theme-btn-skip flex flex-col items-center gap-1 bg-transparent leading-none"
+              >
+                <FaBars className="text-[20px]" />
+                <span>Categories</span>
+              </button>
+
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1 leading-none"
+              >
+                <FaCommentDots className="text-[17px]" />
+                <span>Message</span>
+              </a>
+
+              <span aria-hidden="true" />
+
+              <Link
+                to="/cart"
+                className="flex flex-col items-center gap-1 leading-none"
+              >
+                <FaShoppingCart className="text-[17px]" />
+                <span>Cart ({count})</span>
+              </Link>
+
+              <Link
+                to={user ? "/account" : "/login"}
+                className="flex flex-col items-center gap-1 leading-none"
+              >
+                <FaUser className="text-[17px]" />
+                <span>{user ? "Account" : "Login"}</span>
+              </Link>
+            </div>
+
+            <Link
+              to="/"
+              className="absolute left-1/2 top-0 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-[22px] flex-col items-center justify-center gap-[2px] rounded-full border-[3px] border-white bg-[#050505] text-white shadow-[0_10px_22px_rgba(0,0,0,0.28)]"
+            >
+              <FaHome className="text-[20px]" />
+              <span className="text-[13px] leading-none">Home</span>
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

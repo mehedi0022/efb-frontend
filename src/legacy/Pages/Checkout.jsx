@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as Yup from 'yup';
 import {
     useCheckoutMutation,
     useDeleteCartItemMutation,
@@ -12,6 +13,14 @@ import { resolveMediaUrl } from '../utils/media';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMinus, FiPlus, FiTrash2, FiShoppingBag, FiMapPin, FiPhone, FiUser, FiInfo } from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
+import { showErrorMessage } from '../admin/utils/alerts';
+
+const toDigits = (value) => String(value || '').replace(/\D/g, '');
+
+const isValidBdPhone = (value) => {
+    const digits = toDigits(value);
+    return /^01\d{9}$/.test(digits) || /^8801\d{9}$/.test(digits);
+};
 
 const Checkout = () => {
     const [formData, setFormData] = useState({
@@ -21,6 +30,7 @@ const Checkout = () => {
         area: '',
         payment_method: 'Cash On Delivery',
     });
+    const [formErrors, setFormErrors] = useState({});
     const { data: cart, isLoading: cartLoading } = useGetCartQuery();
     const {
         data: shippingResponse,
@@ -55,13 +65,46 @@ const Checkout = () => {
     };
 
 
-    useEffect(() => {
-        if (!formData.area && shippingCharges.length) {
-            setFormData((prev) => ({ ...prev, area: shippingCharges[0].id }));
-        }
-    }, [formData.area, shippingCharges]);
-
     const items = cart?.items || [];
+    const shippingChargeIds = useMemo(
+        () => shippingCharges.map((charge) => String(charge?.id || '')).filter(Boolean),
+        [shippingCharges]
+    );
+    const checkoutSchema = useMemo(
+        () =>
+            Yup.object({
+                name: Yup.string()
+                    .transform((value) => String(value || '').trim())
+                    .required('Full name is required.')
+                    .min(2, 'Full name must be at least 2 characters.')
+                    .max(120, 'Full name is too long.'),
+                phone: Yup.string()
+                    .required('Mobile number is required.')
+                    .test(
+                        'valid-bd-phone',
+                        'Please enter a valid mobile number.',
+                        (value) => isValidBdPhone(value)
+                    ),
+                address: Yup.string()
+                    .transform((value) => String(value || '').trim())
+                    .required('Address is required.')
+                    .min(5, 'Address must be at least 5 characters.')
+                    .max(500, 'Address is too long.'),
+                area: Yup.string()
+                    .transform((value) => String(value || '').trim())
+                    .required('Please select a delivery area.')
+                    .test(
+                        'valid-delivery-area',
+                        'Please select a valid delivery area.',
+                        (value) => shippingChargeIds.includes(String(value || ''))
+                    ),
+                payment_method: Yup.string()
+                    .transform((value) => String(value || '').trim())
+                    .oneOf(['Cash On Delivery'], 'Invalid payment method.')
+                    .required('Payment method is required.'),
+            }),
+        [shippingChargeIds]
+    );
 
     const subtotal = useMemo(() => {
         return items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
@@ -120,7 +163,14 @@ const Checkout = () => {
     };
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormErrors((prev) => {
+            if (!prev[name]) return prev;
+            const next = { ...prev };
+            delete next[name];
+            return next;
+        });
     };
 
     useEffect(() => {
@@ -181,6 +231,41 @@ const Checkout = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!shippingChargeIds.length) {
+            const message = 'No delivery area is available right now.';
+            setFormErrors((prev) => ({ ...prev, area: message }));
+            showErrorMessage(message);
+            return;
+        }
+
+        try {
+            await checkoutSchema.validate(formData, { abortEarly: false });
+            setFormErrors({});
+        } catch (validationError) {
+            const nextErrors = {};
+            if (validationError?.inner?.length) {
+                validationError.inner.forEach((item) => {
+                    if (item?.path && !nextErrors[item.path]) {
+                        nextErrors[item.path] = item.message;
+                    }
+                });
+            } else if (validationError?.path) {
+                nextErrors[validationError.path] = validationError.message;
+            }
+
+            setFormErrors(nextErrors);
+
+            const areaMessage = nextErrors.area;
+            const firstMessage = areaMessage || Object.values(nextErrors)[0];
+            if (firstMessage) {
+                showErrorMessage(firstMessage);
+            } else {
+                showErrorMessage('Please provide valid checkout information.');
+            }
+            return;
+        }
+
         try {
             const response = await checkoutMutation({
                 ...formData,
@@ -193,11 +278,35 @@ const Checkout = () => {
                 lastTrackedKeyRef.current = '';
                 navigate('/order-success');
             } else {
-                alert('Order was placed but order ID was not returned.');
+                showErrorMessage('Order was placed but order ID was not returned.');
                 navigate('/');
             }
         } catch (error) {
-            alert('Failed to confirm order.');
+            const serverErrors =
+                error?.data?.errors && typeof error.data.errors === 'object'
+                    ? error.data.errors
+                    : {};
+            const errorEntries = Object.entries(serverErrors);
+            const nextErrors = {};
+            errorEntries.forEach(([field, messages]) => {
+                const firstMessage = Array.isArray(messages) ? messages[0] : messages;
+                if (typeof firstMessage === 'string' && firstMessage.trim()) {
+                    nextErrors[field] = firstMessage.trim();
+                }
+            });
+
+            if (Object.keys(nextErrors).length > 0) {
+                setFormErrors((prev) => ({ ...prev, ...nextErrors }));
+            }
+
+            const areaMessage =
+                (typeof nextErrors.area === 'string' && nextErrors.area) ||
+                (Array.isArray(serverErrors.area) ? serverErrors.area[0] : null);
+            const fallbackMessage =
+                areaMessage ||
+                error?.data?.message ||
+                'Failed to confirm order.';
+            showErrorMessage(fallbackMessage);
         }
     };
 
@@ -247,9 +356,15 @@ const Checkout = () => {
                                             value={formData.name}
                                             onChange={handleChange}
                                             placeholder="John Doe"
-                                            className="w-full bg-gray-50 border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
-                                            required
+                                            aria-invalid={Boolean(formErrors.name)}
+                                            className={`w-full rounded-xl px-4 py-3 text-sm transition-all outline-none ${formErrors.name
+                                                    ? 'border border-red-300 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                                                    : 'border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500'
+                                                }`}
                                         />
+                                        {formErrors.name ? (
+                                            <p className="text-xs font-medium text-red-600">{formErrors.name}</p>
+                                        ) : null}
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -260,9 +375,15 @@ const Checkout = () => {
                                             value={formData.phone}
                                             onChange={handleChange}
                                             placeholder="01XXXXXXXXX"
-                                            className="w-full bg-gray-50 border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
-                                            required
+                                            aria-invalid={Boolean(formErrors.phone)}
+                                            className={`w-full rounded-xl px-4 py-3 text-sm transition-all outline-none ${formErrors.phone
+                                                    ? 'border border-red-300 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                                                    : 'border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500'
+                                                }`}
                                         />
+                                        {formErrors.phone ? (
+                                            <p className="text-xs font-medium text-red-600">{formErrors.phone}</p>
+                                        ) : null}
                                     </div>
                                 </div>
 
@@ -277,16 +398,25 @@ const Checkout = () => {
                                         value={formData.address}
                                         onChange={handleChange}
                                         placeholder="Enter your detailed address"
-                                        className="w-full bg-gray-50 border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none resize-none"
-                                        required
+                                        aria-invalid={Boolean(formErrors.address)}
+                                        className={`w-full rounded-xl px-4 py-3 text-sm transition-all outline-none resize-none ${formErrors.address
+                                                ? 'border border-red-300 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                                                : 'border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500'
+                                            }`}
                                     />
+                                    {formErrors.address ? (
+                                        <p className="text-xs font-medium text-red-600">{formErrors.address}</p>
+                                    ) : null}
                                 </div>
 
                                 <div className="space-y-3">
                                     <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                        <FiMapPin className="text-brand-500" /> Delivery Area
+                                        <FiMapPin className="text-brand-500" /> Delivery Area <span className="text-red-500">*</span>
                                     </label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div
+                                        className={`grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl ${formErrors.area ? 'border border-red-200 bg-red-50 p-2' : ''
+                                            }`}
+                                    >
                                         {shippingCharges.map((charge) => {
                                             const isActive = String(formData.area) === String(charge.id);
                                             return (
@@ -307,6 +437,7 @@ const Checkout = () => {
                                                             value={charge.id}
                                                             checked={isActive}
                                                             onChange={handleChange}
+                                                            aria-invalid={Boolean(formErrors.area)}
                                                             style={{ color: primaryColor }}
                                                             className="w-4 h-4 bg-gray-100 border-gray-300 focus:ring-0"
                                                         />
@@ -327,6 +458,9 @@ const Checkout = () => {
                                             );
                                         })}
                                     </div>
+                                    {formErrors.area ? (
+                                        <p className="text-xs font-medium text-red-600">{formErrors.area}</p>
+                                    ) : null}
                                 </div>
 
                                 <div className="pt-4 lg:hidden">
