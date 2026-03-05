@@ -1450,7 +1450,7 @@ const OrderList = () => {
                       {bulkSubmitting &&
                       bulkSubmittingAction === "send_steadfast"
                         ? "Sending..."
-                        : `Bulk Send Steadfast (${selectedOrderIds.length})`}
+                        : `Send Steadfast (${selectedOrderIds.length})`}
                     </AntButton>
                     <AntButton
                       type="primary"
@@ -1466,7 +1466,7 @@ const OrderList = () => {
                       pathaoDispatchContext.mode === "bulk" &&
                       pathaoModalBusy
                         ? "Preparing..."
-                        : `Bulk Send Pathao (${selectedOrderIds.length})`}
+                        : `Send Pathao (${selectedOrderIds.length})`}
                     </AntButton>
                     {/* <AntButton
                       disabled={bulkSubmitting || selectedOrderIds.length === 0}
@@ -1486,7 +1486,7 @@ const OrderList = () => {
                       {bulkSubmitting &&
                       bulkSubmittingAction === "print_invoice"
                         ? "Preparing..."
-                        : `Bulk Print Invoice (${selectedOrderIds.length})`}
+                        : `Print Invoice (${selectedOrderIds.length})`}
                     </AntButton>
                     {selectedOrderIds.length > 0 ? (
                       <AntButton onClick={resetBulkSelection}>
