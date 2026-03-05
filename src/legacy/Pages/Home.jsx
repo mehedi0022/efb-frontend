@@ -17,6 +17,7 @@ import { resolveBrowserTabTitle } from "../utils/tabTitle";
 const IMAGE_BASE =
   process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE ||
   "https://freelancerbangladesh.com/";
+const CATEGORY_PRODUCTS_PER_PAGE = 5;
 
 const resolveImage = (src, base = IMAGE_BASE) => {
   if (!src) return "https://placehold.co/600x600?text=Product";
@@ -205,7 +206,7 @@ const Home = () => {
     cat_page: 1,
     cat_limit: 10,
     prod_page: categoryPage,
-    prod_limit: 12,
+    prod_limit: CATEGORY_PRODUCTS_PER_PAGE,
   });
   const categorySections = Array.isArray(categoryResponse?.data)
     ? categoryResponse.data
@@ -473,7 +474,10 @@ const Home = () => {
             ).map((cat, idx) => {
               const catName = cat?.name || "Category";
               const catSlug = cat?.slug || "";
-              const catProducts = cat?.products || [];
+              const catProducts = (cat?.products || []).slice(
+                0,
+                CATEGORY_PRODUCTS_PER_PAGE,
+              );
               return (
                 <div key={catSlug || idx}>
                   <div className="flex items-center justify-between mb-3">
@@ -483,7 +487,7 @@ const Home = () => {
                     {!loadingHomeCategories && (
                       <Link
                         to={`/products?category=${catSlug}`}
-                        className="text-xs font-semibold text-gray-600 hover:text-black"
+                        className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800"
                       >
                         SEE MORE
                       </Link>
@@ -491,7 +495,7 @@ const Home = () => {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {(loadingHomeCategories
-                      ? Array.from({ length: 5 })
+                      ? Array.from({ length: CATEGORY_PRODUCTS_PER_PAGE })
                       : catProducts
                     ).map((item, productIdx) => (
                       <div key={item?.id || item?.slug || productIdx}>
@@ -562,8 +566,10 @@ const Home = () => {
           ).map((category, idx) => {
             const name = resolveExternalCategoryName(category);
             const slug = resolveExternalCategorySlug(category);
-            const products =
-              category?.products?.data || category?.products || [];
+            const products = (category?.products?.data ||
+              category?.products ||
+              []
+            ).slice(0, CATEGORY_PRODUCTS_PER_PAGE);
             return (
               <div key={slug || idx}>
                 <div className="flex items-center justify-between mb-3">
@@ -572,14 +578,14 @@ const Home = () => {
                   </h4>
                   <Link
                     to={`/products?category=${slug}`}
-                    className="text-xs font-semibold text-gray-600"
+                    className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800"
                   >
                     SEE MORE
                   </Link>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {(loadingCategories
-                    ? Array.from({ length: 5 })
+                    ? Array.from({ length: CATEGORY_PRODUCTS_PER_PAGE })
                     : products
                   ).map((item, productIndex) => (
                     <div
