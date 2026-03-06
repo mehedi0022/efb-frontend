@@ -306,7 +306,7 @@ const Dashboard = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <DashboardCard
-                        title="Total Orders"
+                        title="All Orders"
                         metric={stats.total}
                         icon={FiBox}
                         loading={loading}
@@ -314,7 +314,7 @@ const Dashboard = () => {
                         iconBgClass="bg-cyan-500"
                     />
                     <DashboardCard
-                        title="Active Orders"
+                        title="New Orders"
                         metric={stats.active}
                         icon={FiActivity}
                         loading={loading}
@@ -338,7 +338,7 @@ const Dashboard = () => {
                         iconBgClass="bg-violet-500"
                     />
                     <DashboardCard
-                        title="In Courier (FB Sent)"
+                        title="In Courier / FB Sent"
                         metric={stats.inCourier}
                         icon={FiCheckCircle}
                         loading={loading}
