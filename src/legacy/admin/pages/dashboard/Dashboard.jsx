@@ -1,13 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     FiActivity,
     FiBox,
     FiCheckCircle,
     FiTruck,
     FiXCircle,
+    FiPauseCircle 
 } from 'react-icons/fi';
+
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
+
+
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
 import { useAdminFetchQuery } from '../../../store/adminApi';
+
+
+
 
 const toNumber = (value) => {
     const parsed = Number(value);
@@ -291,6 +300,52 @@ const Dashboard = () => {
         }));
     }, [response]);
 
+const { RangePicker } = DatePicker;
+
+const filterRangePresets = useMemo(
+    () => [
+      {
+        label: "Last 7 Days",
+        value: [
+          dayjs().subtract(6, "day").startOf("day"),
+          dayjs().endOf("day"),
+        ],
+      },
+      {
+        label: "Last 30 Days",
+        value: [
+          dayjs().subtract(29, "day").startOf("day"),
+          dayjs().endOf("day"),
+        ],
+      },
+      {
+        label: "Last 90 Days",
+        value: [
+          dayjs().subtract(89, "day").startOf("day"),
+          dayjs().endOf("day"),
+        ],
+      },
+    ],
+    [],
+  );
+
+const [filters, setFilters] = useState({
+    name: "",
+    tracking_code: "",
+    start_date: "",
+    end_date: "",
+  });
+
+const filterRangeValue = useMemo(() => {
+    const start = filters.start_date
+      ? dayjs(filters.start_date, "YYYY-MM-DD")
+      : null;
+    const end = filters.end_date ? dayjs(filters.end_date, "YYYY-MM-DD") : null;
+
+    if (!start && !end) return null;
+    return [start, end];
+  }, [filters.start_date, filters.end_date]);
+
     return (
         <div className="container-fluid space-y-8">
             {error && (
@@ -299,10 +354,30 @@ const Dashboard = () => {
                 </div>
             )}
 
-            <div>
-                <h4 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    Orders Overview
-                </h4>
+                <div>
+                    <div className='mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
+                        <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">Orders Overview</h4>
+                  
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Filter Date Range</label>
+                        <RangePicker
+                        value={filterRangeValue}
+                        format="YYYY-MM-DD"
+                        allowClear
+                        size="large"
+                        presets={filterRangePresets}
+                        style={{ width: "100%" }}
+                        onChange={(_, dateStrings) => {
+                            setFilters((prev) => ({
+                            ...prev,
+                            start_date: dateStrings?.[0] || "",
+                            end_date: dateStrings?.[1] || "",
+                            }));
+                        }}
+                        />
+                    </div>                  
+                </div>
+
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <DashboardCard
@@ -330,7 +405,7 @@ const Dashboard = () => {
                         iconBgClass="bg-blue-500"
                     />
                     <DashboardCard
-                        title="No Response Orders"
+                        title="In Courier"
                         metric={stats.noResponse}
                         icon={FiTruck}
                         loading={loading}
@@ -338,7 +413,7 @@ const Dashboard = () => {
                         iconBgClass="bg-violet-500"
                     />
                     <DashboardCard
-                        title="In Courier / FB Sent"
+                        title="FB Sent"
                         metric={stats.inCourier}
                         icon={FiCheckCircle}
                         loading={loading}
@@ -346,12 +421,12 @@ const Dashboard = () => {
                         iconBgClass="bg-teal-500"
                     />
                     <DashboardCard
-                        title="Cancelled Orders"
+                        title="Hold Orders"
                         metric={stats.cancelled}
-                        icon={FiXCircle}
+                        icon={FiPauseCircle}
                         loading={loading}
                         colorClass="bg-[#fef2f2]"
-                        iconBgClass="bg-red-500"
+                        iconBgClass="bg-yellow-500"
                     />
                 </div>
             </div>
