@@ -8,6 +8,8 @@ import {
     FiPauseCircle 
 } from 'react-icons/fi';
 
+import { useNavigate } from 'react-router-dom';
+
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
 
@@ -28,8 +30,15 @@ const toMetric = (metric) => ({
     amount: toNumber(metric?.amount),
 });
 
-const DashboardCard = ({ title, metric, icon: Icon, colorClass, iconBgClass, loading }) => (
-    <div className={`rounded-xl p-6 ${colorClass} shadow-sm`}>
+const DashboardCard = ({ title, metric, icon: Icon, colorClass, iconBgClass, loading, url }) => {
+    const navigate = useNavigate();
+
+    return (
+    <div className={`rounded-xl p-6 ${colorClass} shadow-sm cursor-pointer hover:shadow-md transition-all duration-400 hover:scale-105`} onClick={() => {
+        if (url) {
+            navigate(url);
+        }
+    }}>
         <div className="flex items-center gap-4">
             <div className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} shadow-inner`}>
                 <Icon className="w-7 h-7 text-white" />
@@ -46,6 +55,7 @@ const DashboardCard = ({ title, metric, icon: Icon, colorClass, iconBgClass, loa
         </div>
     </div>
 );
+}
 
 const HourlyOrdersChart = ({ data = [], loading, windowHours = 24 }) => {
     const maxOrderCount = useMemo(
@@ -385,6 +395,7 @@ const filterRangeValue = useMemo(() => {
                         metric={stats.total}
                         icon={FiBox}
                         loading={loading}
+                        url="/orders/all"
                         colorClass="bg-[#f0f9ff]"
                         iconBgClass="bg-cyan-500"
                     />
@@ -393,6 +404,7 @@ const filterRangeValue = useMemo(() => {
                         metric={stats.active}
                         icon={FiActivity}
                         loading={loading}
+                        url="/orders/new-order"
                         colorClass="bg-[#ecfdf5]"
                         iconBgClass="bg-emerald-500"
                     />
@@ -401,6 +413,7 @@ const filterRangeValue = useMemo(() => {
                         metric={stats.completed}
                         icon={FiCheckCircle}
                         loading={loading}
+                        url = "/orders/complete"
                         colorClass="bg-[#eff6ff]"
                         iconBgClass="bg-blue-500"
                     />
@@ -409,6 +422,7 @@ const filterRangeValue = useMemo(() => {
                         metric={stats.noResponse}
                         icon={FiTruck}
                         loading={loading}
+                        url="/orders/in-courier"
                         colorClass="bg-[#f5f3ff]"
                         iconBgClass="bg-violet-500"
                     />
@@ -417,6 +431,7 @@ const filterRangeValue = useMemo(() => {
                         metric={stats.inCourier}
                         icon={FiCheckCircle}
                         loading={loading}
+                        url = "/orders/fb-sent"
                         colorClass="bg-[#eefcf5]"
                         iconBgClass="bg-teal-500"
                     />
@@ -425,6 +440,7 @@ const filterRangeValue = useMemo(() => {
                         metric={stats.cancelled}
                         icon={FiPauseCircle}
                         loading={loading}
+                        url="/orders/hold"
                         colorClass="bg-[#fef2f2]"
                         iconBgClass="bg-yellow-500"
                     />
