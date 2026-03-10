@@ -1,13 +1,24 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     FiActivity,
     FiBox,
     FiCheckCircle,
     FiTruck,
-    FiXCircle,
+    FiPauseCircle 
 } from 'react-icons/fi';
+
+import { useNavigate } from 'react-router-dom';
+
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
+
+
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
 import { useAdminFetchQuery } from '../../../store/adminApi';
+
+const { RangePicker } = DatePicker;
+
+
 
 const toNumber = (value) => {
     const parsed = Number(value);
@@ -19,8 +30,15 @@ const toMetric = (metric) => ({
     amount: toNumber(metric?.amount),
 });
 
-const DashboardCard = ({ title, metric, icon: Icon, colorClass, iconBgClass, loading }) => (
-    <div className={`rounded-xl p-6 ${colorClass} shadow-sm`}>
+const DashboardCard = ({ title, metric, icon: Icon, colorClass, iconBgClass, loading, url }) => {
+    const navigate = useNavigate();
+
+    return (
+    <div className={`rounded-xl p-6 ${colorClass} shadow-sm cursor-pointer hover:shadow-md transition-all duration-400 hover:scale-105`} onClick={() => {
+        if (url) {
+            navigate(url);
+        }
+    }}>
         <div className="flex items-center gap-4">
             <div className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} shadow-inner`}>
                 <Icon className="w-7 h-7 text-white" />
@@ -37,6 +55,7 @@ const DashboardCard = ({ title, metric, icon: Icon, colorClass, iconBgClass, loa
         </div>
     </div>
 );
+}
 
 const HourlyOrdersChart = ({ data = [], loading, windowHours = 24 }) => {
     const maxOrderCount = useMemo(
@@ -217,17 +236,69 @@ const MonthlyOrdersPieChart = ({ data = [], loading }) => {
 };
 
 const Dashboard = () => {
+    const [filters, setFilters] = useState({
+        start_date: '',
+        end_date: '',
+    });
+
+    const filterRangePresets = useMemo(
+        () => [
+            {
+                label: 'Last 7 Days',
+                value: [
+                    dayjs().subtract(6, 'day').startOf('day'),
+                    dayjs().endOf('day'),
+                ],
+            },
+            {
+                label: 'Last 30 Days',
+                value: [
+                    dayjs().subtract(29, 'day').startOf('day'),
+                    dayjs().endOf('day'),
+                ],
+            },
+            {
+                label: 'Last 90 Days',
+                value: [
+                    dayjs().subtract(89, 'day').startOf('day'),
+                    dayjs().endOf('day'),
+                ],
+            },
+        ],
+        []
+    );
+
+    const filterRangeValue = useMemo(() => {
+        const start = filters.start_date
+            ? dayjs(filters.start_date, 'YYYY-MM-DD')
+            : null;
+        const end = filters.end_date ? dayjs(filters.end_date, 'YYYY-MM-DD') : null;
+
+        if (!start && !end) return null;
+
+        return [start, end];
+    }, [filters.start_date, filters.end_date]);
+
+    const queryArgs = useMemo(
+        () => ({
+            url: '/admin/dashboard',
+            params: {
+                hours: 24,
+                ...(filters.start_date ? { start_date: filters.start_date } : {}),
+                ...(filters.end_date ? { end_date: filters.end_date } : {}),
+            },
+            tags: ['dashboard'],
+        }),
+        [filters.end_date, filters.start_date]
+    );
+
     const {
         data: response,
         isLoading,
         isFetching,
         error,
     } = useAdminFetchQuery(
-        {
-            url: '/admin/dashboard',
-            params: { hours: 24 },
-            tags: ['dashboard'],
-        },
+        queryArgs,
         {
             pollingInterval: 30_000,
             refetchOnFocus: true,
@@ -299,10 +370,30 @@ const Dashboard = () => {
                 </div>
             )}
 
-            <div>
-                <h4 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    Orders Overview
-                </h4>
+                <div>
+                    <div className='mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
+                        <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">Orders Overview</h4>
+                  
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Filter Date Range</label>
+                        <RangePicker
+                        value={filterRangeValue}
+                        format="YYYY-MM-DD"
+                        allowClear
+                        size="large"
+                        presets={filterRangePresets}
+                        style={{ width: "100%" }}
+                        onChange={(_, dateStrings) => {
+                            setFilters((prev) => ({
+                            ...prev,
+                            start_date: dateStrings?.[0] || "",
+                            end_date: dateStrings?.[1] || "",
+                            }));
+                        }}
+                        />
+                    </div>                  
+                </div>
+
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <DashboardCard
@@ -310,6 +401,7 @@ const Dashboard = () => {
                         metric={stats.total}
                         icon={FiBox}
                         loading={loading}
+                        url="/orders/all"
                         colorClass="bg-[#f0f9ff]"
                         iconBgClass="bg-cyan-500"
                     />
@@ -318,6 +410,7 @@ const Dashboard = () => {
                         metric={stats.active}
                         icon={FiActivity}
                         loading={loading}
+                        url="/orders/new-order"
                         colorClass="bg-[#ecfdf5]"
                         iconBgClass="bg-emerald-500"
                     />
@@ -326,32 +419,36 @@ const Dashboard = () => {
                         metric={stats.completed}
                         icon={FiCheckCircle}
                         loading={loading}
+                        url = "/orders/complete"
                         colorClass="bg-[#eff6ff]"
                         iconBgClass="bg-blue-500"
                     />
                     <DashboardCard
-                        title="No Response Orders"
+                        title="In Courier"
                         metric={stats.noResponse}
                         icon={FiTruck}
                         loading={loading}
+                        url="/orders/in-courier"
                         colorClass="bg-[#f5f3ff]"
                         iconBgClass="bg-violet-500"
                     />
                     <DashboardCard
-                        title="In Courier / FB Sent"
+                        title="FB Sent"
                         metric={stats.inCourier}
                         icon={FiCheckCircle}
                         loading={loading}
+                        url = "/orders/fb-sent"
                         colorClass="bg-[#eefcf5]"
                         iconBgClass="bg-teal-500"
                     />
                     <DashboardCard
-                        title="Cancelled Orders"
+                        title="Hold Orders"
                         metric={stats.cancelled}
-                        icon={FiXCircle}
+                        icon={FiPauseCircle}
                         loading={loading}
+                        url="/orders/hold"
                         colorClass="bg-[#fef2f2]"
-                        iconBgClass="bg-red-500"
+                        iconBgClass="bg-yellow-500"
                     />
                 </div>
             </div>
