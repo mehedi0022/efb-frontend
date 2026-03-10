@@ -4,7 +4,6 @@ import {
     FiBox,
     FiCheckCircle,
     FiTruck,
-    FiXCircle,
     FiPauseCircle 
 } from 'react-icons/fi';
 
@@ -17,6 +16,7 @@ import dayjs from "dayjs";
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
 import { useAdminFetchQuery } from '../../../store/adminApi';
 
+const { RangePicker } = DatePicker;
 
 
 
@@ -236,17 +236,69 @@ const MonthlyOrdersPieChart = ({ data = [], loading }) => {
 };
 
 const Dashboard = () => {
+    const [filters, setFilters] = useState({
+        start_date: '',
+        end_date: '',
+    });
+
+    const filterRangePresets = useMemo(
+        () => [
+            {
+                label: 'Last 7 Days',
+                value: [
+                    dayjs().subtract(6, 'day').startOf('day'),
+                    dayjs().endOf('day'),
+                ],
+            },
+            {
+                label: 'Last 30 Days',
+                value: [
+                    dayjs().subtract(29, 'day').startOf('day'),
+                    dayjs().endOf('day'),
+                ],
+            },
+            {
+                label: 'Last 90 Days',
+                value: [
+                    dayjs().subtract(89, 'day').startOf('day'),
+                    dayjs().endOf('day'),
+                ],
+            },
+        ],
+        []
+    );
+
+    const filterRangeValue = useMemo(() => {
+        const start = filters.start_date
+            ? dayjs(filters.start_date, 'YYYY-MM-DD')
+            : null;
+        const end = filters.end_date ? dayjs(filters.end_date, 'YYYY-MM-DD') : null;
+
+        if (!start && !end) return null;
+
+        return [start, end];
+    }, [filters.start_date, filters.end_date]);
+
+    const queryArgs = useMemo(
+        () => ({
+            url: '/admin/dashboard',
+            params: {
+                hours: 24,
+                ...(filters.start_date ? { start_date: filters.start_date } : {}),
+                ...(filters.end_date ? { end_date: filters.end_date } : {}),
+            },
+            tags: ['dashboard'],
+        }),
+        [filters.end_date, filters.start_date]
+    );
+
     const {
         data: response,
         isLoading,
         isFetching,
         error,
     } = useAdminFetchQuery(
-        {
-            url: '/admin/dashboard',
-            params: { hours: 24 },
-            tags: ['dashboard'],
-        },
+        queryArgs,
         {
             pollingInterval: 30_000,
             refetchOnFocus: true,
@@ -309,52 +361,6 @@ const Dashboard = () => {
             amount: toNumber(item?.amount),
         }));
     }, [response]);
-
-const { RangePicker } = DatePicker;
-
-const filterRangePresets = useMemo(
-    () => [
-      {
-        label: "Last 7 Days",
-        value: [
-          dayjs().subtract(6, "day").startOf("day"),
-          dayjs().endOf("day"),
-        ],
-      },
-      {
-        label: "Last 30 Days",
-        value: [
-          dayjs().subtract(29, "day").startOf("day"),
-          dayjs().endOf("day"),
-        ],
-      },
-      {
-        label: "Last 90 Days",
-        value: [
-          dayjs().subtract(89, "day").startOf("day"),
-          dayjs().endOf("day"),
-        ],
-      },
-    ],
-    [],
-  );
-
-const [filters, setFilters] = useState({
-    name: "",
-    tracking_code: "",
-    start_date: "",
-    end_date: "",
-  });
-
-const filterRangeValue = useMemo(() => {
-    const start = filters.start_date
-      ? dayjs(filters.start_date, "YYYY-MM-DD")
-      : null;
-    const end = filters.end_date ? dayjs(filters.end_date, "YYYY-MM-DD") : null;
-
-    if (!start && !end) return null;
-    return [start, end];
-  }, [filters.start_date, filters.end_date]);
 
     return (
         <div className="container-fluid space-y-8">
