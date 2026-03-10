@@ -324,7 +324,7 @@ const BannerList = () => {
                             onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
                             required={!isEditing}
                         />
-                        <p className="mt-1 text-xs text-gray-500">Recommended size: 1400 x 500 px</p>
+                        <p className="mt-1 text-xs text-gray-500">Recommended size: 1200 x 480 px</p>
                     </div>
                     <div className="flex justify-end gap-2">
                         <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
