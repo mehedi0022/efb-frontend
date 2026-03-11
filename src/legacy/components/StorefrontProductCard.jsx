@@ -206,10 +206,10 @@ const StorefrontProductCard = ({ item, product }) => {
       <div className="px-3 pb-2">
         <Link
           to={detailPath}
-          className="line-clamp-2 min-h-[2.8rem] text-[15px] font-semibold leading-5 text-[#111827]"
+          className="min-h-[2.8rem] text-[15px] font-semibold leading-5 text-[#111827]"
           title={name}
         >
-          {name}
+          <span className="line-clamp-2">{name}</span>
         </Link>
 
         {/* <div className="mt-1.5 flex items-center">
