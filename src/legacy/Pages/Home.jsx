@@ -453,7 +453,7 @@ const Home = () => {
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    <p className="mt-2 text-xs font-medium text-gray-700 text-center line-clamp-1">
+                    <p className="mt-2 text-xs font-medium text-gray-700 text-center line-clamp-1 capitalize">
                       {name}
                     </p>
                   </Link>

@@ -482,7 +482,7 @@ const Header = () => {
                   if (!slug) event.preventDefault();
                 }}
               >
-                <span className="line-clamp-1">{name}</span>
+                <span className="line-clamp-1 capitalize">{name}</span>
               </Link>
             );
           })}
