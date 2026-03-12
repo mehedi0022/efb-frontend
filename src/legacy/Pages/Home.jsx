@@ -102,8 +102,7 @@ const Pagination = ({ current, last, onPage }) => {
         type="button"
         onClick={() => onPage(Math.max(1, current - 1))}
         disabled={current <= 1}
-        className={`px-3 py-1 rounded border text-sm ${current <= 1 ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
-      >
+        className={`px-3 py-1 rounded border text-sm ${current <= 1 ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}>
         <FiChevronLeft />
       </button>
       {pages.map((page, index) =>
@@ -116,8 +115,7 @@ const Pagination = ({ current, last, onPage }) => {
             key={page}
             type="button"
             onClick={() => onPage(page)}
-            className={`px-3 py-1 rounded border text-sm ${page === current ? "bg-black text-white border-black" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
-          >
+            className={`px-3 py-1 rounded border text-sm ${page === current ? "bg-black text-white border-black" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}>
             {page}
           </button>
         ),
@@ -126,8 +124,7 @@ const Pagination = ({ current, last, onPage }) => {
         type="button"
         onClick={() => onPage(Math.min(last, current + 1))}
         disabled={current >= last}
-        className={`px-3 py-1 rounded border text-sm ${current >= last ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
-      >
+        className={`px-3 py-1 rounded border text-sm ${current >= last ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}>
         <FiChevronRight />
       </button>
     </div>
@@ -326,8 +323,7 @@ const Home = () => {
                   href={normalizedBannerLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="block h-full w-full"
-                >
+                  className="block h-full w-full">
                   <img
                     src={bannerImage}
                     alt={bannerTitle || `Banner ${bannerIndex + 1}`}
@@ -366,8 +362,7 @@ const Home = () => {
               )
             }
             disabled={banners.length <= 1}
-            className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full"
-          >
+            className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full">
             <FiChevronLeft />
           </button>
           <button
@@ -376,8 +371,7 @@ const Home = () => {
               setBannerIndex((prev) => (prev + 1) % banners.length)
             }
             disabled={banners.length <= 1}
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full"
-          >
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/70 text-white p-2 rounded-full">
             <FiChevronRight />
           </button>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
@@ -403,8 +397,7 @@ const Home = () => {
             onClick={() => scrollFeaturedBy("left")}
             disabled={!canScrollLeft}
             className={`absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-full border border-gray-200 bg-white p-2 shadow-md transition ${canScrollLeft ? "hover:bg-gray-900 hover:text-white" : "opacity-40 cursor-not-allowed"}`}
-            aria-label="Scroll featured categories left"
-          >
+            aria-label="Scroll featured categories left">
             <FiChevronLeft />
           </button>
           <button
@@ -412,21 +405,18 @@ const Home = () => {
             onClick={() => scrollFeaturedBy("right")}
             disabled={!canScrollRight}
             className={`absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-full border border-gray-200 bg-white p-2 shadow-md transition ${canScrollRight ? "hover:bg-gray-900 hover:text-white" : "opacity-40 cursor-not-allowed"}`}
-            aria-label="Scroll featured categories right"
-          >
+            aria-label="Scroll featured categories right">
             <FiChevronRight />
           </button>
 
           <div
             ref={featuredTrackRef}
-            className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-3 px-10"
-          >
+            className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-3 px-10">
             {loadingFeatured ? (
               Array.from({ length: 8 }).map((_, idx) => (
                 <div
                   key={`featured-skeleton-${idx}`}
-                  className="min-w-[140px] bg-white rounded-lg shadow-sm p-3 flex flex-col items-center"
-                >
+                  className="min-w-[140px] bg-white rounded-lg shadow-sm p-3 flex flex-col items-center">
                   <div className="h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
                   <div className="mt-3 h-3 w-16 rounded bg-gray-200 animate-pulse" />
                 </div>
@@ -444,8 +434,7 @@ const Home = () => {
                   <Link
                     key={slug || idx}
                     to={`/category/external/${slug}`}
-                    className="min-w-[140px] bg-white rounded-lg shadow-sm p-3 flex flex-col items-center hover:shadow-md transition"
-                  >
+                    className="min-w-[140px] bg-white rounded-lg shadow-sm p-3 flex flex-col items-center hover:shadow-md transition">
                     <div className="h-12 w-12 rounded-full bg-gray-100 overflow-hidden">
                       <img
                         src={image}
@@ -487,8 +476,7 @@ const Home = () => {
                     {!loadingHomeCategories && (
                       <Link
                         to={`/products?category=${catSlug}`}
-                        className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800"
-                      >
+                        className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800">
                         SEE MORE
                       </Link>
                     )}
@@ -566,7 +554,8 @@ const Home = () => {
           ).map((category, idx) => {
             const name = resolveExternalCategoryName(category);
             const slug = resolveExternalCategorySlug(category);
-            const products = (category?.products?.data ||
+            const products = (
+              category?.products?.data ||
               category?.products ||
               []
             ).slice(0, CATEGORY_PRODUCTS_PER_PAGE);
@@ -577,9 +566,8 @@ const Home = () => {
                     {name}
                   </h4>
                   <Link
-                    to={`/products?category=${slug}`}
-                    className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800"
-                  >
+                    to={`/category/external/${slug}`}
+                    className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800">
                     SEE MORE
                   </Link>
                 </div>
@@ -589,8 +577,9 @@ const Home = () => {
                     : products
                   ).map((item, productIndex) => (
                     <div
-                      key={item?.id || item?.product_info?.slug || productIndex}
-                    >
+                      key={
+                        item?.id || item?.product_info?.slug || productIndex
+                      }>
                       {loadingCategories ? (
                         <SkeletonCard />
                       ) : (
@@ -612,8 +601,7 @@ const Home = () => {
                 handleCategoryPage(Math.max(1, categoryMeta.current_page - 1))
               }
               disabled={categoryMeta.current_page <= 1}
-              className={`px-3 py-1 rounded border text-sm ${categoryMeta.current_page <= 1 ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
-            >
+              className={`px-3 py-1 rounded border text-sm ${categoryMeta.current_page <= 1 ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}>
               <FiChevronLeft />
             </button>
             <span className="text-sm text-gray-600">
@@ -630,8 +618,7 @@ const Home = () => {
                 )
               }
               disabled={categoryMeta.current_page >= categoryMeta.last_page}
-              className={`px-3 py-1 rounded border text-sm ${categoryMeta.current_page >= categoryMeta.last_page ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
-            >
+              className={`px-3 py-1 rounded border text-sm ${categoryMeta.current_page >= categoryMeta.last_page ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}>
               <FiChevronRight />
             </button>
           </div>
