@@ -190,8 +190,8 @@ const Footer = () => {
                   <span className="text-lg font-semibold">{siteName}</span>
                 )}
               </Link>
-              <div className="theme-footer-panel my-0 max-w-[360px] rounded-2xl px-0 py-0 text-gray-700">
-                <p className="text-[16px] font-medium leading-[1.45] text-gray-700">
+              <div className="theme-footer-panel my-0 max-w-[360px] rounded-2xl p-4 text-gray-700">
+                <p className="text-[18px] font-medium leading-[1.45] text-gray-700">
                   {contact?.address || "Address not set"}
                 </p>
 
@@ -200,8 +200,7 @@ const Footer = () => {
                   {supportEmail ? (
                     <a
                       href={`mailto:${supportEmail}`}
-                      className="font-medium text-gray-700 hover:text-gray-900"
-                    >
+                      className="font-medium text-gray-700 hover:text-gray-900">
                       {supportEmail}
                     </a>
                   ) : (
@@ -214,8 +213,7 @@ const Footer = () => {
                   {supportPhone ? (
                     <a
                       href={`tel:${supportPhone}`}
-                      className="font-medium text-gray-700 hover:text-gray-900"
-                    >
+                      className="font-medium text-gray-700 hover:text-gray-900">
                       {supportPhone}
                     </a>
                   ) : (
@@ -241,8 +239,7 @@ const Footer = () => {
                       href={href}
                       title={title}
                       target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                      rel="noopener noreferrer">
                       <Icon size={14} />
                     </a>
                   );
@@ -259,8 +256,7 @@ const Footer = () => {
                       key={
                         page?.id ||
                         `${page?.slug || page?.name || "useful"}-${index}`
-                      }
-                    >
+                      }>
                       {renderPageLink(page)}
                     </li>
                   ))
@@ -279,8 +275,7 @@ const Footer = () => {
                       key={
                         page?.id ||
                         `${page?.slug || page?.name || "reference"}-${index}`
-                      }
-                    >
+                      }>
                       {renderPageLink(page)}
                     </li>
                   ))
@@ -310,8 +305,7 @@ const Footer = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex h-full w-full items-center justify-center text-[#1877f2]"
-                      title="Facebook"
-                    >
+                      title="Facebook">
                       <FaFacebookF size={28} />
                     </a>
                   )}
@@ -347,8 +341,7 @@ const Footer = () => {
               <a
                 href="https://freelancerbangladesh.com/"
                 target="_blank"
-                rel="noopener noreferrer"
-              >
+                rel="noopener noreferrer">
                 <img
                   src="/frontEnd/images/fcl.png"
                   alt="Freelancer Bangladesh"
@@ -390,8 +383,7 @@ const Footer = () => {
                 onClick={() =>
                   window.dispatchEvent(new CustomEvent("open-mobile-menu"))
                 }
-                className="theme-btn-skip flex flex-col items-center gap-1 bg-transparent leading-none"
-              >
+                className="theme-btn-skip flex flex-col items-center gap-1 bg-transparent leading-none">
                 <FaBars className="text-[20px]" />
                 <span>Categories</span>
               </button>
@@ -400,8 +392,7 @@ const Footer = () => {
                 href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col items-center gap-1 leading-none"
-              >
+                className="flex flex-col items-center gap-1 leading-none">
                 <FaCommentDots className="text-[17px]" />
                 <span>Message</span>
               </a>
@@ -410,16 +401,14 @@ const Footer = () => {
 
               <Link
                 to="/cart"
-                className="flex flex-col items-center gap-1 leading-none"
-              >
+                className="flex flex-col items-center gap-1 leading-none">
                 <FaShoppingCart className="text-[17px]" />
                 <span>Cart ({count})</span>
               </Link>
 
               <Link
                 to={user ? "/account" : "/login"}
-                className="flex flex-col items-center gap-1 leading-none"
-              >
+                className="flex flex-col items-center gap-1 leading-none">
                 <FaUser className="text-[17px]" />
                 <span>{user ? "Account" : "Login"}</span>
               </Link>
@@ -427,8 +416,7 @@ const Footer = () => {
 
             <Link
               to="/"
-              className="absolute left-1/2 top-0 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-[22px] flex-col items-center justify-center gap-[2px] rounded-full border-[3px] border-white bg-[#050505] text-white shadow-[0_10px_22px_rgba(0,0,0,0.28)]"
-            >
+              className="absolute left-1/2 top-0 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-[22px] flex-col items-center justify-center gap-[2px] rounded-full border-[3px] border-white bg-[#050505] text-white shadow-[0_10px_22px_rgba(0,0,0,0.28)]">
               <FaHome className="text-[20px]" />
               <span className="text-[13px] leading-none">Home</span>
             </Link>
