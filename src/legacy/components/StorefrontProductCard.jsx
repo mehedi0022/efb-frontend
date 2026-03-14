@@ -14,6 +14,7 @@ import {
   toExternalProductPath,
 } from "../utils/externalProduct";
 import { showSmartSuccessToast } from "../admin/utils/alerts";
+import { trackFacebookAddToCart } from "../utils/facebookPixel";
 
 const toNumber = (value, fallback = 0) => {
   const parsed = Number(value);
@@ -159,6 +160,16 @@ const StorefrontProductCard = ({ item, product }) => {
       }
 
       await refreshCart();
+
+      trackFacebookAddToCart({
+        productId: isExternal
+          ? source?.external_product_id || source?.id || slug
+          : source?.id || info?.id || slug,
+        sku: sku || null,
+        name,
+        value: price,
+        quantity: 1,
+      });
 
       if (redirectToCheckout) {
         window.location.href = "/checkout";
