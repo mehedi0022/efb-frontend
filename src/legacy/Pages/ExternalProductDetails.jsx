@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useSettings } from '../context/SettingsContext';
@@ -11,6 +11,10 @@ import {
     toExternalProductPath,
 } from '../utils/externalProduct';
 import { resolveBrowserTabTitle } from '../utils/tabTitle';
+import {
+    trackFacebookAddToCart,
+    trackFacebookViewContent,
+} from '../utils/facebookPixel';
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE || 'https://freelancerbangladesh.com/';
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
@@ -53,6 +57,7 @@ const ExternalProductDetails = () => {
     const [qty, setQty] = useState(1);
     const [selectedSize, setSelectedSize] = useState(null);
     const [selectedColor, setSelectedColor] = useState(null);
+    const trackedViewProductKeyRef = useRef('');
 
     const [addExternalToCart] = useAddExternalToCartMutation();
 
@@ -147,6 +152,24 @@ const ExternalProductDetails = () => {
         messenger: setting?.messenger || FALLBACK_MESSENGER_URL,
     }), [setting?.hotline, setting?.whatsapp, setting?.messenger]);
 
+    useEffect(() => {
+        const productId = data?.id || data?.productId || data?.product_id || sku || slug;
+        if (!productId) return;
+
+        const trackKey = String(productId);
+        if (trackedViewProductKeyRef.current === trackKey) return;
+
+        trackFacebookViewContent({
+            productId,
+            sku: sku || null,
+            name: productName,
+            value: Number(price) || 0,
+            quantity: 1,
+        });
+
+        trackedViewProductKeyRef.current = trackKey;
+    }, [data?.id, data?.productId, data?.product_id, sku, slug, productName, price]);
+
     const buildExternalPayload = () => {
         const sizeObj = sizes.find((item) => String(item.id) === String(selectedSize));
         const colorObj = colors.find((item) => String(item.id) === String(selectedColor));
@@ -174,8 +197,17 @@ const ExternalProductDetails = () => {
 
     const handleAddToCart = async (redirectToCheckout = false) => {
         try {
-            await addExternalToCart(buildExternalPayload()).unwrap();
+            const payload = buildExternalPayload();
+            await addExternalToCart(payload).unwrap();
             await refreshCart();
+
+            trackFacebookAddToCart({
+                productId: payload?.external_product_id || data?.id || sku || slug,
+                sku: payload?.options?.sku || sku || null,
+                name: productName,
+                value: (Number(price) || 0) * (Number(qty) || 1),
+                quantity: Number(qty) || 1,
+            });
 
             if (redirectToCheckout) {
                 window.location.href = '/checkout';

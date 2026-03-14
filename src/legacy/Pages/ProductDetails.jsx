@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAddToCartMutation, useGetProductBySlugQuery } from '../store/publicApi';
 import { useCart } from '../context/CartContext';
@@ -7,6 +7,10 @@ import ProductDetailView from '../components/ProductDetailView';
 import { resolveMediaUrl } from '../utils/media';
 import { showSmartSuccessToast } from '../admin/utils/alerts';
 import { resolveBrowserTabTitle } from '../utils/tabTitle';
+import {
+    trackFacebookAddToCart,
+    trackFacebookViewContent,
+} from '../utils/facebookPixel';
 
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
 const FALLBACK_WHATSAPP_PHONE = process.env.NEXT_PUBLIC_NOGOD_PHONE || FALLBACK_CONTACT_PHONE;
@@ -39,6 +43,7 @@ const ProductDetails = () => {
     const [qty, setQty] = useState(1);
     const [selectedSize, setSelectedSize] = useState(null);
     const [selectedColor, setSelectedColor] = useState(null);
+    const trackedViewProductKeyRef = useRef('');
 
     const [addToCartMutation] = useAddToCartMutation();
 
@@ -204,6 +209,23 @@ const ProductDetails = () => {
         messenger: setting?.messenger || FALLBACK_MESSENGER_URL,
     }), [setting?.hotline, setting?.whatsapp, setting?.messenger]);
 
+    useEffect(() => {
+        if (!product?.id) return;
+
+        const trackKey = String(product.id);
+        if (trackedViewProductKeyRef.current === trackKey) return;
+
+        trackFacebookViewContent({
+            productId: product.id,
+            sku: product?.sku || product?.product_code || null,
+            name: product?.name || null,
+            value: Number(price) || Number(product?.new_price ?? product?.price ?? 0),
+            quantity: 1,
+        });
+
+        trackedViewProductKeyRef.current = trackKey;
+    }, [product?.id, product?.sku, product?.product_code, product?.name, product?.new_price, product?.price, price]);
+
     const handleAddToCart = async (redirectToCheckout = false) => {
         if (!product?.id) return;
 
@@ -228,6 +250,14 @@ const ProductDetails = () => {
             }).unwrap();
 
             await refreshCart();
+
+            trackFacebookAddToCart({
+                productId: product.id,
+                sku: product?.sku || product?.product_code || null,
+                name: product?.name || null,
+                value: (Number(price) || 0) * (Number(qty) || 1),
+                quantity: Number(qty) || 1,
+            });
 
             if (redirectToCheckout) {
                 window.location.href = '/checkout';

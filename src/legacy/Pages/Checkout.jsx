@@ -14,6 +14,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiMinus, FiPlus, FiTrash2, FiShoppingBag, FiMapPin, FiPhone, FiUser, FiInfo } from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
 import { showErrorMessage } from '../admin/utils/alerts';
+import {
+    trackFacebookInitiateCheckout,
+    trackFacebookPurchase,
+} from '../utils/facebookPixel';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
 
@@ -43,6 +47,7 @@ const Checkout = () => {
     const [trackIncompleteOrder] = useTrackIncompleteOrderMutation();
     const navigate = useNavigate();
     const lastTrackedKeyRef = useRef('');
+    const initiateCheckoutTrackedRef = useRef(false);
 
     const shippingCharges = shippingResponse?.data || [];
 
@@ -116,6 +121,17 @@ const Checkout = () => {
     }, [shippingCharges, formData.area]);
 
     const total = subtotal + shippingCost;
+    const totalQuantity = useMemo(
+        () => items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+        [items]
+    );
+    const cartItemContentIds = useMemo(
+        () => items
+            .map((item) => item?.product_id || item?.external_product_id || item?.id || item?.options?.sku)
+            .map((id) => String(id || '').trim())
+            .filter(Boolean),
+        [items]
+    );
     const phoneDigits = String(formData.phone || '').replace(/\D/g, '');
     const canTrackIncomplete = phoneDigits.length >= 6 && items.length > 0;
     const cartSnapshotKey = useMemo(
@@ -172,6 +188,18 @@ const Checkout = () => {
             return next;
         });
     };
+
+    useEffect(() => {
+        if (initiateCheckoutTrackedRef.current) return;
+        if (!items.length) return;
+
+        trackFacebookInitiateCheckout({
+            itemIds: cartItemContentIds,
+            value: total,
+            quantity: totalQuantity,
+        });
+        initiateCheckoutTrackedRef.current = true;
+    }, [items.length, cartItemContentIds, total, totalQuantity]);
 
     useEffect(() => {
         if (!canTrackIncomplete || !trackingKey) return undefined;
@@ -275,6 +303,12 @@ const Checkout = () => {
             // Assuming response contains order_id or id. Adjust based on API response structure.
             // The CheckoutController returns: { success: true, message: '...', order_id: ... }
             if (response?.order_id) {
+                trackFacebookPurchase({
+                    orderId: response.order_id,
+                    itemIds: cartItemContentIds,
+                    value: total,
+                    quantity: totalQuantity,
+                });
                 lastTrackedKeyRef.current = '';
                 navigate('/order-success');
             } else {
