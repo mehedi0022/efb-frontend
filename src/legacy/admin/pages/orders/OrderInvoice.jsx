@@ -1,84 +1,102 @@
-import React, { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useAdminFetchQuery } from '../../../store/adminApi';
-import { resolveMediaUrl } from '../../../utils/media';
+import React, { useMemo } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useAdminFetchQuery } from "../../../store/adminApi";
+import { resolveMediaUrl } from "../../../utils/media";
 
 const toNumber = (value) => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const formatInvoiceDate = (value) => {
-    if (!value) return '-';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '-';
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
 
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
 
-    return `${day}-${month}-${year}`;
+  return `${day}-${month}-${year}`;
 };
 
 const formatTaka = (value) => {
-    const amount = toNumber(value);
-    return `৳${amount.toLocaleString('en-BD', { maximumFractionDigits: 2 })}`;
+  const amount = toNumber(value);
+  return `৳${amount.toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
 };
 
 const OrderInvoice = () => {
-    const { invoiceId } = useParams();
+  const { invoiceId } = useParams();
 
-    const { data: orderResponse, isLoading, isFetching } = useAdminFetchQuery(
-        { url: `/admin/orders/invoice/${invoiceId}`, tags: ['orders'] },
-        { skip: !invoiceId }
-    );
+  const {
+    data: orderResponse,
+    isLoading,
+    isFetching,
+  } = useAdminFetchQuery(
+    { url: `/admin/orders/invoice/${invoiceId}`, tags: ["orders"] },
+    { skip: !invoiceId },
+  );
 
-    const { data: settingResponse } = useAdminFetchQuery(
-        { url: '/v1/settings', tags: ['invoice-setting'] }
-    );
+  const { data: settingResponse } = useAdminFetchQuery({
+    url: "/v1/settings",
+    tags: ["invoice-setting"],
+  });
 
-    const { data: siteDataResponse } = useAdminFetchQuery(
-        { url: '/v1/site-data', tags: ['invoice-site-data'] }
-    );
+  const { data: siteDataResponse } = useAdminFetchQuery({
+    url: "/v1/site-data",
+    tags: ["invoice-site-data"],
+  });
 
-    const order = orderResponse?.data || null;
-    const generalSetting = settingResponse?.data || null;
-    const contact = siteDataResponse?.data?.contact || null;
-    const loading = isLoading || isFetching;
+  const order = orderResponse?.data || null;
+  const generalSetting = settingResponse?.data || null;
+  const contact = siteDataResponse?.data?.contact || null;
+  const loading = isLoading || isFetching;
 
-    const items = useMemo(
-        () => (Array.isArray(order?.orderdetails) ? order.orderdetails : []),
-        [order?.orderdetails]
-    );
+  console.log(order);
 
-    const subTotal = useMemo(
-        () => items.reduce((sum, item) => sum + (toNumber(item.sale_price) * toNumber(item.qty)), 0),
-        [items]
-    );
+  const items = useMemo(
+    () => (Array.isArray(order?.orderdetails) ? order.orderdetails : []),
+    [order?.orderdetails],
+  );
 
-    const shippingCharge = toNumber(order?.shipping_charge);
-    const discount = toNumber(order?.discount);
-    const finalTotal = subTotal + shippingCharge - discount;
+  const subTotal = useMemo(
+    () =>
+      items.reduce(
+        (sum, item) => sum + toNumber(item.sale_price) * toNumber(item.qty),
+        0,
+      ),
+    [items],
+  );
 
-    const logoUrl = resolveMediaUrl(generalSetting?.white_logo || generalSetting?.logo, null);
-    const paymentMethod = String(order?.payment?.payment_method || '').toUpperCase();
-    const companyName = generalSetting?.name || process.env.NEXT_PUBLIC_APP_NAME || '-';
-    const hotline = contact?.hotline || generalSetting?.hotline || '-';
-    const companyEmail = contact?.email || '-';
-    const companyAddress = contact?.address || '-';
+  const shippingCharge = toNumber(order?.shipping_charge);
+  const discount = toNumber(order?.discount);
+  const finalTotal = subTotal + shippingCharge - discount;
 
-    if (loading) {
-        return <div className="p-6">Loading...</div>;
-    }
+  const logoUrl = resolveMediaUrl(
+    generalSetting?.white_logo || generalSetting?.logo,
+    null,
+  );
+  const paymentMethod = String(
+    order?.payment?.payment_method || "",
+  ).toUpperCase();
+  const companyName =
+    generalSetting?.name || process.env.NEXT_PUBLIC_APP_NAME || "-";
+  const hotline = contact?.hotline || generalSetting?.hotline || "-";
+  const companyEmail = contact?.email || "-";
+  const companyAddress = contact?.address || "-";
 
-    if (!order) {
-        return <div className="p-6">Order not found</div>;
-    }
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
 
-    return (
-        <div className="invoice-page-root">
-            <style>
-                {`
+  if (!order) {
+    return <div className="p-6">Order not found</div>;
+  }
+
+  return (
+    <div className="invoice-page-root">
+      <style>
+        {`
                     .customer-invoice {
                         margin: 97px 0 50px;
                     }
@@ -319,174 +337,206 @@ const OrderInvoice = () => {
                         }
                     }
                 `}
-            </style>
+      </style>
 
-            <section className="customer-invoice">
-                <div className="container">
-                    <div className="invoice-controls no-print">
-                        <Link to="/orders/all" className="inline-flex items-center font-semibold text-gray-700">
-                            Back To Order
-                        </Link>
-                        <button
-                            type="button"
-                            onClick={() => window.print()}
-                            className="invoice-print-btn"
-                            aria-label="Print invoice"
-                        >
-                            Print
-                        </button>
+      <section className="customer-invoice">
+        <div className="container">
+          <div className="invoice-controls no-print">
+            <Link
+              to="/orders/all"
+              className="inline-flex items-center font-semibold text-gray-700">
+              Back To Order
+            </Link>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="invoice-print-btn"
+              aria-label="Print invoice">
+              Print
+            </button>
+          </div>
+
+          <div className="invoice-main">
+            <table style={{ width: "100%" }}>
+              <tbody>
+                <tr>
+                  <td className="invoice-header-left">
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        width="90"
+                        alt={companyName}
+                        style={{ marginTop: 25 }}
+                      />
+                    ) : null}
+                    <p className="invoice-payment">
+                      <strong>Payment Method:</strong>{" "}
+                      <span>{paymentMethod || "-"}</span>
+                    </p>
+                    <div>
+                      <p className="invoice-copy">
+                        <strong>Invoice From:</strong>
+                      </p>
+                      <p className="invoice-copy">{companyName}</p>
+                      <p className="invoice-copy">{hotline}</p>
+                      <p className="invoice-copy">{companyEmail}</p>
+                      <p className="invoice-copy">{companyAddress}</p>
                     </div>
+                  </td>
+                  <td className="invoice-header-right">
+                    <div className="invoice-bar-primary">
+                      <p>Invoice</p>
+                    </div>
+                    <div className="invoice-bar-secondary">
+                      <p>
+                        Invoice ID : <strong>#{order.invoice_id}</strong>
+                      </p>
+                      <p>
+                        Invoice Date:{" "}
+                        <strong>{formatInvoiceDate(order.created_at)}</strong>
+                      </p>
+                    </div>
+                    <div className="invoice-to">
+                      <p>
+                        <strong>Invoice To:</strong>
+                      </p>
+                      <p>{order.shipping?.name || ""}</p>
+                      <p>{order.shipping?.address || ""}</p>
+                      <p>{order.shipping?.phone || ""}</p>
+                      <p>{order.shipping?.area || ""}</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-                    <div className="invoice-main">
-                        <table style={{ width: '100%' }}>
-                            <tbody>
-                                <tr>
-                                    <td className="invoice-header-left">
-                                        {logoUrl ? (
-                                            <img
-                                                src={logoUrl}
-                                                width="90"
-                                                alt={companyName}
-                                                style={{ marginTop: 25 }}
-                                            />
-                                        ) : null}
-                                        <p className="invoice-payment">
-                                            <strong>Payment Method:</strong>{' '}
-                                            <span>{paymentMethod || '-'}</span>
-                                        </p>
-                                        <div>
-                                            <p className="invoice-copy">
-                                                <strong>Invoice From:</strong>
-                                            </p>
-                                            <p className="invoice-copy">{companyName}</p>
-                                            <p className="invoice-copy">{hotline}</p>
-                                            <p className="invoice-copy">{companyEmail}</p>
-                                            <p className="invoice-copy">{companyAddress}</p>
-                                        </div>
-                                    </td>
-                                    <td className="invoice-header-right">
-                                        <div className="invoice-bar-primary">
-                                            <p>Invoice</p>
-                                        </div>
-                                        <div className="invoice-bar-secondary">
-                                            <p>
-                                                Invoice ID : <strong>#{order.invoice_id}</strong>
-                                            </p>
-                                            <p>
-                                                Invoice Date:{' '}
-                                                <strong>{formatInvoiceDate(order.created_at)}</strong>
-                                            </p>
-                                        </div>
-                                        <div className="invoice-to">
-                                            <p>
-                                                <strong>Invoice To:</strong>
-                                            </p>
-                                            <p>{order.shipping?.name || ''}</p>
-                                            <p>{order.shipping?.phone || ''}</p>
-                                            <p>{order.shipping?.area || ''}</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <table className="invoice-table">
+              <thead>
+                <tr>
+                  <th>SL</th>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, index) => {
+                  const productImageUrl = resolveMediaUrl(item.image, null);
+                  const imageColorUrl = resolveMediaUrl(item.image_color, null);
+                  const lineTotal =
+                    toNumber(item.sale_price) * toNumber(item.qty);
 
-                        <table className="invoice-table">
-                            <thead>
-                                <tr>
-                                    <th>SL</th>
-                                    <th>Product</th>
-                                    <th>Price</th>
-                                    <th>Qty</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.map((item, index) => {
-                                    const productImageUrl = resolveMediaUrl(item.image, null);
-                                    const imageColorUrl = resolveMediaUrl(item.image_color, null);
-                                    const lineTotal = toNumber(item.sale_price) * toNumber(item.qty);
-
-                                    return (
-                                        <tr key={item.id || `${item.product_name}-${index}`}>
-                                            <td>{index + 1}</td>
-                                            <td>
-                                                <div className="invoice-product">
-                                                    {productImageUrl ? (
-                                                        <img
-                                                            src={productImageUrl}
-                                                            alt={item.product_name || 'Invoice image'}
-                                                            className="invoice-product-image"
-                                                        />
-                                                    ) : null}
-                                                    <div>
-                                                        <strong>{item.product_name}</strong>
-                                                        <br />
-                                                        {item.product_size ? <span>Size: {item.product_size}</span> : null}
-                                                        {item.product_color ? (
-                                                            <span>{item.product_size ? ', ' : ''}Color: {item.product_color}</span>
-                                                        ) : null}
-                                                        {imageColorUrl ? (
-                                                            <span>
-                                                                {item.product_size || item.product_color ? ', ' : ''}
-                                                                Color: <img src={imageColorUrl} alt="Color" className="invoice-color-image" />
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>{formatTaka(item.sale_price)}</td>
-                                            <td>{toNumber(item.qty)}</td>
-                                            <td>{formatTaka(lineTotal)}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-
-                        <div>
-                            <table className="invoice-total-table">
-                                <tbody>
-                                    <tr>
-                                        <td><strong>SubTotal</strong></td>
-                                        <td><strong>{formatTaka(subTotal)}</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Shipping(+)</strong></td>
-                                        <td><strong>{formatTaka(shippingCharge)}</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Discount(-)</strong></td>
-                                        <td><strong>{formatTaka(discount)}</strong></td>
-                                    </tr>
-                                    <tr className="invoice-final-total">
-                                        <td><strong>Final Total</strong></td>
-                                        <td><strong>{formatTaka(finalTotal)}</strong></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                            <div className="terms-condition">
-                                <h5>
-                                    <a href="/terms-condition" target="_blank" rel="noreferrer">
-                                        Terms & Conditions
-                                    </a>
-                                </h5>
-                                <h5>
-                                    Customer Agree to the website{' '}
-                                    <span style={{ color: '#DF3130' }}>
-                                        Terms and Conditions, Return Policy
-                                    </span>
-                                </h5>
-                                <p>
-                                    * This is a computer generated invoice, does not require any signature.
-                                </p>
-                            </div>
+                  return (
+                    <tr key={item.id || `${item.product_name}-${index}`}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <div className="invoice-product">
+                          {productImageUrl ? (
+                            <img
+                              src={productImageUrl}
+                              alt={item.product_name || "Invoice image"}
+                              className="invoice-product-image"
+                            />
+                          ) : null}
+                          <div>
+                            <strong>{item.product_name}</strong>
+                            <br />
+                            {item.product_size ? (
+                              <span>Size: {item.product_size}</span>
+                            ) : null}
+                            {item.product_color ? (
+                              <span>
+                                {item.product_size ? ", " : ""}Color:{" "}
+                                {item.product_color}
+                              </span>
+                            ) : null}
+                            {imageColorUrl ? (
+                              <span>
+                                {item.product_size || item.product_color
+                                  ? ", "
+                                  : ""}
+                                Color:{" "}
+                                <img
+                                  src={imageColorUrl}
+                                  alt="Color"
+                                  className="invoice-color-image"
+                                />
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
-                    </div>
-                </div>
-            </section>
+                      </td>
+                      <td>{formatTaka(item.sale_price)}</td>
+                      <td>{toNumber(item.qty)}</td>
+                      <td>{formatTaka(lineTotal)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div>
+              <table className="invoice-total-table">
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong>SubTotal</strong>
+                    </td>
+                    <td>
+                      <strong>{formatTaka(subTotal)}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Shipping(+)</strong>
+                    </td>
+                    <td>
+                      <strong>{formatTaka(shippingCharge)}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <strong>Discount(-)</strong>
+                    </td>
+                    <td>
+                      <strong>{formatTaka(discount)}</strong>
+                    </td>
+                  </tr>
+                  <tr className="invoice-final-total">
+                    <td>
+                      <strong>Final Total</strong>
+                    </td>
+                    <td>
+                      <strong>{formatTaka(finalTotal)}</strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="terms-condition">
+                <h5>
+                  <a href="/terms-condition" target="_blank" rel="noreferrer">
+                    Terms & Conditions
+                  </a>
+                </h5>
+                <h5>
+                  Customer Agree to the website{" "}
+                  <span style={{ color: "#DF3130" }}>
+                    Terms and Conditions, Return Policy
+                  </span>
+                </h5>
+                <p>
+                  * This is a computer generated invoice, does not require any
+                  signature.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </section>
+    </div>
+  );
 };
 
 export default OrderInvoice;
