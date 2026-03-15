@@ -73,7 +73,7 @@ const ProductList = () => {
                 url: '/admin/products/delete',
                 method: 'DELETE',
                 body: { product_ids: ids },
-                invalidates: [tagKey],
+                invalidates: [tagKey, 'list:/admin/categories', 'list:/admin/subcategories'],
             }).unwrap();
             setSelectedIds([]);
         } catch (error) {
