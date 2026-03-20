@@ -6,8 +6,8 @@ import {
 } from '../utils/facebookPixel';
 
 const SIMPLE_PIXEL_ID_PATTERN = /^\d{5,20}$/;
-const SCRIPT_TAG_PATTERN = /<script[\s>]/i;
-const HTML_TAG_PATTERN = /<[a-z][\s\S]*>/i;
+const FBQ_INIT_ID_PATTERN = /fbq\s*\(\s*['"]init['"]\s*,\s*['"]?(\d{5,20})['"]?/gi;
+const FB_TR_ID_PATTERN = /[?&]id=(\d{5,20})(?:[&#"'>\s]|$)/gi;
 const INJECTOR_STATE_KEY = '__legacyPixelInjectorState';
 
 const getInjectorState = () => {
@@ -38,38 +38,33 @@ const clearManagedNodes = (state) => {
     state.managedNodes = [];
 };
 
-const toScriptNode = (sourceScript) => {
-    const script = document.createElement('script');
+const unique = (items = []) => Array.from(new Set(items.filter(Boolean)));
 
-    Array.from(sourceScript.attributes).forEach((attribute) => {
-        script.setAttribute(attribute.name, attribute.value);
-    });
+const extractFacebookPixelIds = (rawCode = '') => {
+    const snippet = String(rawCode || '').trim();
+    if (!snippet) return [];
 
-    if (sourceScript.textContent) {
-        script.textContent = sourceScript.textContent;
+    if (SIMPLE_PIXEL_ID_PATTERN.test(snippet)) {
+        return [snippet];
     }
 
-    return script;
-};
+    const ids = [];
+    const collectMatches = (pattern) => {
+        pattern.lastIndex = 0;
+        let match = pattern.exec(snippet);
+        while (match) {
+            const id = String(match[1] || '').trim();
+            if (SIMPLE_PIXEL_ID_PATTERN.test(id)) {
+                ids.push(id);
+            }
+            match = pattern.exec(snippet);
+        }
+    };
 
-const injectHtmlSnippet = (snippet, appendNode) => {
-    const template = document.createElement('template');
-    template.innerHTML = snippet;
+    collectMatches(FBQ_INIT_ID_PATTERN);
+    collectMatches(FB_TR_ID_PATTERN);
 
-    const scriptNodes = Array.from(template.content.querySelectorAll('script'));
-    scriptNodes.forEach((sourceScript) => {
-        const script = toScriptNode(sourceScript);
-        appendNode(script, document.head);
-        sourceScript.remove();
-    });
-
-    if (template.content.childNodes.length > 0) {
-        const wrapper = document.createElement('div');
-        wrapper.setAttribute('data-pixel-code-extra', '1');
-        wrapper.style.display = 'none';
-        wrapper.appendChild(template.content.cloneNode(true));
-        appendNode(wrapper, document.body);
-    }
+    return unique(ids);
 };
 
 const PixelCodeInjector = () => {
@@ -110,42 +105,35 @@ const PixelCodeInjector = () => {
             injectorState.managedNodes.push(node);
         };
 
-        const simplePixelIds = [];
-        const customSnippets = [];
+        const resolvedPixelIds = unique(
+            rawCodes.flatMap((snippet) => extractFacebookPixelIds(snippet))
+        );
 
-        rawCodes.forEach((snippet) => {
-            if (SIMPLE_PIXEL_ID_PATTERN.test(snippet)) {
-                simplePixelIds.push(snippet);
-                return;
-            }
-
-            customSnippets.push(snippet);
-        });
-
-        const uniqueSimplePixelIds = Array.from(new Set(simplePixelIds));
-        if (uniqueSimplePixelIds.length > 0) {
-            uniqueSimplePixelIds.forEach((pixelId) => {
-                initializeFacebookPixelId(pixelId);
-            });
-            trackFacebookPageView();
-
-            uniqueSimplePixelIds.forEach((pixelId) => {
-                const noscript = document.createElement('noscript');
-                noscript.innerHTML = `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1" />`;
-                appendNode(noscript, document.body);
-            });
+        if (resolvedPixelIds.length === 0) {
+            console.warn(
+                '[PixelCodeInjector] No valid Facebook Pixel ID found. Save a pixel ID or a standard fbq init snippet.'
+            );
+            return undefined;
         }
 
-        customSnippets.forEach((snippet) => {
-            if (SCRIPT_TAG_PATTERN.test(snippet) || HTML_TAG_PATTERN.test(snippet)) {
-                injectHtmlSnippet(snippet, appendNode);
-                return;
-            }
-
-            const script = document.createElement('script');
-            script.textContent = snippet;
-            appendNode(script, document.head);
+        resolvedPixelIds.forEach((pixelId) => {
+            initializeFacebookPixelId(pixelId);
         });
+        trackFacebookPageView();
+
+        resolvedPixelIds.forEach((pixelId) => {
+            const noscript = document.createElement('noscript');
+            noscript.innerHTML = `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1" />`;
+            appendNode(noscript, document.body);
+        });
+
+        if (resolvedPixelIds.length < rawCodes.length) {
+            console.warn(
+                '[PixelCodeInjector] Ignored unsupported custom pixel script to keep storefront interactions stable.'
+            );
+        }
+
+        return undefined;
     }, [pixels]);
 
     return null;

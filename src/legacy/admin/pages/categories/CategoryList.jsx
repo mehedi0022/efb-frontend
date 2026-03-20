@@ -3,6 +3,17 @@ import GenericList from '../../components/GenericList';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { useAdminActionMutation } from '../../../store/adminApi';
 
+const CATEGORY_DELETE_BLOCKED_MESSAGE = 'This category cannot be deleted because it contains subcategories or products. Please remove those items first before deleting the category.';
+
+const toSafeNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const hasCategoryDependencies = (row) => (
+    toSafeNumber(row?.subcategories_count) > 0 || toSafeNumber(row?.products_count) > 0
+);
+
 const ShowHomeToggle = ({ row }) => {
     const [adminAction, { isLoading }] = useAdminActionMutation();
 
@@ -72,6 +83,18 @@ const CategoryList = () => {
             width: '12%',
             render: (row) => <ShowHomeToggle row={row} />,
         },
+        {
+            header: 'Subcategories',
+            accessor: 'subcategories_count',
+            width: '10%',
+            render: (row) => toSafeNumber(row.subcategories_count),
+        },
+        {
+            header: 'Products',
+            accessor: 'products_count',
+            width: '8%',
+            render: (row) => toSafeNumber(row.products_count),
+        },
     ];
 
     const formFields = [
@@ -103,6 +126,11 @@ const CategoryList = () => {
                 formFields={formFields}
                 idField="id"
                 nameField="name"
+                getDeleteBlockReason={(rows = []) => (
+                    rows.some((row) => hasCategoryDependencies(row))
+                        ? CATEGORY_DELETE_BLOCKED_MESSAGE
+                        : ''
+                )}
             />
         </ErrorBoundary>
     );

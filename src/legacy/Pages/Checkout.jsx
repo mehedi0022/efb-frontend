@@ -47,7 +47,7 @@ const Checkout = () => {
     const [trackIncompleteOrder] = useTrackIncompleteOrderMutation();
     const navigate = useNavigate();
     const lastTrackedKeyRef = useRef('');
-    const initiateCheckoutTrackedRef = useRef(false);
+    const initiateCheckoutTrackedRef = useRef('');
 
     const shippingCharges = shippingResponse?.data || [];
 
@@ -160,6 +160,10 @@ const Checkout = () => {
             cart: cartSnapshotKey,
         });
     }, [canTrackIncomplete, trackingPayload, cartSnapshotKey]);
+    const initiateCheckoutTrackKey = useMemo(
+        () => `${cartItemContentIds.join(',')}|${Number(total || 0).toFixed(2)}|${totalQuantity}`,
+        [cartItemContentIds, total, totalQuantity]
+    );
 
     const handleQty = async (itemId, nextQty) => {
         if (nextQty < 1) return;
@@ -188,18 +192,6 @@ const Checkout = () => {
             return next;
         });
     };
-
-    useEffect(() => {
-        if (initiateCheckoutTrackedRef.current) return;
-        if (!items.length) return;
-
-        trackFacebookInitiateCheckout({
-            itemIds: cartItemContentIds,
-            value: total,
-            quantity: totalQuantity,
-        });
-        initiateCheckoutTrackedRef.current = true;
-    }, [items.length, cartItemContentIds, total, totalQuantity]);
 
     useEffect(() => {
         if (!canTrackIncomplete || !trackingKey) return undefined;
@@ -295,6 +287,15 @@ const Checkout = () => {
         }
 
         try {
+            if (items.length > 0 && initiateCheckoutTrackedRef.current !== initiateCheckoutTrackKey) {
+                trackFacebookInitiateCheckout({
+                    itemIds: cartItemContentIds,
+                    value: total,
+                    quantity: totalQuantity,
+                });
+                initiateCheckoutTrackedRef.current = initiateCheckoutTrackKey;
+            }
+
             const response = await checkoutMutation({
                 ...formData,
                 district: 64,

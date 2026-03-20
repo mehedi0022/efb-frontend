@@ -5,6 +5,7 @@ import Button from './common/Button';
 import Modal from './common/Modal';
 import Input from './common/Input';
 import { useAdminActionMutation, useAdminFetchQuery } from '../../store/adminApi';
+import { showConfirmAlert, showErrorMessage } from '../utils/alerts';
 
 const GenericList = ({
     title,
@@ -14,6 +15,8 @@ const GenericList = ({
     idField = 'id',
     nameField = 'name',
     singleRecordMode = false,
+    getDeleteBlockReason,
+    deleteInvalidates,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -28,6 +31,14 @@ const GenericList = ({
     });
 
     const tagKey = `list:${endpoint}`;
+    const resolvedDeleteInvalidates = useMemo(() => {
+        const extraTags = Array.isArray(deleteInvalidates)
+            ? deleteInvalidates.filter((tag) => typeof tag === 'string' && tag.trim())
+            : [];
+
+        return Array.from(new Set([tagKey, ...extraTags]));
+    }, [deleteInvalidates, tagKey]);
+
     const queryArgs = useMemo(() => ({
         url: endpoint,
         params: {
@@ -101,18 +112,40 @@ const GenericList = ({
     };
 
     const handleDelete = async (ids) => {
-        if (!window.confirm('Are you sure you want to delete?')) return;
+        const normalizedIds = Array.isArray(ids) ? ids.filter((id) => id !== null && id !== undefined) : [];
+        if (normalizedIds.length === 0) return;
+
+        if (typeof getDeleteBlockReason === 'function') {
+            const rowsToDelete = data.filter((item) => normalizedIds.includes(item[idField]));
+            const deleteBlockReason = getDeleteBlockReason(rowsToDelete, normalizedIds);
+            if (typeof deleteBlockReason === 'string' && deleteBlockReason.trim()) {
+                showErrorMessage(deleteBlockReason.trim());
+                return;
+            }
+        }
+
+        const confirmed = await showConfirmAlert({
+            title: 'Confirm Delete',
+            content: normalizedIds.length > 1
+                ? `Are you sure you want to delete these ${normalizedIds.length} items?`
+                : 'Are you sure you want to delete this item?',
+            okText: 'Yes, Delete',
+            cancelText: 'Cancel',
+            okType: 'danger',
+        });
+        if (!confirmed) return;
 
         try {
             await adminAction({
                 url: `${endpoint}/delete`,
                 method: 'DELETE',
-                body: { [`${idField}s`]: ids },
-                invalidates: [tagKey],
+                body: { [`${idField}s`]: normalizedIds },
+                invalidates: resolvedDeleteInvalidates,
             }).unwrap();
             setSelectedIds([]);
         } catch (error) {
             console.error('Error deleting:', error);
+            showErrorMessage(error?.data?.message || 'Error deleting records.');
         }
     };
 

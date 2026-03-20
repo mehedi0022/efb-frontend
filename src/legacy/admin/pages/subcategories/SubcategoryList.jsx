@@ -80,6 +80,7 @@ const SubcategoryList = () => {
             formFields={formFields}
             idField="id"
             nameField="name"
+            deleteInvalidates={['list:/admin/categories']}
         />
     );
 };
