@@ -116,22 +116,29 @@ const PixelCodeInjector = () => {
             return undefined;
         }
 
+        // 1. Initialize IDs (Ensures fbevents.js is ready and internal state is updated for Checkout.jsx polling)
         resolvedPixelIds.forEach((pixelId) => {
             initializeFacebookPixelId(pixelId);
         });
-        trackFacebookPageView();
 
-        resolvedPixelIds.forEach((pixelId) => {
-            const noscript = document.createElement('noscript');
-            noscript.innerHTML = `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1" />`;
-            appendNode(noscript, document.body);
+        // 2. Inject Raw Snippets (Ensures FB Event Setup Tool detects the pixel and custom logic runs)
+        rawCodes.forEach((snippet) => {
+            try {
+                const fragment = document.createRange().createContextualFragment(snippet);
+                Array.from(fragment.childNodes).forEach((node) => {
+                    // Inject into head for better detection by automation tools
+                    parent.appendChild(node);
+                    injectorState.managedNodes.push(node);
+                });
+            } catch (error) {
+                console.error('[PixelCodeInjector] Failed to inject snippet', error);
+            }
         });
 
-        if (resolvedPixelIds.length < rawCodes.length) {
-            console.warn(
-                '[PixelCodeInjector] Ignored unsupported custom pixel script to keep storefront interactions stable.'
-            );
-        }
+        // NOTE: We don't call trackFacebookPageView() here because:
+        // 1. The raw snippets usually contain fbq('track', 'PageView')
+        // 2. MainLayout.jsx also tracks PageView on every route change
+        // Manual tracking here would cause triple-firing on initial load.
 
         return undefined;
     }, [pixels]);
