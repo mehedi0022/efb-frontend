@@ -44,7 +44,7 @@ const PixelList = () => {
             type: 'textarea',
             required: true,
             rows: 10,
-            placeholder: 'Paste full JavaScript snippet, script tag, or pixel ID',
+            placeholder: 'Paste Facebook Pixel ID or standard fbq init snippet (unsupported custom scripts are ignored)',
         },
         {
             name: 'status',
