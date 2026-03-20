@@ -52,29 +52,55 @@ const ensureFbqStub = () => {
   const win = getWindowObject();
   if (!win) return null;
 
-  if (typeof win.fbq === 'function') {
-    return win.fbq;
-  }
+  const state = getGlobalState();
 
-  const fbq = function (...args) {
-    if (typeof fbq.callMethod === 'function') {
-      fbq.callMethod.apply(fbq, args);
-      return;
+  // Helper to update our internal state when fbq('init', id) is called
+  const trackInitCall = (args) => {
+    if (args[0] === 'init' && args[1] && state) {
+      const id = String(args[1]).trim();
+      if (id) state.initializedIds[id] = true;
     }
-    fbq.queue.push(args);
   };
 
-  fbq.push = fbq;
-  fbq.loaded = true;
-  fbq.version = '2.0';
-  fbq.queue = [];
+  const existingFbq = win.fbq;
 
-  win.fbq = fbq;
-  if (!win._fbq) {
-    win._fbq = fbq;
+  // If fbq is already a functional wrapper we created, just return it
+  if (typeof existingFbq === 'function' && existingFbq.__isLegacyWrapper) {
+    return existingFbq;
   }
 
-  return fbq;
+  const fbqWrapper = function (...args) {
+    trackInitCall(args);
+
+    if (typeof fbqWrapper.callMethod === 'function') {
+      fbqWrapper.callMethod.apply(fbqWrapper, args);
+      return;
+    }
+    fbqWrapper.queue.push(args);
+  };
+
+  fbqWrapper.__isLegacyWrapper = true;
+  fbqWrapper.push = fbqWrapper;
+  fbqWrapper.loaded = true;
+  fbqWrapper.version = '2.0';
+  fbqWrapper.queue = [];
+
+  // If there was an existing fbq, migrate its queue and properties
+  if (typeof existingFbq === 'function') {
+    fbqWrapper.queue = Array.isArray(existingFbq.queue) ? existingFbq.queue : [];
+    fbqWrapper.loaded = existingFbq.loaded ?? true;
+    fbqWrapper.version = existingFbq.version ?? '2.0';
+    
+    // Process the existing queue characters to update our state for any 'init' calls already made
+    fbqWrapper.queue.forEach(args => trackInitCall(args));
+  }
+
+  win.fbq = fbqWrapper;
+  if (!win._fbq) {
+    win._fbq = fbqWrapper;
+  }
+
+  return fbqWrapper;
 };
 
 const ensureFacebookEventsScript = () => {
