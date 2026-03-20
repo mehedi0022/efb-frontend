@@ -160,9 +160,10 @@ const Checkout = () => {
             cart: cartSnapshotKey,
         });
     }, [canTrackIncomplete, trackingPayload, cartSnapshotKey]);
+    // Use subtotal (without shipping) for InitiateCheckout — shipping may not be selected yet
     const initiateCheckoutTrackKey = useMemo(
-        () => `${cartItemContentIds.join(',')}|${Number(total || 0).toFixed(2)}|${totalQuantity}`,
-        [cartItemContentIds, total, totalQuantity]
+        () => `${cartItemContentIds.join(',')}|${Number(subtotal || 0).toFixed(2)}|${totalQuantity}`,
+        [cartItemContentIds, subtotal, totalQuantity]
     );
 
     const handleQty = async (itemId, nextQty) => {
@@ -249,6 +250,20 @@ const Checkout = () => {
         };
     }, [canTrackIncomplete, trackingKey, trackingPayload]);
 
+    // Fire InitiateCheckout as soon as the cart is loaded with items
+    useEffect(() => {
+        if (!items.length || !initiateCheckoutTrackKey) return;
+        if (initiateCheckoutTrackedRef.current === initiateCheckoutTrackKey) return;
+
+        trackFacebookInitiateCheckout({
+            itemIds: cartItemContentIds,
+            value: subtotal,
+            quantity: totalQuantity,
+            currency: 'BDT',
+        });
+        initiateCheckoutTrackedRef.current = initiateCheckoutTrackKey;
+    }, [initiateCheckoutTrackKey, items.length, cartItemContentIds, subtotal, totalQuantity]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -287,15 +302,6 @@ const Checkout = () => {
         }
 
         try {
-            if (items.length > 0 && initiateCheckoutTrackedRef.current !== initiateCheckoutTrackKey) {
-                trackFacebookInitiateCheckout({
-                    itemIds: cartItemContentIds,
-                    value: total,
-                    quantity: totalQuantity,
-                });
-                initiateCheckoutTrackedRef.current = initiateCheckoutTrackKey;
-            }
-
             const response = await checkoutMutation({
                 ...formData,
                 district: 64,
