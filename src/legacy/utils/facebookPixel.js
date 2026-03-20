@@ -120,6 +120,12 @@ const callFbqTrack = (eventName, payload) => {
   }
 };
 
+export const hasInitializedPixel = () => {
+  const state = getGlobalState();
+  if (!state) return false;
+  return Object.keys(state.initializedIds || {}).length > 0;
+};
+
 export const ensureFacebookPixelReady = () => {
   if (!getWindowObject() || !getDocumentObject()) return false;
 

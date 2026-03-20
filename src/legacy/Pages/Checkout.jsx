@@ -17,6 +17,7 @@ import { showErrorMessage } from '../admin/utils/alerts';
 import {
     trackFacebookInitiateCheckout,
     trackFacebookPurchase,
+    hasInitializedPixel,
 } from '../utils/facebookPixel';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
@@ -250,18 +251,39 @@ const Checkout = () => {
         };
     }, [canTrackIncomplete, trackingKey, trackingPayload]);
 
-    // Fire InitiateCheckout as soon as the cart is loaded with items
+    // Fire InitiateCheckout once pixel is initialized (wait for PixelCodeInjector to run fbq('init'))
     useEffect(() => {
         if (!items.length || !initiateCheckoutTrackKey) return;
         if (initiateCheckoutTrackedRef.current === initiateCheckoutTrackKey) return;
 
-        trackFacebookInitiateCheckout({
-            itemIds: cartItemContentIds,
-            value: subtotal,
-            quantity: totalQuantity,
-            currency: 'BDT',
-        });
-        initiateCheckoutTrackedRef.current = initiateCheckoutTrackKey;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 34; // ~10 seconds (34 × 300ms)
+
+        const tryFireEvent = () => {
+            attempts++;
+            if (!hasInitializedPixel()) {
+                // Pixel not yet initialized by PixelCodeInjector — keep waiting
+                if (attempts < MAX_ATTEMPTS) return;
+                // Timed out — fire anyway using stub queue (best-effort)
+            }
+
+            // Pixel is ready (or timed out) — fire the event
+            if (initiateCheckoutTrackedRef.current !== initiateCheckoutTrackKey) {
+                trackFacebookInitiateCheckout({
+                    itemIds: cartItemContentIds,
+                    value: subtotal,
+                    quantity: totalQuantity,
+                    currency: 'BDT',
+                });
+                initiateCheckoutTrackedRef.current = initiateCheckoutTrackKey;
+            }
+            clearInterval(intervalId);
+        };
+
+        const intervalId = setInterval(tryFireEvent, 300);
+        tryFireEvent(); // also try immediately
+
+        return () => clearInterval(intervalId);
     }, [initiateCheckoutTrackKey, items.length, cartItemContentIds, subtotal, totalQuantity]);
 
     const handleSubmit = async (e) => {
