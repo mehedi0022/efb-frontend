@@ -134,6 +134,12 @@ const formatMoney = (value) => {
   return new Intl.NumberFormat("en-BD").format(Math.round(amount));
 };
 
+const toTrackingMoney = (value, fallback = "0.00") => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return fallback;
+  return amount.toFixed(2);
+};
+
 const resolveThumbsPerView = (width) => {
   if (width < 640) return 4;
   if (width < 1024) return 6;
@@ -231,6 +237,11 @@ const ProductDetailView = ({
 
   const currentPrice = Number(price);
   const oldPrice = Number(previousPrice);
+  const selectedQty = Number(qty);
+  const safeQty = Number.isFinite(selectedQty) && selectedQty > 0 ? selectedQty : 1;
+  const eventValue = toTrackingMoney(
+    Number.isFinite(currentPrice) ? currentPrice * safeQty : 0,
+  );
   const productSku = String(product?.sku || "").trim();
   const discountAmount =
     Number.isFinite(oldPrice) &&
@@ -523,6 +534,19 @@ const ProductDetailView = ({
                   %)
                 </span>
               ) : null}
+            </div>
+
+            <div className="mt-1 inline-flex items-center gap-1.5 rounded border border-dashed border-[#c7d9f2] bg-[#f4f8ff] px-2 py-1 text-[10px] font-semibold text-[#3b5f94]">
+              <span>Meta Value Source</span>
+              <span
+                id="meta-product-event-value"
+                data-meta-value-source="product_price_x_qty"
+                data-meta-currency="BDT"
+                data-meta-value={eventValue}
+                className="rounded bg-white px-1.5 py-0.5 font-extrabold tracking-wide text-[#1f3558]"
+              >
+                {eventValue}
+              </span>
             </div>
 
             <div className="mt-2">

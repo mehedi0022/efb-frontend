@@ -4,6 +4,23 @@ import { initializeFacebookPixelId, trackFacebookPageView } from '../utils/faceb
 
 const INJECTOR_STATE_KEY = '__legacyPixelInjectorState';
 const SIMPLE_PIXEL_ID_PATTERN = /^\d{5,20}$/;
+const FBQ_PAGE_VIEW_PATTERN = /fbq\(\s*['"]track['"]\s*,\s*['"]PageView['"]\s*\)/i;
+
+const extractPixelIdsFromSnippet = (snippet = '') => {
+    const ids = new Set();
+    const pattern = /fbq\(\s*['"]init['"]\s*,\s*['"](\d{5,20})['"]\s*\)/gi;
+    let match = pattern.exec(snippet);
+
+    while (match) {
+        const candidate = String(match[1] || '').trim();
+        if (SIMPLE_PIXEL_ID_PATTERN.test(candidate)) {
+            ids.add(candidate);
+        }
+        match = pattern.exec(snippet);
+    }
+
+    return Array.from(ids);
+};
 
 const getInjectorState = () => {
     if (typeof window === 'undefined') return null;
@@ -65,39 +82,43 @@ const PixelCodeInjector = () => {
         clearManagedNodes(injectorState);
         injectorState.signature = nextSignature;
 
-        // Support plain Pixel IDs (e.g. "123456789012345") in addition to full snippets.
-        // This aligns with the admin form placeholder and avoids requiring users to paste full script tags.
-        let initializedAnyPlainId = false;
-        const snippetsToInject = [];
+        // Parse supported formats only:
+        // 1) plain pixel ID
+        // 2) standard snippet containing fbq('init', 'PIXEL_ID')
+        const parsedPixelIds = new Set();
+        let shouldTrackPageView = false;
+        let hasUnsupportedEntry = false;
+
         rawCodes.forEach((entry) => {
             if (SIMPLE_PIXEL_ID_PATTERN.test(entry)) {
-                const initialized = initializeFacebookPixelId(entry);
-                initializedAnyPlainId = initializedAnyPlainId || initialized;
+                parsedPixelIds.add(entry);
+                shouldTrackPageView = true;
                 return;
             }
-            snippetsToInject.push(entry);
-        });
 
-        // Inject Raw Snippets exactly as they come from the API
-        // No regex or extraction mechanism is used here.
-        snippetsToInject.forEach((snippet) => {
-            try {
-                const fragment = document.createRange().createContextualFragment(snippet);
-                Array.from(fragment.childNodes).forEach((node) => {
-                    // Standard practice: inject scripts into head/body to execute
-                    if (document.head) {
-                        document.head.appendChild(node);
-                    } else {
-                        document.body.appendChild(node);
-                    }
-                    injectorState.managedNodes.push(node);
-                });
-            } catch (error) {
-                console.error('[PixelCodeInjector] Failed to inject exact pixel snippet', error);
+            const idsFromSnippet = extractPixelIdsFromSnippet(entry);
+            if (idsFromSnippet.length === 0) {
+                hasUnsupportedEntry = true;
+                return;
+            }
+
+            idsFromSnippet.forEach((id) => parsedPixelIds.add(id));
+            if (FBQ_PAGE_VIEW_PATTERN.test(entry)) {
+                shouldTrackPageView = true;
             }
         });
 
-        if (initializedAnyPlainId) {
+        let initializedAnyPixel = false;
+        parsedPixelIds.forEach((pixelId) => {
+            const initialized = initializeFacebookPixelId(pixelId);
+            initializedAnyPixel = initializedAnyPixel || initialized;
+        });
+
+        if (hasUnsupportedEntry) {
+            console.warn('[PixelCodeInjector] Ignored unsupported pixel code. Use Pixel ID or standard fbq init snippet only.');
+        }
+
+        if (initializedAnyPixel && shouldTrackPageView) {
             // Send an initial page view after successful init to make Test Events verification easier.
             trackFacebookPageView();
         }
