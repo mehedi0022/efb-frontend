@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useSiteData } from '../context/SiteDataContext';
+import { initializeFacebookPixelId, trackFacebookPageView } from '../utils/facebookPixel';
 
 const INJECTOR_STATE_KEY = '__legacyPixelInjectorState';
+const SIMPLE_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 
 const getInjectorState = () => {
     if (typeof window === 'undefined') return null;
@@ -63,11 +65,22 @@ const PixelCodeInjector = () => {
         clearManagedNodes(injectorState);
         injectorState.signature = nextSignature;
 
-
+        // Support plain Pixel IDs (e.g. "123456789012345") in addition to full snippets.
+        // This aligns with the admin form placeholder and avoids requiring users to paste full script tags.
+        let initializedAnyPlainId = false;
+        const snippetsToInject = [];
+        rawCodes.forEach((entry) => {
+            if (SIMPLE_PIXEL_ID_PATTERN.test(entry)) {
+                const initialized = initializeFacebookPixelId(entry);
+                initializedAnyPlainId = initializedAnyPlainId || initialized;
+                return;
+            }
+            snippetsToInject.push(entry);
+        });
 
         // Inject Raw Snippets exactly as they come from the API
         // No regex or extraction mechanism is used here.
-        rawCodes.forEach((snippet) => {
+        snippetsToInject.forEach((snippet) => {
             try {
                 const fragment = document.createRange().createContextualFragment(snippet);
                 Array.from(fragment.childNodes).forEach((node) => {
@@ -83,6 +96,11 @@ const PixelCodeInjector = () => {
                 console.error('[PixelCodeInjector] Failed to inject exact pixel snippet', error);
             }
         });
+
+        if (initializedAnyPlainId) {
+            // Send an initial page view after successful init to make Test Events verification easier.
+            trackFacebookPageView();
+        }
 
         return undefined;
     }, [pixels]);
