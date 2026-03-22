@@ -141,6 +141,7 @@ const Checkout = () => {
 
     const total = subtotal + shippingCost;
     const trackingSubtotalValue = useMemo(() => toTrackingValue(subtotal), [subtotal]);
+    const trackingShippingValue = useMemo(() => toTrackingValue(shippingCost), [shippingCost]);
     const trackingTotalValue = useMemo(() => toTrackingValue(total), [total]);
     const totalQuantity = useMemo(
         () => items.reduce((sum, item) => sum + parseMoney(item?.quantity, 0), 0),
@@ -538,6 +539,11 @@ const Checkout = () => {
                                                     <span
                                                         style={{ color: isActive ? primaryColor : undefined }}
                                                         className={`text-sm font-medium ${!isActive ? 'text-gray-500' : ''}`}
+                                                        data-track="meta-shipping-option-value"
+                                                        data-meta-value-source="shipping_option_amount"
+                                                        data-meta-currency="BDT"
+                                                        data-meta-value={toTrackingValue(charge.amount)}
+                                                        data-shipping-option-id={String(charge.id)}
                                                     >
                                                         ৳{charge.amount}
                                                     </span>
@@ -558,7 +564,24 @@ const Checkout = () => {
                                         style={{ backgroundColor: primaryColor }}
                                         className={`w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 ${isSubmittingOrder ? 'cursor-wait opacity-80' : 'hover:brightness-95'}`}
                                     >
-                                        {isSubmittingOrder ? 'Confirming...' : `Confirm Order • ৳${total}`}
+                                        {isSubmittingOrder ? (
+                                            'Confirming...'
+                                        ) : (
+                                            <>
+                                                <span>Confirm Order •</span>
+                                                <span
+                                                    id="meta-mobile-confirm-total-value"
+                                                    data-track="meta-mobile-confirm-total-value"
+                                                    data-meta-value-source="checkout_mobile_confirm_total"
+                                                    data-meta-currency="BDT"
+                                                    data-meta-value={trackingTotalValue}
+                                                    className="tabular-nums"
+                                                    title="Checkout mobile confirm total value source"
+                                                >
+                                                    ৳{total}
+                                                </span>
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </form>
@@ -585,6 +608,8 @@ const Checkout = () => {
                                         const productName = item.product_name || item.product?.name || 'Product';
                                         const imageSrc = resolveCheckoutImage(item);
                                         const lineTotal = parseMoney(item?.price, 0) * parseMoney(item?.quantity, 0);
+                                        const lineTrackingValue = toTrackingValue(lineTotal);
+                                        const lineTrackId = String(item?.id || item?.external_product_id || item?.product_id || '');
 
                                         return (
                                             <motion.div
@@ -646,7 +671,16 @@ const Checkout = () => {
                                                             </button>
                                                         </div>
                                                         <p className="text-sm font-bold text-gray-900">
+                                                            <span
+                                                                data-track="meta-line-total-value"
+                                                                data-meta-value-source="line_total"
+                                                                data-meta-currency="BDT"
+                                                                data-meta-value={lineTrackingValue}
+                                                                data-line-track-id={lineTrackId}
+                                                                className="tabular-nums"
+                                                            >
                                                             ৳{lineTotal}
+                                                            </span>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -659,7 +693,17 @@ const Checkout = () => {
                             <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
                                 <div className="flex justify-between text-sm text-gray-500">
                                     <span>Subtotal</span>
-                                    <span className="font-semibold text-gray-900">৳{subtotal}</span>
+                                    <span
+                                        id="meta-subtotal-value"
+                                        data-track="meta-subtotal-value"
+                                        data-meta-value-source="checkout_subtotal_display"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingSubtotalValue}
+                                        className="font-semibold text-gray-900 tabular-nums"
+                                        title="Checkout subtotal value source"
+                                    >
+                                        ৳{subtotal}
+                                    </span>
                                 </div>
                                 <div
                                     data-track="meta-value-container"
@@ -680,11 +724,32 @@ const Checkout = () => {
                                 </div>
                                 <div className="flex justify-between text-sm text-gray-500 pb-1">
                                     <span>Shipping</span>
-                                    <span className="font-semibold text-gray-900">৳{shippingCost}</span>
+                                    <span
+                                        id="meta-shipping-value"
+                                        data-track="meta-shipping-value"
+                                        data-meta-value-source="checkout_shipping_display"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingShippingValue}
+                                        className="font-semibold text-gray-900 tabular-nums"
+                                        title="Checkout shipping value source"
+                                    >
+                                        ৳{shippingCost}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                                     <span className="text-base font-bold text-gray-900">Total Payable</span>
-                                    <span style={{ color: primaryColor }} className="text-xl font-black">৳{total}</span>
+                                    <span
+                                        id="meta-total-payable-value"
+                                        data-track="meta-total-payable-value"
+                                        data-meta-value-source="checkout_total_payable_display"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingTotalValue}
+                                        style={{ color: primaryColor }}
+                                        className="text-xl font-black tabular-nums"
+                                        title="Checkout total payable value source"
+                                    >
+                                        ৳{total}
+                                    </span>
                                 </div>
                                 <div
                                     data-track="meta-value-container"
