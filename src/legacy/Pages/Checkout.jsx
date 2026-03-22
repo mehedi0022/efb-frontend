@@ -661,14 +661,19 @@ const Checkout = () => {
                                     <span>Subtotal</span>
                                     <span className="font-semibold text-gray-900">৳{subtotal}</span>
                                 </div>
-                                <div className="flex justify-between text-[11px] text-gray-400">
+                                <div
+                                    data-track="meta-value-container"
+                                    className="flex justify-between text-xs text-gray-400"
+                                >
                                     <span>Meta Value Source (InitiateCheckout)</span>
                                     <span
                                         id="meta-initiate-checkout-value"
+                                        data-track="meta-initiate-checkout-value"
                                         data-meta-value-source="initiate_checkout_subtotal"
                                         data-meta-currency="BDT"
                                         data-meta-value={trackingSubtotalValue}
                                         className="font-semibold text-gray-500 tabular-nums"
+                                        title="Use this value in Meta Event Setup Tool"
                                     >
                                         {trackingSubtotalValue}
                                     </span>
@@ -681,14 +686,19 @@ const Checkout = () => {
                                     <span className="text-base font-bold text-gray-900">Total Payable</span>
                                     <span style={{ color: primaryColor }} className="text-xl font-black">৳{total}</span>
                                 </div>
-                                <div className="flex justify-between text-[11px] text-gray-400">
+                                <div
+                                    data-track="meta-value-container"
+                                    className="flex justify-between text-xs text-gray-400"
+                                >
                                     <span>Meta Value Source (Purchase)</span>
                                     <span
                                         id="meta-purchase-value"
+                                        data-track="meta-purchase-value"
                                         data-meta-value-source="purchase_total"
                                         data-meta-currency="BDT"
                                         data-meta-value={trackingTotalValue}
                                         className="font-semibold text-gray-500 tabular-nums"
+                                        title="Use this value in Meta Event Setup Tool"
                                     >
                                         {trackingTotalValue}
                                     </span>

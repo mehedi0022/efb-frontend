@@ -536,14 +536,19 @@ const ProductDetailView = ({
               ) : null}
             </div>
 
-            <div className="mt-1 inline-flex items-center gap-1.5 rounded border border-dashed border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
+            <div
+              data-track="meta-value-container"
+              className="mt-1 inline-flex items-center gap-1 rounded border border-dashed border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700"
+            >
               <span>Meta Value Source</span>
               <span
                 id="meta-product-event-value"
+                data-track="meta-product-value"
                 data-meta-value-source="product_price_x_qty"
                 data-meta-currency="BDT"
                 data-meta-value={eventValue}
-                className="meta-value-source rounded bg-white px-2 py-0.5 font-extrabold tracking-wide text-blue-900"
+                className="meta-value-source rounded bg-white px-2 py-1 font-extrabold tracking-wide text-blue-900 tabular-nums"
+                title="Use this value in Meta Event Setup Tool"
               >
                 {eventValue}
               </span>
@@ -717,7 +722,7 @@ const ProductDetailView = ({
                         <FiMapPin className="text-[13px] text-[#3b82f6]" />
                         {charge.name || "Courier Charge"}
                       </span>
-                      <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700">
+                      <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-700">
                         ৳ {formatMoney(charge.amount)}
                       </span>
                     </div>
@@ -728,7 +733,7 @@ const ProductDetailView = ({
                       <FiMapPin className="text-[13px] text-[#3b82f6]" />
                       Courier Charge
                     </span>
-                    <span className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-xs font-bold text-[#4b5563]">
+                    <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-bold text-gray-600">
                       {shippingLoading || shippingFetching
                         ? "Loading..."
                         : "Not set"}
