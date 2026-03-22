@@ -17,9 +17,22 @@ import { showErrorMessage } from '../admin/utils/alerts';
 import {
     trackFacebookInitiateCheckout,
     trackFacebookPurchase,
+    hasInitializedPixel,
 } from '../utils/facebookPixel';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
+const parseMoney = (value, fallback = 0) => {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : fallback;
+    }
+
+    const normalized = String(value ?? '')
+        .replace(/[\s,]/g, '')
+        .replace(/[^\d.-]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+const toTrackingValue = (value) => parseMoney(value, 0).toFixed(2);
 
 const isValidBdPhone = (value) => {
     const digits = toDigits(value);
@@ -47,7 +60,9 @@ const Checkout = () => {
     const [trackIncompleteOrder] = useTrackIncompleteOrderMutation();
     const navigate = useNavigate();
     const lastTrackedKeyRef = useRef('');
-    const initiateCheckoutTrackedRef = useRef('');
+    const initiateCheckoutTrackedRef = useRef(false);
+    const trackedOrderIdsRef = useRef(new Set());
+    const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
     const shippingCharges = shippingResponse?.data || [];
 
@@ -112,17 +127,24 @@ const Checkout = () => {
     );
 
     const subtotal = useMemo(() => {
-        return items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+        return items.reduce((sum, item) => {
+            const price = parseMoney(item?.price, 0);
+            const qty = parseMoney(item?.quantity, 0);
+            return sum + (price * qty);
+        }, 0);
     }, [items]);
 
     const shippingCost = useMemo(() => {
         const charge = shippingCharges.find((c) => String(c.id) === String(formData.area));
-        return charge ? Number(charge.amount) : 0;
+        return charge ? parseMoney(charge.amount, 0) : 0;
     }, [shippingCharges, formData.area]);
 
     const total = subtotal + shippingCost;
+    const trackingSubtotalValue = useMemo(() => toTrackingValue(subtotal), [subtotal]);
+    const trackingShippingValue = useMemo(() => toTrackingValue(shippingCost), [shippingCost]);
+    const trackingTotalValue = useMemo(() => toTrackingValue(total), [total]);
     const totalQuantity = useMemo(
-        () => items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+        () => items.reduce((sum, item) => sum + parseMoney(item?.quantity, 0), 0),
         [items]
     );
     const cartItemContentIds = useMemo(
@@ -162,8 +184,8 @@ const Checkout = () => {
     }, [canTrackIncomplete, trackingPayload, cartSnapshotKey]);
     // Use subtotal (without shipping) for InitiateCheckout — shipping may not be selected yet
     const initiateCheckoutTrackKey = useMemo(
-        () => `${cartItemContentIds.join(',')}|${Number(subtotal || 0).toFixed(2)}|${totalQuantity}`,
-        [cartItemContentIds, subtotal, totalQuantity]
+        () => `${cartItemContentIds.join(',')}|${trackingSubtotalValue}|${totalQuantity}`,
+        [cartItemContentIds, trackingSubtotalValue, totalQuantity]
     );
 
     const handleQty = async (itemId, nextQty) => {
@@ -250,22 +272,41 @@ const Checkout = () => {
         };
     }, [canTrackIncomplete, trackingKey, trackingPayload]);
 
-    // Fire InitiateCheckout as soon as the cart is loaded with items
+    // Fire InitiateCheckout once pixel is initialized (wait for PixelCodeInjector to run fbq('init'))
     useEffect(() => {
         if (!items.length || !initiateCheckoutTrackKey) return;
-        if (initiateCheckoutTrackedRef.current === initiateCheckoutTrackKey) return;
+        if (initiateCheckoutTrackedRef.current) return;
 
-        trackFacebookInitiateCheckout({
-            itemIds: cartItemContentIds,
-            value: subtotal,
-            quantity: totalQuantity,
-            currency: 'BDT',
-        });
-        initiateCheckoutTrackedRef.current = initiateCheckoutTrackKey;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 100; // ~30 seconds (100 × 300ms)
+
+        const tryFireEvent = () => {
+            attempts++;
+            if (!hasInitializedPixel()) {
+                if (attempts < MAX_ATTEMPTS) return;
+                // Best-effort fallback: state did not confirm init within timeout.
+                // We still fire once so tracking is not silently dropped.
+            }
+
+            trackFacebookInitiateCheckout({
+                itemIds: cartItemContentIds,
+                value: parseMoney(subtotal, 0),
+                quantity: totalQuantity,
+                currency: 'BDT',
+            });
+            initiateCheckoutTrackedRef.current = true;
+            clearInterval(intervalId);
+        };
+
+        const intervalId = setInterval(tryFireEvent, 300);
+        tryFireEvent(); // also try immediately
+
+        return () => clearInterval(intervalId);
     }, [initiateCheckoutTrackKey, items.length, cartItemContentIds, subtotal, totalQuantity]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmittingOrder) return;
 
         if (!shippingChargeIds.length) {
             const message = 'No delivery area is available right now.';
@@ -301,21 +342,25 @@ const Checkout = () => {
             return;
         }
 
+        setIsSubmittingOrder(true);
         try {
             const response = await checkoutMutation({
                 ...formData,
                 district: 64,
             }).unwrap();
 
-            // Assuming response contains order_id or id. Adjust based on API response structure.
-            // The CheckoutController returns: { success: true, message: '...', order_id: ... }
             if (response?.order_id) {
-                trackFacebookPurchase({
-                    orderId: response.order_id,
-                    itemIds: cartItemContentIds,
-                    value: total,
-                    quantity: totalQuantity,
-                });
+                const orderId = String(response.order_id).trim();
+                if (!trackedOrderIdsRef.current.has(orderId)) {
+                    trackFacebookPurchase({
+                        orderId,
+                        itemIds: cartItemContentIds,
+                        value: parseMoney(total, 0),
+                        quantity: totalQuantity,
+                        currency: 'BDT',
+                    });
+                    trackedOrderIdsRef.current.add(orderId);
+                }
                 lastTrackedKeyRef.current = '';
                 navigate('/order-success');
             } else {
@@ -348,6 +393,8 @@ const Checkout = () => {
                 error?.data?.message ||
                 'Failed to confirm order.';
             showErrorMessage(fallbackMessage);
+        } finally {
+            setIsSubmittingOrder(false);
         }
     };
 
@@ -371,7 +418,7 @@ const Checkout = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col lg:flex-row gap-8 items-start"
+                    className="flex flex-col min-[900px]:flex-row gap-6 lg:gap-8 items-start"
                 >
                     {/* Left Column: Form Section */}
                     <div className="flex-1 w-full space-y-6">
@@ -492,6 +539,11 @@ const Checkout = () => {
                                                     <span
                                                         style={{ color: isActive ? primaryColor : undefined }}
                                                         className={`text-sm font-medium ${!isActive ? 'text-gray-500' : ''}`}
+                                                        data-track="meta-shipping-option-value"
+                                                        data-meta-value-source="shipping_option_amount"
+                                                        data-meta-currency="BDT"
+                                                        data-meta-value={toTrackingValue(charge.amount)}
+                                                        data-shipping-option-id={String(charge.id)}
                                                     >
                                                         ৳{charge.amount}
                                                     </span>
@@ -504,13 +556,32 @@ const Checkout = () => {
                                     ) : null}
                                 </div>
 
-                                <div className="pt-4 lg:hidden">
+                                <div className="hidden">
                                     <button
                                         type="submit"
+                                        disabled={isSubmittingOrder}
+                                        aria-disabled={isSubmittingOrder}
                                         style={{ backgroundColor: primaryColor }}
-                                        className="w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 hover:brightness-95"
+                                        className={`w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 ${isSubmittingOrder ? 'cursor-wait opacity-80' : 'hover:brightness-95'}`}
                                     >
-                                        Confirm Order • ৳{total}
+                                        {isSubmittingOrder ? (
+                                            'Confirming...'
+                                        ) : (
+                                            <>
+                                                <span>Confirm Order •</span>
+                                                <span
+                                                    id="meta-mobile-confirm-total-value"
+                                                    data-track="meta-mobile-confirm-total-value"
+                                                    data-meta-value-source="checkout_mobile_confirm_total"
+                                                    data-meta-currency="BDT"
+                                                    data-meta-value={trackingTotalValue}
+                                                    className="tabular-nums"
+                                                    title="Checkout mobile confirm total value source"
+                                                >
+                                                    ৳{total}
+                                                </span>
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </form>
@@ -518,7 +589,7 @@ const Checkout = () => {
                     </div>
 
                     {/* Right Column: Order Summary Section */}
-                    <div className="w-full lg:w-[420px] sticky top-8 space-y-6">
+                    <div className="w-full min-[900px]:w-[340px] lg:w-[420px] min-[900px]:sticky min-[900px]:top-4 lg:top-8 space-y-6">
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="p-6 border-b border-gray-50">
                                 <div className="flex items-center justify-between">
@@ -536,7 +607,9 @@ const Checkout = () => {
                                     {items.map((item) => {
                                         const productName = item.product_name || item.product?.name || 'Product';
                                         const imageSrc = resolveCheckoutImage(item);
-                                        const lineTotal = Number(item.price) * item.quantity;
+                                        const lineTotal = parseMoney(item?.price, 0) * parseMoney(item?.quantity, 0);
+                                        const lineTrackingValue = toTrackingValue(lineTotal);
+                                        const lineTrackId = String(item?.id || item?.external_product_id || item?.product_id || '');
 
                                         return (
                                             <motion.div
@@ -598,7 +671,16 @@ const Checkout = () => {
                                                             </button>
                                                         </div>
                                                         <p className="text-sm font-bold text-gray-900">
+                                                            <span
+                                                                data-track="meta-line-total-value"
+                                                                data-meta-value-source="line_total"
+                                                                data-meta-currency="BDT"
+                                                                data-meta-value={lineTrackingValue}
+                                                                data-line-track-id={lineTrackId}
+                                                                className="tabular-nums"
+                                                            >
                                                             ৳{lineTotal}
+                                                            </span>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -611,15 +693,80 @@ const Checkout = () => {
                             <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
                                 <div className="flex justify-between text-sm text-gray-500">
                                     <span>Subtotal</span>
-                                    <span className="font-semibold text-gray-900">৳{subtotal}</span>
+                                    <span
+                                        id="meta-subtotal-value"
+                                        data-track="meta-subtotal-value"
+                                        data-meta-value-source="checkout_subtotal_display"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingSubtotalValue}
+                                        className="font-semibold text-gray-900 tabular-nums"
+                                        title="Checkout subtotal value source"
+                                    >
+                                        ৳{subtotal}
+                                    </span>
+                                </div>
+                                <div
+                                    data-track="meta-value-container"
+                                    className="flex justify-between text-xs text-gray-400"
+                                >
+                                    <span>Meta Value Source (InitiateCheckout)</span>
+                                    <span
+                                        id="meta-initiate-checkout-value"
+                                        data-track="meta-initiate-checkout-value"
+                                        data-meta-value-source="initiate_checkout_subtotal"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingSubtotalValue}
+                                        className="font-semibold text-gray-500 tabular-nums"
+                                        title="Use this value in Meta Event Setup Tool"
+                                    >
+                                        {trackingSubtotalValue}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between text-sm text-gray-500 pb-1">
                                     <span>Shipping</span>
-                                    <span className="font-semibold text-gray-900">৳{shippingCost}</span>
+                                    <span
+                                        id="meta-shipping-value"
+                                        data-track="meta-shipping-value"
+                                        data-meta-value-source="checkout_shipping_display"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingShippingValue}
+                                        className="font-semibold text-gray-900 tabular-nums"
+                                        title="Checkout shipping value source"
+                                    >
+                                        ৳{shippingCost}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                                     <span className="text-base font-bold text-gray-900">Total Payable</span>
-                                    <span style={{ color: primaryColor }} className="text-xl font-black">৳{total}</span>
+                                    <span
+                                        id="meta-total-payable-value"
+                                        data-track="meta-total-payable-value"
+                                        data-meta-value-source="checkout_total_payable_display"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingTotalValue}
+                                        style={{ color: primaryColor }}
+                                        className="text-xl font-black tabular-nums"
+                                        title="Checkout total payable value source"
+                                    >
+                                        ৳{total}
+                                    </span>
+                                </div>
+                                <div
+                                    data-track="meta-value-container"
+                                    className="flex justify-between text-xs text-gray-400"
+                                >
+                                    <span>Meta Value Source (Purchase)</span>
+                                    <span
+                                        id="meta-purchase-value"
+                                        data-track="meta-purchase-value"
+                                        data-meta-value-source="purchase_total"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingTotalValue}
+                                        className="font-semibold text-gray-500 tabular-nums"
+                                        title="Use this value in Meta Event Setup Tool"
+                                    >
+                                        {trackingTotalValue}
+                                    </span>
                                 </div>
                             </div>
 
@@ -629,10 +776,12 @@ const Checkout = () => {
                                         e.preventDefault();
                                         handleSubmit(e);
                                     }}
+                                    disabled={isSubmittingOrder}
+                                    aria-disabled={isSubmittingOrder}
                                     style={{ backgroundColor: primaryColor }}
-                                    className="hidden lg:flex w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] items-center justify-center gap-2 group shadow-lg hover:brightness-95"
+                                    className={`flex w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] items-center justify-center gap-2 group shadow-lg ${isSubmittingOrder ? 'cursor-wait opacity-80' : 'hover:brightness-95'}`}
                                 >
-                                    Confirm Order
+                                    {isSubmittingOrder ? 'Confirming...' : 'Confirm Order'}
                                     <motion.div
                                         animate={{ x: [0, 4, 0] }}
                                         transition={{ repeat: Infinity, duration: 1.5 }}

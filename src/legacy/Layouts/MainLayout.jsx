@@ -7,6 +7,7 @@ import { trackFacebookPageView } from "../utils/facebookPixel";
 
 const MainLayout = () => {
   const location = useLocation();
+  const isCheckoutRoute = location.pathname === "/checkout";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -27,7 +28,9 @@ const MainLayout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <RouteTransitionLoader />
-      <Header />
+      <div className={isCheckoutRoute ? "sticky top-0 z-40" : ""}>
+        <Header />
+      </div>
       <main className="flex-grow pb-20 md:pb-8">
         <Outlet />
       </main>

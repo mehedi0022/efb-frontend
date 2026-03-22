@@ -297,7 +297,7 @@ const Footer = () => {
                       style={{ border: "none", overflow: "hidden" }}
                       scrolling="no"
                       frameBorder="0"
-                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
                     />
                   ) : (
                     <a

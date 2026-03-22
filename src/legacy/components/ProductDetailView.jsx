@@ -134,6 +134,12 @@ const formatMoney = (value) => {
   return new Intl.NumberFormat("en-BD").format(Math.round(amount));
 };
 
+const toTrackingMoney = (value, fallback = "0.00") => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return fallback;
+  return amount.toFixed(2);
+};
+
 const resolveThumbsPerView = (width) => {
   if (width < 640) return 4;
   if (width < 1024) return 6;
@@ -231,6 +237,11 @@ const ProductDetailView = ({
 
   const currentPrice = Number(price);
   const oldPrice = Number(previousPrice);
+  const selectedQty = Number(qty);
+  const safeQty = Number.isFinite(selectedQty) && selectedQty > 0 ? selectedQty : 1;
+  const eventValue = toTrackingMoney(
+    Number.isFinite(currentPrice) ? currentPrice * safeQty : 0,
+  );
   const productSku = String(product?.sku || "").trim();
   const discountAmount =
     Number.isFinite(oldPrice) &&
@@ -509,20 +520,38 @@ const ProductDetailView = ({
             </h1>
 
             <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-1">
-              <span className="text-[18px] font-extrabold leading-none text-[#111827] sm:text-[20px] md:text-[24px]">
+              <span className="text-[18px] font-extrabold leading-none text-gray-900 sm:text-[20px] md:text-[24px]">
                 TK. {formatMoney(price)}
               </span>
               {discountAmount > 0 ? (
-                <span className="text-[17px] font-bold leading-none text-[#fca5a5] line-through sm:text-[19px] md:text-[22px]">
+                <span className="text-[17px] font-bold leading-none text-red-300 line-through sm:text-[19px] md:text-[22px]">
                   TK. {formatMoney(oldPrice)}
                 </span>
               ) : null}
               {discountAmount > 0 ? (
-                <span className="text-xs font-semibold leading-tight text-[#43a047] sm:text-sm">
+                <span className="text-xs font-semibold leading-tight text-green-600 sm:text-sm">
                   You Save TK. {formatMoney(discountAmount)} ({discountPercent}
                   %)
                 </span>
               ) : null}
+            </div>
+
+            <div
+              data-track="meta-value-container"
+              className="mt-1 inline-flex items-center gap-1 rounded border border-dashed border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700"
+            >
+              <span>Meta Value Source</span>
+              <span
+                id="meta-product-event-value"
+                data-track="meta-product-value"
+                data-meta-value-source="product_price_x_qty"
+                data-meta-currency="BDT"
+                data-meta-value={eventValue}
+                className="meta-value-source rounded bg-white px-2 py-1 font-extrabold tracking-wide text-blue-900 tabular-nums"
+                title="Use this value in Meta Event Setup Tool"
+              >
+                {eventValue}
+              </span>
             </div>
 
             <div className="mt-2">
@@ -693,7 +722,7 @@ const ProductDetailView = ({
                         <FiMapPin className="text-[13px] text-[#3b82f6]" />
                         {charge.name || "Courier Charge"}
                       </span>
-                      <span className="rounded-full bg-[#edf8ef] px-2.5 py-1 text-xs font-bold text-[#1e7d3d]">
+                      <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-700">
                         ৳ {formatMoney(charge.amount)}
                       </span>
                     </div>
@@ -704,7 +733,7 @@ const ProductDetailView = ({
                       <FiMapPin className="text-[13px] text-[#3b82f6]" />
                       Courier Charge
                     </span>
-                    <span className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-xs font-bold text-[#4b5563]">
+                    <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-bold text-gray-600">
                       {shippingLoading || shippingFetching
                         ? "Loading..."
                         : "Not set"}
