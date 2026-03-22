@@ -418,7 +418,7 @@ const Checkout = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col lg:flex-row gap-8 items-start"
+                    className="flex flex-col min-[900px]:flex-row gap-6 lg:gap-8 items-start"
                 >
                     {/* Left Column: Form Section */}
                     <div className="flex-1 w-full space-y-6">
@@ -589,7 +589,7 @@ const Checkout = () => {
                     </div>
 
                     {/* Right Column: Order Summary Section */}
-                    <div className="w-full lg:w-[420px] lg:sticky lg:top-8 space-y-6">
+                    <div className="w-full min-[900px]:w-[340px] lg:w-[420px] min-[900px]:sticky min-[900px]:top-4 lg:top-8 space-y-6">
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="p-6 border-b border-gray-50">
                                 <div className="flex items-center justify-between">
