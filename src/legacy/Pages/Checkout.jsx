@@ -556,7 +556,7 @@ const Checkout = () => {
                                     ) : null}
                                 </div>
 
-                                <div className="pt-4 lg:hidden">
+                                <div className="hidden">
                                     <button
                                         type="submit"
                                         disabled={isSubmittingOrder}
@@ -589,7 +589,7 @@ const Checkout = () => {
                     </div>
 
                     {/* Right Column: Order Summary Section */}
-                    <div className="w-full lg:w-[420px] sticky top-8 space-y-6">
+                    <div className="w-full lg:w-[420px] lg:sticky lg:top-8 space-y-6">
                         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="p-6 border-b border-gray-50">
                                 <div className="flex items-center justify-between">
@@ -779,7 +779,7 @@ const Checkout = () => {
                                     disabled={isSubmittingOrder}
                                     aria-disabled={isSubmittingOrder}
                                     style={{ backgroundColor: primaryColor }}
-                                    className={`hidden lg:flex w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] items-center justify-center gap-2 group shadow-lg ${isSubmittingOrder ? 'cursor-wait opacity-80' : 'hover:brightness-95'}`}
+                                    className={`flex w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] items-center justify-center gap-2 group shadow-lg ${isSubmittingOrder ? 'cursor-wait opacity-80' : 'hover:brightness-95'}`}
                                 >
                                     {isSubmittingOrder ? 'Confirming...' : 'Confirm Order'}
                                     <motion.div
