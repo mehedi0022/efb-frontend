@@ -2,19 +2,69 @@ const FB_EVENTS_SRC = 'https://connect.facebook.net/en_US/fbevents.js';
 const PAGE_VIEW_DEDUPE_WINDOW_MS = 600;
 const GLOBAL_STATE_KEY = '__legacyFacebookPixelState';
 const SIMPLE_PIXEL_ID_PATTERN = /^\d{5,20}$/;
+const PIXEL_DEBUG_STORAGE_KEY = 'pixel_debug';
+const TRUTHY_VALUES = ['1', 'true', 'yes', 'on'];
 
 const getWindowObject = () => (typeof window === 'undefined' ? null : window);
 const getDocumentObject = () => (typeof document === 'undefined' ? null : document);
 
-const normalizeNumber = (value, fallback = 0) => {
+const parseNumericValue = (value, fallback = NaN) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value
+      .replace(/[\s,]/g, '')
+      .replace(/[^\d.-]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const normalizeNumber = (value, fallback = 0) => {
+  const parsed = parseNumericValue(value, NaN);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
 const resolveEventValue = (value) => {
-  const parsed = Number(value);
+  const parsed = parseNumericValue(value, NaN);
   if (!Number.isFinite(parsed)) return undefined;
   return Number(parsed.toFixed(2));
+};
+
+const normalizeCurrency = (value, fallback = 'BDT') => {
+  const normalized = String(value || fallback).trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(normalized) ? normalized : fallback;
+};
+
+const isPixelDebugEnabled = () => {
+  const envFlag = String(process.env.NEXT_PUBLIC_PIXEL_DEBUG || '').trim().toLowerCase();
+  if (TRUTHY_VALUES.includes(envFlag)) return true;
+
+  const win = getWindowObject();
+  if (!win || !win.localStorage) return false;
+
+  try {
+    const localFlag = String(win.localStorage.getItem(PIXEL_DEBUG_STORAGE_KEY) || '')
+      .trim()
+      .toLowerCase();
+    return TRUTHY_VALUES.includes(localFlag);
+  } catch {
+    return false;
+  }
+};
+
+const debugPixel = (message, payload) => {
+  if (!isPixelDebugEnabled()) return;
+  if (payload === undefined) {
+    console.info(`[MetaPixel] ${message}`);
+    return;
+  }
+  console.info(`[MetaPixel] ${message}`, payload);
 };
 
 const normalizeContentIds = (ids = []) => {
@@ -134,6 +184,7 @@ const callFbqTrack = (eventName, payload) => {
   if (!win || typeof win.fbq !== 'function') return false;
 
   try {
+    debugPixel(`track:${eventName}`, payload || {});
     if (payload && Object.keys(payload).length > 0) {
       win.fbq('track', eventName, payload);
     } else {
@@ -175,6 +226,7 @@ export const initializeFacebookPixelId = (pixelId) => {
     if (state) {
       state.initializedIds[normalizedId] = true;
     }
+    debugPixel('init', { pixelId: normalizedId });
     return true;
   } catch (error) {
     console.error(`Facebook Pixel init failed for ID "${normalizedId}"`, error);
@@ -222,7 +274,7 @@ export const trackFacebookViewContent = ({
     content_type: contentIds.length > 0 ? 'product' : undefined,
     content_name: String(name || '').trim() || undefined,
     value: resolveEventValue(value),
-    currency: String(currency || 'BDT').trim().toUpperCase() || 'BDT',
+    currency: normalizeCurrency(currency, 'BDT'),
     num_items: normalizeNumber(quantity, 1),
   });
 
@@ -245,7 +297,7 @@ export const trackFacebookAddToCart = ({
     content_type: contentIds.length > 0 ? 'product' : undefined,
     content_name: String(name || '').trim() || undefined,
     value: resolveEventValue(value),
-    currency: String(currency || 'BDT').trim().toUpperCase() || 'BDT',
+    currency: normalizeCurrency(currency, 'BDT'),
     num_items: normalizeNumber(quantity, 1),
   });
 
@@ -265,7 +317,7 @@ export const trackFacebookInitiateCheckout = ({
     content_ids: normalizedItemIds.length > 0 ? normalizedItemIds : undefined,
     content_type: normalizedItemIds.length > 0 ? 'product' : undefined,
     value: resolveEventValue(value),
-    currency: String(currency || 'BDT').trim().toUpperCase() || 'BDT',
+    currency: normalizeCurrency(currency, 'BDT'),
     num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
   });
 
@@ -286,7 +338,7 @@ export const trackFacebookPurchase = ({
     content_ids: normalizedItemIds.length > 0 ? normalizedItemIds : undefined,
     content_type: normalizedItemIds.length > 0 ? 'product' : undefined,
     value: resolveEventValue(value),
-    currency: String(currency || 'BDT').trim().toUpperCase() || 'BDT',
+    currency: normalizeCurrency(currency, 'BDT'),
     num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
     order_id: String(orderId || '').trim() || undefined,
   });

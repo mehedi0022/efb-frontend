@@ -21,6 +21,18 @@ import {
 } from '../utils/facebookPixel';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
+const parseMoney = (value, fallback = 0) => {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : fallback;
+    }
+
+    const normalized = String(value ?? '')
+        .replace(/[\s,]/g, '')
+        .replace(/[^\d.-]/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+const toTrackingValue = (value) => parseMoney(value, 0).toFixed(2);
 
 const isValidBdPhone = (value) => {
     const digits = toDigits(value);
@@ -48,7 +60,9 @@ const Checkout = () => {
     const [trackIncompleteOrder] = useTrackIncompleteOrderMutation();
     const navigate = useNavigate();
     const lastTrackedKeyRef = useRef('');
-    const initiateCheckoutTrackedRef = useRef('');
+    const initiateCheckoutTrackedRef = useRef(false);
+    const trackedOrderIdsRef = useRef(new Set());
+    const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
     const shippingCharges = shippingResponse?.data || [];
 
@@ -113,17 +127,23 @@ const Checkout = () => {
     );
 
     const subtotal = useMemo(() => {
-        return items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+        return items.reduce((sum, item) => {
+            const price = parseMoney(item?.price, 0);
+            const qty = parseMoney(item?.quantity, 0);
+            return sum + (price * qty);
+        }, 0);
     }, [items]);
 
     const shippingCost = useMemo(() => {
         const charge = shippingCharges.find((c) => String(c.id) === String(formData.area));
-        return charge ? Number(charge.amount) : 0;
+        return charge ? parseMoney(charge.amount, 0) : 0;
     }, [shippingCharges, formData.area]);
 
     const total = subtotal + shippingCost;
+    const trackingSubtotalValue = useMemo(() => toTrackingValue(subtotal), [subtotal]);
+    const trackingTotalValue = useMemo(() => toTrackingValue(total), [total]);
     const totalQuantity = useMemo(
-        () => items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+        () => items.reduce((sum, item) => sum + parseMoney(item?.quantity, 0), 0),
         [items]
     );
     const cartItemContentIds = useMemo(
@@ -163,8 +183,8 @@ const Checkout = () => {
     }, [canTrackIncomplete, trackingPayload, cartSnapshotKey]);
     // Use subtotal (without shipping) for InitiateCheckout — shipping may not be selected yet
     const initiateCheckoutTrackKey = useMemo(
-        () => `${cartItemContentIds.join(',')}|${Number(subtotal || 0).toFixed(2)}|${totalQuantity}`,
-        [cartItemContentIds, subtotal, totalQuantity]
+        () => `${cartItemContentIds.join(',')}|${trackingSubtotalValue}|${totalQuantity}`,
+        [cartItemContentIds, trackingSubtotalValue, totalQuantity]
     );
 
     const handleQty = async (itemId, nextQty) => {
@@ -254,29 +274,26 @@ const Checkout = () => {
     // Fire InitiateCheckout once pixel is initialized (wait for PixelCodeInjector to run fbq('init'))
     useEffect(() => {
         if (!items.length || !initiateCheckoutTrackKey) return;
-        if (initiateCheckoutTrackedRef.current === initiateCheckoutTrackKey) return;
+        if (initiateCheckoutTrackedRef.current) return;
 
         let attempts = 0;
-        const MAX_ATTEMPTS = 34; // ~10 seconds (34 × 300ms)
+        const MAX_ATTEMPTS = 100; // ~30 seconds (100 × 300ms)
 
         const tryFireEvent = () => {
             attempts++;
             if (!hasInitializedPixel()) {
-                // Pixel not yet initialized by PixelCodeInjector — keep waiting
                 if (attempts < MAX_ATTEMPTS) return;
-                // Timed out — fire anyway using stub queue (best-effort)
+                // Best-effort fallback: state did not confirm init within timeout.
+                // We still fire once so tracking is not silently dropped.
             }
 
-            // Pixel is ready (or timed out) — fire the event
-            if (initiateCheckoutTrackedRef.current !== initiateCheckoutTrackKey) {
-                trackFacebookInitiateCheckout({
-                    itemIds: cartItemContentIds,
-                    value: subtotal,
-                    quantity: totalQuantity,
-                    currency: 'BDT',
-                });
-                initiateCheckoutTrackedRef.current = initiateCheckoutTrackKey;
-            }
+            trackFacebookInitiateCheckout({
+                itemIds: cartItemContentIds,
+                value: parseMoney(subtotal, 0),
+                quantity: totalQuantity,
+                currency: 'BDT',
+            });
+            initiateCheckoutTrackedRef.current = true;
             clearInterval(intervalId);
         };
 
@@ -288,6 +305,7 @@ const Checkout = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmittingOrder) return;
 
         if (!shippingChargeIds.length) {
             const message = 'No delivery area is available right now.';
@@ -323,21 +341,25 @@ const Checkout = () => {
             return;
         }
 
+        setIsSubmittingOrder(true);
         try {
             const response = await checkoutMutation({
                 ...formData,
                 district: 64,
             }).unwrap();
 
-            // Assuming response contains order_id or id. Adjust based on API response structure.
-            // The CheckoutController returns: { success: true, message: '...', order_id: ... }
             if (response?.order_id) {
-                trackFacebookPurchase({
-                    orderId: response.order_id,
-                    itemIds: cartItemContentIds,
-                    value: total,
-                    quantity: totalQuantity,
-                });
+                const orderId = String(response.order_id).trim();
+                if (!trackedOrderIdsRef.current.has(orderId)) {
+                    trackFacebookPurchase({
+                        orderId,
+                        itemIds: cartItemContentIds,
+                        value: parseMoney(total, 0),
+                        quantity: totalQuantity,
+                        currency: 'BDT',
+                    });
+                    trackedOrderIdsRef.current.add(orderId);
+                }
                 lastTrackedKeyRef.current = '';
                 navigate('/order-success');
             } else {
@@ -370,6 +392,8 @@ const Checkout = () => {
                 error?.data?.message ||
                 'Failed to confirm order.';
             showErrorMessage(fallbackMessage);
+        } finally {
+            setIsSubmittingOrder(false);
         }
     };
 
@@ -529,10 +553,12 @@ const Checkout = () => {
                                 <div className="pt-4 lg:hidden">
                                     <button
                                         type="submit"
+                                        disabled={isSubmittingOrder}
+                                        aria-disabled={isSubmittingOrder}
                                         style={{ backgroundColor: primaryColor }}
-                                        className="w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 hover:brightness-95"
+                                        className={`w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 ${isSubmittingOrder ? 'cursor-wait opacity-80' : 'hover:brightness-95'}`}
                                     >
-                                        Confirm Order • ৳{total}
+                                        {isSubmittingOrder ? 'Confirming...' : `Confirm Order • ৳${total}`}
                                     </button>
                                 </div>
                             </form>
@@ -558,7 +584,7 @@ const Checkout = () => {
                                     {items.map((item) => {
                                         const productName = item.product_name || item.product?.name || 'Product';
                                         const imageSrc = resolveCheckoutImage(item);
-                                        const lineTotal = Number(item.price) * item.quantity;
+                                        const lineTotal = parseMoney(item?.price, 0) * parseMoney(item?.quantity, 0);
 
                                         return (
                                             <motion.div
@@ -635,6 +661,18 @@ const Checkout = () => {
                                     <span>Subtotal</span>
                                     <span className="font-semibold text-gray-900">৳{subtotal}</span>
                                 </div>
+                                <div className="flex justify-between text-[11px] text-gray-400">
+                                    <span>Meta Value Source (InitiateCheckout)</span>
+                                    <span
+                                        id="meta-initiate-checkout-value"
+                                        data-meta-value-source="initiate_checkout_subtotal"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingSubtotalValue}
+                                        className="font-semibold text-gray-500 tabular-nums"
+                                    >
+                                        {trackingSubtotalValue}
+                                    </span>
+                                </div>
                                 <div className="flex justify-between text-sm text-gray-500 pb-1">
                                     <span>Shipping</span>
                                     <span className="font-semibold text-gray-900">৳{shippingCost}</span>
@@ -642,6 +680,18 @@ const Checkout = () => {
                                 <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                                     <span className="text-base font-bold text-gray-900">Total Payable</span>
                                     <span style={{ color: primaryColor }} className="text-xl font-black">৳{total}</span>
+                                </div>
+                                <div className="flex justify-between text-[11px] text-gray-400">
+                                    <span>Meta Value Source (Purchase)</span>
+                                    <span
+                                        id="meta-purchase-value"
+                                        data-meta-value-source="purchase_total"
+                                        data-meta-currency="BDT"
+                                        data-meta-value={trackingTotalValue}
+                                        className="font-semibold text-gray-500 tabular-nums"
+                                    >
+                                        {trackingTotalValue}
+                                    </span>
                                 </div>
                             </div>
 
@@ -651,10 +701,12 @@ const Checkout = () => {
                                         e.preventDefault();
                                         handleSubmit(e);
                                     }}
+                                    disabled={isSubmittingOrder}
+                                    aria-disabled={isSubmittingOrder}
                                     style={{ backgroundColor: primaryColor }}
-                                    className="hidden lg:flex w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] items-center justify-center gap-2 group shadow-lg hover:brightness-95"
+                                    className={`hidden lg:flex w-full text-white py-4 rounded-xl font-bold transition-all transform active:scale-[0.98] items-center justify-center gap-2 group shadow-lg ${isSubmittingOrder ? 'cursor-wait opacity-80' : 'hover:brightness-95'}`}
                                 >
-                                    Confirm Order
+                                    {isSubmittingOrder ? 'Confirming...' : 'Confirm Order'}
                                     <motion.div
                                         animate={{ x: [0, 4, 0] }}
                                         transition={{ repeat: Infinity, duration: 1.5 }}
