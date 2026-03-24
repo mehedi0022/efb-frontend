@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { FiCheckCircle, FiHome, FiPhoneCall } from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
 import { useSiteData } from '../context/SiteDataContext';
+import { hasInitializedPixel, trackFacebookPurchase } from '../utils/facebookPixel';
 
 const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
+const PURCHASE_TRACKED_KEY_PREFIX = 'meta_purchase_tracked_';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
 
@@ -16,9 +18,39 @@ const pickFirstValue = (...candidates) => {
     return '';
 };
 
+const normalizePurchaseTrackingPayload = (payload) => {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const orderId = String(payload.orderId || '').trim();
+    if (!orderId) return null;
+
+    const itemIds = Array.isArray(payload.itemIds)
+        ? payload.itemIds.map((itemId) => String(itemId || '').trim()).filter(Boolean)
+        : [];
+    const parsedValue = Number(payload.value);
+    const parsedQuantity = Number(payload.quantity);
+
+    return {
+        orderId,
+        itemIds,
+        value: Number.isFinite(parsedValue) ? parsedValue : 0,
+        quantity: Number.isFinite(parsedQuantity) && parsedQuantity > 0
+            ? parsedQuantity
+            : (itemIds.length || 1),
+        currency: String(payload.currency || 'BDT').trim() || 'BDT',
+    };
+};
+
 const OrderSuccess = () => {
+    const location = useLocation();
     const { setting } = useSettings();
     const { contact } = useSiteData();
+    const hasTrackedPurchaseRef = useRef(false);
+
+    const purchaseTrackingPayload = useMemo(
+        () => normalizePurchaseTrackingPayload(location.state?.purchaseTracking),
+        [location.state]
+    );
 
     const hotlineNumber = useMemo(
         () => pickFirstValue(
@@ -31,6 +63,53 @@ const OrderSuccess = () => {
         [contact?.hotline, contact?.phone, setting?.hotline, setting?.phone]
     );
     const hotlineHref = toDigits(hotlineNumber) ? `tel:${toDigits(hotlineNumber)}` : '#';
+
+    useEffect(() => {
+        if (!purchaseTrackingPayload || hasTrackedPurchaseRef.current) return;
+        if (typeof window === 'undefined') return;
+
+        const orderId = purchaseTrackingPayload.orderId;
+        const trackedKey = `${PURCHASE_TRACKED_KEY_PREFIX}${orderId}`;
+
+        try {
+            if (window.sessionStorage.getItem(trackedKey) === '1') {
+                hasTrackedPurchaseRef.current = true;
+                return;
+            }
+        } catch {
+            // Ignore storage issues (private mode, strict browser settings).
+        }
+
+        let attempts = 0;
+        const MAX_ATTEMPTS = 100; // ~30 seconds (100 × 300ms)
+
+        const tryTrackPurchase = () => {
+            attempts += 1;
+
+            if (!hasInitializedPixel() && attempts < MAX_ATTEMPTS) return;
+
+            const tracked = trackFacebookPurchase(purchaseTrackingPayload);
+            if (tracked) {
+                hasTrackedPurchaseRef.current = true;
+                try {
+                    window.sessionStorage.setItem(trackedKey, '1');
+                } catch {
+                    // Ignore storage write issues and keep runtime dedupe only.
+                }
+                clearInterval(intervalId);
+                return;
+            }
+
+            if (attempts >= MAX_ATTEMPTS) {
+                clearInterval(intervalId);
+            }
+        };
+
+        const intervalId = window.setInterval(tryTrackPurchase, 300);
+        tryTrackPurchase();
+
+        return () => window.clearInterval(intervalId);
+    }, [purchaseTrackingPayload]);
 
     return (
         <div className="min-h-[65vh] bg-[#edf1f7] px-4 py-10 md:py-14">

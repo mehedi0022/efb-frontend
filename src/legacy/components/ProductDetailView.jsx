@@ -536,23 +536,7 @@ const ProductDetailView = ({
               ) : null}
             </div>
 
-            <div
-              data-track="meta-value-container"
-              className="mt-1 inline-flex items-center gap-1 rounded border border-dashed border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700"
-            >
-              <span>Meta Value Source</span>
-              <span
-                id="meta-product-event-value"
-                data-track="meta-product-value"
-                data-meta-value-source="product_price_x_qty"
-                data-meta-currency="BDT"
-                data-meta-value={eventValue}
-                className="meta-value-source rounded bg-white px-2 py-1 font-extrabold tracking-wide text-blue-900 tabular-nums"
-                title="Use this value in Meta Event Setup Tool"
-              >
-                {eventValue}
-              </span>
-            </div>
+       
 
             <div className="mt-2">
               <Tag
