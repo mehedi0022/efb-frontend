@@ -16,7 +16,6 @@ import { useSettings } from '../context/SettingsContext';
 import { showErrorMessage } from '../admin/utils/alerts';
 import {
     trackFacebookInitiateCheckout,
-    trackFacebookPurchase,
     hasInitializedPixel,
 } from '../utils/facebookPixel';
 
@@ -61,7 +60,6 @@ const Checkout = () => {
     const navigate = useNavigate();
     const lastTrackedKeyRef = useRef('');
     const initiateCheckoutTrackedRef = useRef(false);
-    const trackedOrderIdsRef = useRef(new Set());
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
     const shippingCharges = shippingResponse?.data || [];
@@ -351,18 +349,19 @@ const Checkout = () => {
 
             if (response?.order_id) {
                 const orderId = String(response.order_id).trim();
-                if (!trackedOrderIdsRef.current.has(orderId)) {
-                    trackFacebookPurchase({
-                        orderId,
-                        itemIds: cartItemContentIds,
-                        value: parseMoney(total, 0),
-                        quantity: totalQuantity,
-                        currency: 'BDT',
-                    });
-                    trackedOrderIdsRef.current.add(orderId);
-                }
+                const purchaseTrackingPayload = {
+                    orderId,
+                    itemIds: cartItemContentIds,
+                    value: parseMoney(total, 0),
+                    quantity: totalQuantity,
+                    currency: 'BDT',
+                };
                 lastTrackedKeyRef.current = '';
-                navigate('/order-success');
+                navigate('/order-success', {
+                    state: {
+                        purchaseTracking: purchaseTrackingPayload,
+                    },
+                });
             } else {
                 showErrorMessage('Order was placed but order ID was not returned.');
                 navigate('/');
