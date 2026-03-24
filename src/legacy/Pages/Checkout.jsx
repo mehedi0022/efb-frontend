@@ -750,7 +750,7 @@ const Checkout = () => {
                                         ৳{total}
                                     </span>
                                 </div>
-                                <div
+                                {/* <div
                                     data-track="meta-value-container"
                                     className="flex justify-between text-xs text-gray-400"
                                 >
@@ -766,7 +766,7 @@ const Checkout = () => {
                                     >
                                         {trackingTotalValue}
                                     </span>
-                                </div>
+                                </div> */}
                             </div>
 
                             <div className="p-6 pt-0">
