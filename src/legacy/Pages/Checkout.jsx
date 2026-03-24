@@ -704,7 +704,7 @@ const Checkout = () => {
                                         ৳{subtotal}
                                     </span>
                                 </div>
-                                <div
+                                {/* <div
                                     data-track="meta-value-container"
                                     className="flex justify-between text-xs text-gray-400"
                                 >
@@ -720,7 +720,7 @@ const Checkout = () => {
                                     >
                                         {trackingSubtotalValue}
                                     </span>
-                                </div>
+                                </div> */}
                                 <div className="flex justify-between text-sm text-gray-500 pb-1">
                                     <span>Shipping</span>
                                     <span
