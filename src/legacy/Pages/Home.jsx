@@ -314,9 +314,9 @@ const Home = () => {
 
   return (
     <div className="bg-[#f3f4f6]">
-      <section className="max-w-6xl mx-auto px-4 pt-3">
+      <section className="max-w-[1200px] mx-auto pt-3">
         <div className="bg-white rounded-lg overflow-hidden shadow-sm relative">
-          <div className="h-48 sm:h-[350px] md:h-[520px] overflow-hidden">
+          <div className="h-48 sm:h-[350px] md:h-[480px] overflow-hidden">
             {normalizedBannerLink ? (
               isExternalHttpUrl(normalizedBannerLink) ? (
                 <a
