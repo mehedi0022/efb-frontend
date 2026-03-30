@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   output: 'standalone',
   experimental: {
     optimizePackageImports: ['antd', 'react-icons']

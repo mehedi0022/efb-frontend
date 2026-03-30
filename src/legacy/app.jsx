@@ -14,17 +14,15 @@ import { SiteDataProvider } from './context/SiteDataContext';
 import { CartProvider } from './context/CartContext';
 
 ReactDOM.createRoot(document.getElementById('app')).render(
-    <React.StrictMode>
-        <Provider store={store}>
-            <AuthProvider>
-                <SettingsProvider>
-                    <SiteDataProvider>
-                        <CartProvider>
-                            <RouterProvider router={router} />
-                        </CartProvider>
-                    </SiteDataProvider>
-                </SettingsProvider>
-            </AuthProvider>
-        </Provider>
-    </React.StrictMode>
+    <Provider store={store}>
+        <AuthProvider>
+            <SettingsProvider>
+                <SiteDataProvider>
+                    <CartProvider>
+                        <RouterProvider router={router} />
+                    </CartProvider>
+                </SiteDataProvider>
+            </SettingsProvider>
+        </AuthProvider>
+    </Provider>
 );

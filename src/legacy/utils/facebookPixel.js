@@ -92,7 +92,15 @@ const getGlobalState = () => {
       initializedIds: {},
       lastPageViewPath: '',
       lastPageViewAt: 0,
+      trackedPurchases: {},
     };
+  }
+
+  if (!win[GLOBAL_STATE_KEY].initializedIds || typeof win[GLOBAL_STATE_KEY].initializedIds !== 'object') {
+    win[GLOBAL_STATE_KEY].initializedIds = {};
+  }
+  if (!win[GLOBAL_STATE_KEY].trackedPurchases || typeof win[GLOBAL_STATE_KEY].trackedPurchases !== 'object') {
+    win[GLOBAL_STATE_KEY].trackedPurchases = {};
   }
 
   return win[GLOBAL_STATE_KEY];
@@ -179,14 +187,31 @@ const toCurrentPath = () => {
   return `${win.location.pathname}${win.location.search}`;
 };
 
-const callFbqTrack = (eventName, payload) => {
+const normalizeTrackOptions = (options = {}) => normalizeEventPayload({
+  eventID: String(options.eventId || options.eventID || '').trim() || undefined,
+});
+
+const callFbqTrack = (eventName, payload, options = {}) => {
   const win = getWindowObject();
   if (!win || typeof win.fbq !== 'function') return false;
 
+  const normalizedPayload = payload && typeof payload === 'object' ? payload : undefined;
+  const normalizedOptions = normalizeTrackOptions(options);
+  const hasPayload = !!(normalizedPayload && Object.keys(normalizedPayload).length > 0);
+  const hasOptions = Object.keys(normalizedOptions).length > 0;
+
   try {
-    debugPixel(`track:${eventName}`, payload || {});
-    if (payload && Object.keys(payload).length > 0) {
-      win.fbq('track', eventName, payload);
+    debugPixel(`track:${eventName}`, {
+      ...(normalizedPayload || {}),
+      ...(hasOptions ? { _meta_track_options: normalizedOptions } : {}),
+    });
+
+    if (hasPayload && hasOptions) {
+      win.fbq('track', eventName, normalizedPayload, normalizedOptions);
+    } else if (hasPayload) {
+      win.fbq('track', eventName, normalizedPayload);
+    } else if (hasOptions) {
+      win.fbq('track', eventName, {}, normalizedOptions);
     } else {
       win.fbq('track', eventName);
     }
@@ -330,8 +355,17 @@ export const trackFacebookPurchase = ({
   value,
   quantity,
   currency = 'BDT',
+  eventId,
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
+
+  const state = getGlobalState();
+  const normalizedOrderId = String(orderId || '').trim();
+
+  if (normalizedOrderId && state?.trackedPurchases?.[normalizedOrderId]) {
+    debugPixel('skip:purchase-duplicate', { orderId: normalizedOrderId });
+    return false;
+  }
 
   const normalizedItemIds = normalizeContentIds(itemIds);
   const payload = normalizeEventPayload({
@@ -340,8 +374,13 @@ export const trackFacebookPurchase = ({
     value: resolveEventValue(value),
     currency: normalizeCurrency(currency, 'BDT'),
     num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
-    order_id: String(orderId || '').trim() || undefined,
+    order_id: normalizedOrderId || undefined,
   });
 
-  return callFbqTrack('Purchase', payload);
+  const tracked = callFbqTrack('Purchase', payload, { eventId });
+  if (tracked && normalizedOrderId && state) {
+    state.trackedPurchases[normalizedOrderId] = Date.now();
+  }
+
+  return tracked;
 };
