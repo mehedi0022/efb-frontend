@@ -189,12 +189,11 @@ const StorefrontProductCard = ({ item, product }) => {
   };
 
   return (
-    <div className="theme-product-card overflow-hidden rounded-2xl border border-[#dde3ea] bg-white shadow-[0_2px_10px_rgba(15,23,42,0.08)]">
+    <div className="flex flex-col justify-between h-full theme-product-card overflow-hidden rounded-2xl border border-[#dde3ea] bg-white shadow-[0_2px_10px_rgba(15,23,42,0.08)]">
       <div className="relative p-2.5">
         <Link
           to={detailPath}
-          className="block overflow-hidden rounded-xl border border-[#ecf0f5] bg-[#f4f7fb]"
-        >
+          className="block overflow-hidden rounded-xl border border-[#ecf0f5] bg-[#f4f7fb]">
           <img
             src={imageSrc}
             alt={name}
@@ -218,8 +217,7 @@ const StorefrontProductCard = ({ item, product }) => {
         <Link
           to={detailPath}
           className="min-h-[2.8rem] text-[15px] font-semibold leading-5 text-[#111827]"
-          title={name}
-        >
+          title={name}>
           <span className="line-clamp-2">{name}</span>
         </Link>
 
@@ -241,8 +239,7 @@ const StorefrontProductCard = ({ item, product }) => {
               isOutOfStock
                 ? "bg-red-100 text-red-700"
                 : "bg-emerald-100 text-emerald-700"
-            }`}
-          >
+            }`}>
             <FiPackage className="text-[12px]" />
             {isOutOfStock ? "Out of stock" : `In stock: ${stockValue}`}
           </div>
@@ -274,8 +271,7 @@ const StorefrontProductCard = ({ item, product }) => {
                 : isOrderNowLocked
                   ? "cursor-not-allowed pointer-events-none opacity-90"
                   : ""
-          }`}
-        >
+          }`}>
           <FiShoppingBag className="text-base" />
           {isOutOfStock
             ? "Out of Stock"
@@ -288,7 +284,9 @@ const StorefrontProductCard = ({ item, product }) => {
           type="button"
           onClick={() => handleAddToCart(false)}
           disabled={isOutOfStock}
-          aria-disabled={isOutOfStock || isAddToCartLoading || isAddToCartLocked}
+          aria-disabled={
+            isOutOfStock || isAddToCartLoading || isAddToCartLocked
+          }
           className={`theme-btn-secondary flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-bold transition ${
             isOutOfStock
               ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-500"
@@ -297,8 +295,7 @@ const StorefrontProductCard = ({ item, product }) => {
                 : isAddToCartLocked
                   ? "cursor-not-allowed pointer-events-none opacity-90"
                   : ""
-          }`}
-        >
+          }`}>
           <FiShoppingBag className="text-base" />
           {isAddToCartLoading ? "Adding..." : "Add to Cart"}
         </button>
