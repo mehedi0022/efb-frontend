@@ -99,10 +99,16 @@ const getGlobalState = () => {
     };
   }
 
-  if (!win[GLOBAL_STATE_KEY].initializedIds || typeof win[GLOBAL_STATE_KEY].initializedIds !== 'object') {
+  if (
+    !win[GLOBAL_STATE_KEY].initializedIds ||
+    typeof win[GLOBAL_STATE_KEY].initializedIds !== "object"
+  ) {
     win[GLOBAL_STATE_KEY].initializedIds = {};
   }
-  if (!win[GLOBAL_STATE_KEY].trackedPurchases || typeof win[GLOBAL_STATE_KEY].trackedPurchases !== 'object') {
+  if (
+    !win[GLOBAL_STATE_KEY].trackedPurchases ||
+    typeof win[GLOBAL_STATE_KEY].trackedPurchases !== "object"
+  ) {
     win[GLOBAL_STATE_KEY].trackedPurchases = {};
   }
 
@@ -194,17 +200,22 @@ const toCurrentPath = () => {
   return `${win.location.pathname}${win.location.search}`;
 };
 
-const normalizeTrackOptions = (options = {}) => normalizeEventPayload({
-  eventID: String(options.eventId || options.eventID || '').trim() || undefined,
-});
+const normalizeTrackOptions = (options = {}) =>
+  normalizeEventPayload({
+    eventID:
+      String(options.eventId || options.eventID || "").trim() || undefined,
+  });
 
 const callFbqTrack = (eventName, payload, options = {}) => {
   const win = getWindowObject();
   if (!win || typeof win.fbq !== "function") return false;
 
-  const normalizedPayload = payload && typeof payload === 'object' ? payload : undefined;
+  const normalizedPayload =
+    payload && typeof payload === "object" ? payload : undefined;
   const normalizedOptions = normalizeTrackOptions(options);
-  const hasPayload = !!(normalizedPayload && Object.keys(normalizedPayload).length > 0);
+  const hasPayload = !!(
+    normalizedPayload && Object.keys(normalizedPayload).length > 0
+  );
   const hasOptions = Object.keys(normalizedOptions).length > 0;
 
   try {
@@ -214,11 +225,15 @@ const callFbqTrack = (eventName, payload, options = {}) => {
     });
 
     if (hasPayload && hasOptions) {
-      win.fbq('track', eventName, normalizedPayload, normalizedOptions);
+      win.fbq("track", eventName, normalizedPayload, normalizedOptions);
     } else if (hasPayload) {
-      win.fbq('track', eventName, normalizedPayload);
+      win.fbq("track", eventName, normalizedPayload);
     } else if (hasOptions) {
+<<<<<<< HEAD
+      win.fbq("track", eventName, {}, normalizedOptions);
+=======
       win.fbq('track', eventName, {}, normalizedOptions);
+>>>>>>> 1c01dab8ad4ea79c0bdf8eea7165b6e73b921a49
     } else {
       win.fbq("track", eventName);
     }
@@ -361,16 +376,20 @@ export const trackFacebookPurchase = ({
   itemIds = [],
   value,
   quantity,
+<<<<<<< HEAD
+  currency = "BDT",
+=======
   currency = 'BDT',
+>>>>>>> 1c01dab8ad4ea79c0bdf8eea7165b6e73b921a49
   eventId,
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
   const state = getGlobalState();
-  const normalizedOrderId = String(orderId || '').trim();
+  const normalizedOrderId = String(orderId || "").trim();
 
   if (normalizedOrderId && state?.trackedPurchases?.[normalizedOrderId]) {
-    debugPixel('skip:purchase-duplicate', { orderId: normalizedOrderId });
+    debugPixel("skip:purchase-duplicate", { orderId: normalizedOrderId });
     return false;
   }
 
@@ -384,7 +403,7 @@ export const trackFacebookPurchase = ({
     order_id: normalizedOrderId || undefined,
   });
 
-  const tracked = callFbqTrack('Purchase', payload, { eventId });
+  const tracked = callFbqTrack("Purchase", payload, { eventId });
   if (tracked && normalizedOrderId && state) {
     state.trackedPurchases[normalizedOrderId] = Date.now();
   }

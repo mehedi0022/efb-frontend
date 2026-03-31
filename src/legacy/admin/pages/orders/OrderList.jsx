@@ -41,6 +41,7 @@ import {
 } from "../../../store/adminApi";
 import {
   showConfirmAlert,
+  showErrorAlert,
   showErrorMessage,
   showSuccessAlert,
 } from "../../utils/alerts";
@@ -342,7 +343,7 @@ const OrderList = () => {
         content: result?.message || "Order sent to FB successfully.",
       });
     } catch (submitError) {
-      showSuccessAlert({
+      showErrorAlert({
         title: "দুঃখিত!",
         content:
           "অর্ডারটি FB-তে পাঠানোর জন্য উপযুক্ত নয়। এটি আপনার বাক্তিগত প্রোডাক্ট ",
