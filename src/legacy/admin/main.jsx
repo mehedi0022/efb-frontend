@@ -11,9 +11,7 @@ import { store } from '../store/store';
 
 const root = ReactDOM.createRoot(document.getElementById('admin-root'));
 root.render(
-    <React.StrictMode>
-        <Provider store={store}>
-            <App />
-        </Provider>
-    </React.StrictMode>
+    <Provider store={store}>
+        <App />
+    </Provider>
 );
