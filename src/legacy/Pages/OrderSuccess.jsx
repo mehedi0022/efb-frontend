@@ -7,6 +7,7 @@ import { hasInitializedPixel, trackFacebookPurchase } from '../utils/facebookPix
 
 const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
 const PURCHASE_TRACKED_KEY_PREFIX = 'meta_purchase_tracked_';
+const PURCHASE_EVENT_ID_PREFIX = 'purchase_';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
 
@@ -41,6 +42,39 @@ const normalizePurchaseTrackingPayload = (payload) => {
     };
 };
 
+const buildPurchaseEventId = (orderId) => {
+    const normalizedOrderId = String(orderId || '')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    return normalizedOrderId ? `${PURCHASE_EVENT_ID_PREFIX}${normalizedOrderId}` : '';
+};
+
+const clearPurchaseTrackingHistoryState = () => {
+    if (typeof window === 'undefined') return;
+    if (!window.history || typeof window.history.replaceState !== 'function') return;
+
+    const currentHistoryState = window.history.state;
+    if (!currentHistoryState || typeof currentHistoryState !== 'object') return;
+
+    const currentUserState = currentHistoryState.usr;
+    if (!currentUserState || typeof currentUserState !== 'object') return;
+    if (!Object.prototype.hasOwnProperty.call(currentUserState, 'purchaseTracking')) return;
+
+    const restUserState = { ...currentUserState };
+    delete restUserState.purchaseTracking;
+
+    try {
+        window.history.replaceState(
+            { ...currentHistoryState, usr: restUserState },
+            document.title,
+            window.location.href
+        );
+    } catch {
+        // Ignore history state write issues and keep storage-based dedupe only.
+    }
+};
+
 const OrderSuccess = () => {
     const location = useLocation();
     const { setting } = useSettings();
@@ -70,10 +104,14 @@ const OrderSuccess = () => {
 
         const orderId = purchaseTrackingPayload.orderId;
         const trackedKey = `${PURCHASE_TRACKED_KEY_PREFIX}${orderId}`;
+        const purchaseEventId = buildPurchaseEventId(orderId);
 
         try {
-            if (window.sessionStorage.getItem(trackedKey) === '1') {
+            const alreadyTrackedInSession = window.sessionStorage.getItem(trackedKey) === '1';
+            const alreadyTrackedInLocal = window.localStorage.getItem(trackedKey) === '1';
+            if (alreadyTrackedInSession || alreadyTrackedInLocal) {
                 hasTrackedPurchaseRef.current = true;
+                clearPurchaseTrackingHistoryState();
                 return;
             }
         } catch {
@@ -88,14 +126,19 @@ const OrderSuccess = () => {
 
             if (!hasInitializedPixel() && attempts < MAX_ATTEMPTS) return;
 
-            const tracked = trackFacebookPurchase(purchaseTrackingPayload);
+            const tracked = trackFacebookPurchase({
+                ...purchaseTrackingPayload,
+                eventId: purchaseEventId || undefined,
+            });
             if (tracked) {
                 hasTrackedPurchaseRef.current = true;
                 try {
                     window.sessionStorage.setItem(trackedKey, '1');
+                    window.localStorage.setItem(trackedKey, '1');
                 } catch {
                     // Ignore storage write issues and keep runtime dedupe only.
                 }
+                clearPurchaseTrackingHistoryState();
                 clearInterval(intervalId);
                 return;
             }
