@@ -229,7 +229,11 @@ const callFbqTrack = (eventName, payload, options = {}) => {
     } else if (hasPayload) {
       win.fbq("track", eventName, normalizedPayload);
     } else if (hasOptions) {
+<<<<<<< HEAD
       win.fbq("track", eventName, {}, normalizedOptions);
+=======
+      win.fbq('track', eventName, {}, normalizedOptions);
+>>>>>>> 1c01dab8ad4ea79c0bdf8eea7165b6e73b921a49
     } else {
       win.fbq("track", eventName);
     }
@@ -372,7 +376,11 @@ export const trackFacebookPurchase = ({
   itemIds = [],
   value,
   quantity,
+<<<<<<< HEAD
   currency = "BDT",
+=======
+  currency = 'BDT',
+>>>>>>> 1c01dab8ad4ea79c0bdf8eea7165b6e73b921a49
   eventId,
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
