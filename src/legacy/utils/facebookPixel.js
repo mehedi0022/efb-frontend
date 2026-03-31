@@ -1,22 +1,21 @@
-const FB_EVENTS_SRC = 'https://connect.facebook.net/en_US/fbevents.js';
+const FB_EVENTS_SRC = "https://connect.facebook.net/en_US/fbevents.js";
 const PAGE_VIEW_DEDUPE_WINDOW_MS = 600;
-const GLOBAL_STATE_KEY = '__legacyFacebookPixelState';
+const GLOBAL_STATE_KEY = "__legacyFacebookPixelState";
 const SIMPLE_PIXEL_ID_PATTERN = /^\d{5,20}$/;
-const PIXEL_DEBUG_STORAGE_KEY = 'pixel_debug';
-const TRUTHY_VALUES = ['1', 'true', 'yes', 'on'];
+const PIXEL_DEBUG_STORAGE_KEY = "pixel_debug";
+const TRUTHY_VALUES = ["1", "true", "yes", "on"];
 
-const getWindowObject = () => (typeof window === 'undefined' ? null : window);
-const getDocumentObject = () => (typeof document === 'undefined' ? null : document);
+const getWindowObject = () => (typeof window === "undefined" ? null : window);
+const getDocumentObject = () =>
+  typeof document === "undefined" ? null : document;
 
 const parseNumericValue = (value, fallback = NaN) => {
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return Number.isFinite(value) ? value : fallback;
   }
 
-  if (typeof value === 'string') {
-    const normalized = value
-      .replace(/[\s,]/g, '')
-      .replace(/[^\d.-]/g, '');
+  if (typeof value === "string") {
+    const normalized = value.replace(/[\s,]/g, "").replace(/[^\d.-]/g, "");
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : fallback;
   }
@@ -36,20 +35,26 @@ const resolveEventValue = (value) => {
   return Number(parsed.toFixed(2));
 };
 
-const normalizeCurrency = (value, fallback = 'BDT') => {
-  const normalized = String(value || fallback).trim().toUpperCase();
+const normalizeCurrency = (value, fallback = "BDT") => {
+  const normalized = String(value || fallback)
+    .trim()
+    .toUpperCase();
   return /^[A-Z]{3}$/.test(normalized) ? normalized : fallback;
 };
 
 const isPixelDebugEnabled = () => {
-  const envFlag = String(process.env.NEXT_PUBLIC_PIXEL_DEBUG || '').trim().toLowerCase();
+  const envFlag = String(process.env.NEXT_PUBLIC_PIXEL_DEBUG || "")
+    .trim()
+    .toLowerCase();
   if (TRUTHY_VALUES.includes(envFlag)) return true;
 
   const win = getWindowObject();
   if (!win || !win.localStorage) return false;
 
   try {
-    const localFlag = String(win.localStorage.getItem(PIXEL_DEBUG_STORAGE_KEY) || '')
+    const localFlag = String(
+      win.localStorage.getItem(PIXEL_DEBUG_STORAGE_KEY) || "",
+    )
       .trim()
       .toLowerCase();
     return TRUTHY_VALUES.includes(localFlag);
@@ -69,15 +74,13 @@ const debugPixel = (message, payload) => {
 
 const normalizeContentIds = (ids = []) => {
   const source = Array.isArray(ids) ? ids : [ids];
-  return source
-    .map((item) => String(item || '').trim())
-    .filter(Boolean);
+  return source.map((item) => String(item || "").trim()).filter(Boolean);
 };
 
 const normalizeEventPayload = (payload = {}) => {
   const normalized = {};
   Object.entries(payload).forEach(([key, value]) => {
-    if (value === null || value === undefined || value === '') return;
+    if (value === null || value === undefined || value === "") return;
     normalized[key] = value;
   });
   return normalized;
@@ -87,10 +90,10 @@ const getGlobalState = () => {
   const win = getWindowObject();
   if (!win) return null;
 
-  if (!win[GLOBAL_STATE_KEY] || typeof win[GLOBAL_STATE_KEY] !== 'object') {
+  if (!win[GLOBAL_STATE_KEY] || typeof win[GLOBAL_STATE_KEY] !== "object") {
     win[GLOBAL_STATE_KEY] = {
       initializedIds: {},
-      lastPageViewPath: '',
+      lastPageViewPath: "",
       lastPageViewAt: 0,
     };
   }
@@ -106,7 +109,7 @@ const ensureFbqStub = () => {
 
   // Helper to update our internal state when fbq('init', id) is called
   const trackInitCall = (args) => {
-    if (args[0] === 'init' && args[1] && state) {
+    if (args[0] === "init" && args[1] && state) {
       const id = String(args[1]).trim();
       if (id) state.initializedIds[id] = true;
     }
@@ -115,14 +118,14 @@ const ensureFbqStub = () => {
   const existingFbq = win.fbq;
 
   // If fbq is already a functional wrapper we created, just return it
-  if (typeof existingFbq === 'function' && existingFbq.__isLegacyWrapper) {
+  if (typeof existingFbq === "function" && existingFbq.__isLegacyWrapper) {
     return existingFbq;
   }
 
   const fbqWrapper = function (...args) {
     trackInitCall(args);
 
-    if (typeof fbqWrapper.callMethod === 'function') {
+    if (typeof fbqWrapper.callMethod === "function") {
       fbqWrapper.callMethod.apply(fbqWrapper, args);
       return;
     }
@@ -132,17 +135,19 @@ const ensureFbqStub = () => {
   fbqWrapper.__isLegacyWrapper = true;
   fbqWrapper.push = fbqWrapper;
   fbqWrapper.loaded = true;
-  fbqWrapper.version = '2.0';
+  fbqWrapper.version = "2.0";
   fbqWrapper.queue = [];
 
   // If there was an existing fbq, migrate its queue and properties
-  if (typeof existingFbq === 'function') {
-    fbqWrapper.queue = Array.isArray(existingFbq.queue) ? existingFbq.queue : [];
+  if (typeof existingFbq === "function") {
+    fbqWrapper.queue = Array.isArray(existingFbq.queue)
+      ? existingFbq.queue
+      : [];
     fbqWrapper.loaded = existingFbq.loaded ?? true;
-    fbqWrapper.version = existingFbq.version ?? '2.0';
-    
+    fbqWrapper.version = existingFbq.version ?? "2.0";
+
     // Process the existing queue characters to update our state for any 'init' calls already made
-    fbqWrapper.queue.forEach(args => trackInitCall(args));
+    fbqWrapper.queue.forEach((args) => trackInitCall(args));
   }
 
   win.fbq = fbqWrapper;
@@ -157,17 +162,19 @@ const ensureFacebookEventsScript = () => {
   const doc = getDocumentObject();
   if (!doc) return false;
 
-  const hasScript = Array.from(doc.getElementsByTagName('script')).some((script) => {
-    const src = String(script.getAttribute('src') || script.src || '').trim();
-    return src === FB_EVENTS_SRC;
-  });
+  const hasScript = Array.from(doc.getElementsByTagName("script")).some(
+    (script) => {
+      const src = String(script.getAttribute("src") || script.src || "").trim();
+      return src === FB_EVENTS_SRC;
+    },
+  );
 
   if (hasScript) return true;
 
-  const script = doc.createElement('script');
+  const script = doc.createElement("script");
   script.async = true;
   script.src = FB_EVENTS_SRC;
-  script.setAttribute('data-fb-events-core', '1');
+  script.setAttribute("data-fb-events-core", "1");
   doc.head.appendChild(script);
 
   return true;
@@ -175,20 +182,20 @@ const ensureFacebookEventsScript = () => {
 
 const toCurrentPath = () => {
   const win = getWindowObject();
-  if (!win) return '';
+  if (!win) return "";
   return `${win.location.pathname}${win.location.search}`;
 };
 
 const callFbqTrack = (eventName, payload) => {
   const win = getWindowObject();
-  if (!win || typeof win.fbq !== 'function') return false;
+  if (!win || typeof win.fbq !== "function") return false;
 
   try {
     debugPixel(`track:${eventName}`, payload || {});
     if (payload && Object.keys(payload).length > 0) {
-      win.fbq('track', eventName, payload);
+      win.fbq("track", eventName, payload);
     } else {
-      win.fbq('track', eventName);
+      win.fbq("track", eventName);
     }
     return true;
   } catch (error) {
@@ -214,7 +221,7 @@ export const ensureFacebookPixelReady = () => {
 };
 
 export const initializeFacebookPixelId = (pixelId) => {
-  const normalizedId = String(pixelId || '').trim();
+  const normalizedId = String(pixelId || "").trim();
   if (!SIMPLE_PIXEL_ID_PATTERN.test(normalizedId)) return false;
   if (!ensureFacebookPixelReady()) return false;
 
@@ -222,11 +229,11 @@ export const initializeFacebookPixelId = (pixelId) => {
   if (state?.initializedIds?.[normalizedId]) return true;
 
   try {
-    window.fbq('init', normalizedId);
+    window.fbq("init", normalizedId);
     if (state) {
       state.initializedIds[normalizedId] = true;
     }
-    debugPixel('init', { pixelId: normalizedId });
+    debugPixel("init", { pixelId: normalizedId });
     return true;
   } catch (error) {
     console.error(`Facebook Pixel init failed for ID "${normalizedId}"`, error);
@@ -249,7 +256,7 @@ export const trackFacebookPageView = () => {
     return false;
   }
 
-  const tracked = callFbqTrack('PageView');
+  const tracked = callFbqTrack("PageView");
   if (tracked && state) {
     state.lastPageViewPath = currentPath;
     state.lastPageViewAt = now;
@@ -264,21 +271,21 @@ export const trackFacebookViewContent = ({
   name,
   value,
   quantity = 1,
-  currency = 'BDT',
+  currency = "BDT",
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
   const contentIds = normalizeContentIds([productId, sku]);
   const payload = normalizeEventPayload({
     content_ids: contentIds.length > 0 ? contentIds : undefined,
-    content_type: contentIds.length > 0 ? 'product' : undefined,
-    content_name: String(name || '').trim() || undefined,
+    content_type: contentIds.length > 0 ? "product" : undefined,
+    content_name: String(name || "").trim() || undefined,
     value: resolveEventValue(value),
-    currency: normalizeCurrency(currency, 'BDT'),
+    currency: normalizeCurrency(currency, "BDT"),
     num_items: normalizeNumber(quantity, 1),
   });
 
-  return callFbqTrack('ViewContent', payload);
+  return callFbqTrack("ViewContent", payload);
 };
 
 export const trackFacebookAddToCart = ({
@@ -287,41 +294,41 @@ export const trackFacebookAddToCart = ({
   name,
   value,
   quantity = 1,
-  currency = 'BDT',
+  currency = "BDT",
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
   const contentIds = normalizeContentIds([productId, sku]);
   const payload = normalizeEventPayload({
     content_ids: contentIds.length > 0 ? contentIds : undefined,
-    content_type: contentIds.length > 0 ? 'product' : undefined,
-    content_name: String(name || '').trim() || undefined,
+    content_type: contentIds.length > 0 ? "product" : undefined,
+    content_name: String(name || "").trim() || undefined,
     value: resolveEventValue(value),
-    currency: normalizeCurrency(currency, 'BDT'),
+    currency: normalizeCurrency(currency, "BDT"),
     num_items: normalizeNumber(quantity, 1),
   });
 
-  return callFbqTrack('AddToCart', payload);
+  return callFbqTrack("AddToCart", payload);
 };
 
 export const trackFacebookInitiateCheckout = ({
   itemIds = [],
   value,
   quantity,
-  currency = 'BDT',
+  currency = "BDT",
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
   const normalizedItemIds = normalizeContentIds(itemIds);
   const payload = normalizeEventPayload({
     content_ids: normalizedItemIds.length > 0 ? normalizedItemIds : undefined,
-    content_type: normalizedItemIds.length > 0 ? 'product' : undefined,
+    content_type: normalizedItemIds.length > 0 ? "product" : undefined,
     value: resolveEventValue(value),
-    currency: normalizeCurrency(currency, 'BDT'),
+    currency: normalizeCurrency(currency, "BDT"),
     num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
   });
 
-  return callFbqTrack('InitiateCheckout', payload);
+  return callFbqTrack("InitiateCheckout", payload);
 };
 
 export const trackFacebookPurchase = ({
@@ -329,19 +336,19 @@ export const trackFacebookPurchase = ({
   itemIds = [],
   value,
   quantity,
-  currency = 'BDT',
+  currency = "BDT",
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
   const normalizedItemIds = normalizeContentIds(itemIds);
   const payload = normalizeEventPayload({
     content_ids: normalizedItemIds.length > 0 ? normalizedItemIds : undefined,
-    content_type: normalizedItemIds.length > 0 ? 'product' : undefined,
+    content_type: normalizedItemIds.length > 0 ? "product" : undefined,
     value: resolveEventValue(value),
-    currency: normalizeCurrency(currency, 'BDT'),
+    currency: normalizeCurrency(currency, "BDT"),
     num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
-    order_id: String(orderId || '').trim() || undefined,
+    order_id: String(orderId || "").trim() || undefined,
   });
 
-  return callFbqTrack('Purchase', payload);
+  return callFbqTrack("Purchase", payload);
 };
