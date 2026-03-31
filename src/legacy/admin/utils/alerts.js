@@ -56,10 +56,27 @@ export const showSuccessAlert = ({
   content = "Action completed successfully.",
 } = {}) => {
   if (appModalApi?.success) {
-    appModalApi.error({
+    appModalApi.success({
       centered: true,
       title: resolveText(title, "Success"),
       content: resolveText(content, "Action completed successfully."),
+      okText: "OK",
+    });
+    return;
+  }
+  if (!isBrowser) return;
+  window.alert(resolveText(content, "Action completed successfully."));
+};
+
+export const showErrorAlert = ({
+  title = "Error",
+  content = "Something went wrong. Please try again.",
+} = {}) => {
+  if (appModalApi?.success) {
+    appModalApi.error({
+      centered: true,
+      title: resolveText(title, "Error"),
+      content: resolveText(content, "Something went wrong. Please try again."),
       okText: "OK",
     });
     return;
