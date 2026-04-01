@@ -339,8 +339,8 @@ const OrderList = () => {
 
       setEfbSentOrderIds((prev) => [...new Set([...prev, orderId])]);
       showSuccessAlert({
-        title: "Success",
-        content: result?.message || "Order sent to FB successfully.",
+        title: "ধন্যবাদ",
+        content: "আপনার অর্ডারটি সফলভাবে FB-তে পাঠানো হয়েছে।",
       });
     } catch (submitError) {
       showErrorAlert({
