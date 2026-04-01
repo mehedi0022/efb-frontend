@@ -556,6 +556,7 @@ const Home = () => {
               category?.products ||
               []
             ).slice(0, CATEGORY_PRODUCTS_PER_PAGE);
+
             return (
               <div key={slug || idx}>
                 <div className="flex items-center justify-between mb-3">
@@ -589,6 +590,77 @@ const Home = () => {
             );
           })}
         </div>
+
+        {/*
+        Frontend Sorting for "Hot Deals" category to show it first, since backend doesn't guarantee order and we want to prioritize showing hot deals on the homepage.
+
+        <div className="space-y-8">
+          {(() => {
+            let displayCategories = loadingCategories
+              ? Array.from({ length: 3 })
+              : [...categorySections];
+
+            if (!loadingCategories) {
+              displayCategories.sort((a, b) => {
+                const nameA = resolveExternalCategoryName(a)?.toLowerCase();
+                const nameB = resolveExternalCategoryName(b)?.toLowerCase();
+
+                if (nameA === "hot deals") return -1;
+                if (nameB === "hot deals") return 1;
+                return 0;
+              });
+            }
+
+            return displayCategories.map((category, idx) => {
+              const name = resolveExternalCategoryName(category);
+              const slug = resolveExternalCategorySlug(category);
+              const products = (
+                category?.products?.data ||
+                category?.products ||
+                []
+              ).slice(0, CATEGORY_PRODUCTS_PER_PAGE);
+
+              return (
+                <div key={slug || idx}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-base font-semibold text-gray-800">
+                      {loadingCategories ? (
+                        <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
+                      ) : (
+                        name
+                      )}
+                    </h4>
+                    {!loadingCategories && (
+                      <Link
+                        to={`/category/external/${slug}`}
+                        className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800">
+                        SEE MORE
+                      </Link>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {(loadingCategories
+                      ? Array.from({ length: CATEGORY_PRODUCTS_PER_PAGE })
+                      : products
+                    ).map((item, productIndex) => (
+                      <div
+                        key={
+                          item?.id || item?.product_info?.slug || productIndex
+                        }>
+                        {loadingCategories ? (
+                          <SkeletonCard />
+                        ) : (
+                          <StorefrontProductCard item={item} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
+        */}
 
         <div className="flex justify-center mt-6">
           <div className="flex items-center gap-2">
