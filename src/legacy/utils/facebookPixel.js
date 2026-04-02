@@ -74,7 +74,15 @@ const debugPixel = (message, payload) => {
 
 const normalizeContentIds = (ids = []) => {
   const source = Array.isArray(ids) ? ids : [ids];
-  return source.map((item) => String(item || "").trim()).filter(Boolean);
+  const seenIds = new Set();
+
+  return source
+    .map((item) => String(item || "").trim())
+    .filter((id) => {
+      if (!id || seenIds.has(id)) return false;
+      seenIds.add(id);
+      return true;
+    });
 };
 
 const normalizeEventPayload = (payload = {}) => {
