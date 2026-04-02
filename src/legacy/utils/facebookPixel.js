@@ -311,7 +311,6 @@ export const trackFacebookPageView = () => {
 
 export const trackFacebookViewContent = ({
   productId,
-  sku,
   name,
   value,
   quantity = 1,
@@ -319,7 +318,7 @@ export const trackFacebookViewContent = ({
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
-  const contentIds = normalizeContentIds([productId, sku]);
+  const contentIds = normalizeContentIds([productId]);
   const payload = normalizeEventPayload({
     content_ids: contentIds.length > 0 ? contentIds : undefined,
     content_type: contentIds.length > 0 ? "product" : undefined,
@@ -334,7 +333,6 @@ export const trackFacebookViewContent = ({
 
 export const trackFacebookAddToCart = ({
   productId,
-  sku,
   name,
   value,
   quantity = 1,
@@ -342,7 +340,7 @@ export const trackFacebookAddToCart = ({
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
-  const contentIds = normalizeContentIds([productId, sku]);
+  const contentIds = normalizeContentIds([productId]);
   const payload = normalizeEventPayload({
     content_ids: contentIds.length > 0 ? contentIds : undefined,
     content_type: contentIds.length > 0 ? "product" : undefined,

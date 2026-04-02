@@ -153,7 +153,7 @@ const ExternalProductDetails = () => {
     }), [setting?.hotline, setting?.whatsapp, setting?.messenger]);
 
     useEffect(() => {
-        const productId = data?.id || data?.productId || data?.product_id || sku || slug;
+        const productId = data?.id || data?.productId || data?.product_id;
         if (!productId) return;
 
         const trackKey = String(productId);
@@ -161,14 +161,13 @@ const ExternalProductDetails = () => {
 
         trackFacebookViewContent({
             productId,
-            sku: sku || null,
             name: productName,
             value: Number(price) || 0,
             quantity: 1,
         });
 
         trackedViewProductKeyRef.current = trackKey;
-    }, [data?.id, data?.productId, data?.product_id, sku, slug, productName, price]);
+    }, [data?.id, data?.productId, data?.product_id, productName, price]);
 
     const buildExternalPayload = () => {
         const sizeObj = sizes.find((item) => String(item.id) === String(selectedSize));
@@ -202,8 +201,7 @@ const ExternalProductDetails = () => {
             await refreshCart();
 
             trackFacebookAddToCart({
-                productId: payload?.external_product_id || data?.id || sku || slug,
-                sku: payload?.options?.sku || sku || null,
+                productId: data?.id || data?.productId || data?.product_id || null,
                 name: productName,
                 value: (Number(price) || 0) * (Number(qty) || 1),
                 quantity: Number(qty) || 1,
