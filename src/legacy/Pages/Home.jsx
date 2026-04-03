@@ -472,7 +472,7 @@ const Home = () => {
                     </h3>
                     {!loadingHomeCategories && (
                       <Link
-                        to={`/products?category=${catSlug}`}
+                        to={`/category/${catSlug}`}
                         className="inline-flex items-center rounded bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800">
                         SEE MORE
                       </Link>
