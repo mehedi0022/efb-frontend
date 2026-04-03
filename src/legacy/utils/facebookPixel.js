@@ -494,6 +494,7 @@ export const trackFacebookInitiateCheckout = ({
   value,
   quantity,
   currency = "BDT",
+  eventId,
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
@@ -506,8 +507,9 @@ export const trackFacebookInitiateCheckout = ({
     num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
   });
 
-  return callFbqTrack("InitiateCheckout", payload);
+  return callFbqTrack("InitiateCheckout", payload, { eventId });
 };
+
 
 export const trackFacebookPurchase = ({
   orderId,
