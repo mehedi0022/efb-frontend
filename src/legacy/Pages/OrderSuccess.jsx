@@ -3,10 +3,13 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FiCheckCircle, FiHome, FiPhoneCall } from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
 import { useSiteData } from '../context/SiteDataContext';
-import { hasInitializedPixel, trackFacebookPurchase } from '../utils/facebookPixel';
+import {
+    hasInitializedPixel,
+    hasTrackedFacebookPurchase,
+    trackFacebookPurchase,
+} from '../utils/facebookPixel';
 
 const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
-const PURCHASE_TRACKED_KEY_PREFIX = 'meta_purchase_tracked_';
 const PURCHASE_EVENT_ID_PREFIX = 'purchase_';
 const ORDER_SUCCESS_ACCESS_KEY = 'order_success_access_token';
 
@@ -131,19 +134,12 @@ const OrderSuccess = () => {
         if (typeof window === 'undefined') return;
 
         const orderId = purchaseTrackingPayload.orderId;
-        const trackedKey = `${PURCHASE_TRACKED_KEY_PREFIX}${orderId}`;
         const purchaseEventId = buildPurchaseEventId(orderId);
 
-        try {
-            const alreadyTrackedInSession = window.sessionStorage.getItem(trackedKey) === '1';
-            const alreadyTrackedInLocal = window.localStorage.getItem(trackedKey) === '1';
-            if (alreadyTrackedInSession || alreadyTrackedInLocal) {
-                hasTrackedPurchaseRef.current = true;
-                clearPurchaseTrackingHistoryState();
-                return;
-            }
-        } catch {
-            // Ignore storage issues (private mode, strict browser settings).
+        if (hasTrackedFacebookPurchase(orderId)) {
+            hasTrackedPurchaseRef.current = true;
+            clearPurchaseTrackingHistoryState();
+            return;
         }
 
         let attempts = 0;
@@ -160,12 +156,13 @@ const OrderSuccess = () => {
             });
             if (tracked) {
                 hasTrackedPurchaseRef.current = true;
-                try {
-                    window.sessionStorage.setItem(trackedKey, '1');
-                    window.localStorage.setItem(trackedKey, '1');
-                } catch {
-                    // Ignore storage write issues and keep runtime dedupe only.
-                }
+                clearPurchaseTrackingHistoryState();
+                clearInterval(intervalId);
+                return;
+            }
+
+            if (hasTrackedFacebookPurchase(orderId)) {
+                hasTrackedPurchaseRef.current = true;
                 clearPurchaseTrackingHistoryState();
                 clearInterval(intervalId);
                 return;
