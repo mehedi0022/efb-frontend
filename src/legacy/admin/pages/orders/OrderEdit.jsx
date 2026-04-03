@@ -379,7 +379,12 @@ const OrderEdit = () => {
         invalidates: ["orders", `orders:all`, `order:${invoiceId}`],
       }).unwrap();
 
-      navigate(`/orders/invoice/${invoiceId}`);
+      const path = statuses
+        .find((status) => String(status.id) === String(formData.order_status))
+        ?.name?.toLowerCase()
+        .replace(/\s+/g, "-");
+
+      navigate(`/orders/${path || "all"}`);
     } catch (error) {
       const fieldErrors = error?.data?.errors || {};
       const normalizedErrors = {};
