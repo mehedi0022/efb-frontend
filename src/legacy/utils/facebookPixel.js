@@ -1,6 +1,7 @@
 const FB_EVENTS_SRC = "https://connect.facebook.net/en_US/fbevents.js";
 const PAGE_VIEW_DEDUPE_WINDOW_MS = 600;
 const GLOBAL_STATE_KEY = "__legacyFacebookPixelState";
+const PURCHASE_TRACKED_KEY_PREFIX = "meta_purchase_tracked_";
 const SIMPLE_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 const PIXEL_DEBUG_STORAGE_KEY = "pixel_debug";
 const TRUTHY_VALUES = ["1", "true", "yes", "on"];
@@ -10,6 +11,51 @@ const NUMERIC_CONTENT_ID_PATTERN = /^\d+$/;
 const getWindowObject = () => (typeof window === "undefined" ? null : window);
 const getDocumentObject = () =>
   typeof document === "undefined" ? null : document;
+
+const normalizeOrderId = (value) => String(value || "").trim();
+
+const buildPurchaseTrackedKey = (orderId) =>
+  `${PURCHASE_TRACKED_KEY_PREFIX}${orderId}`;
+
+const readStorageFlag = (storage, key) => {
+  if (!storage || !key) return false;
+  try {
+    return storage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const writeStorageFlag = (storage, key) => {
+  if (!storage || !key) return false;
+  try {
+    storage.setItem(key, "1");
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const hasPersistentPurchaseMarker = (orderId) => {
+  const win = getWindowObject();
+  if (!win || !orderId) return false;
+
+  const key = buildPurchaseTrackedKey(orderId);
+  return (
+    readStorageFlag(win.sessionStorage, key) ||
+    readStorageFlag(win.localStorage, key)
+  );
+};
+
+const persistPurchaseMarker = (orderId) => {
+  const win = getWindowObject();
+  if (!win || !orderId) return false;
+
+  const key = buildPurchaseTrackedKey(orderId);
+  const persistedToSession = writeStorageFlag(win.sessionStorage, key);
+  const persistedToLocal = writeStorageFlag(win.localStorage, key);
+  return persistedToSession || persistedToLocal;
+};
 
 const parseNumericValue = (value, fallback = NaN) => {
   if (typeof value === "number") {
@@ -176,6 +222,7 @@ const getGlobalState = () => {
       lastPageViewPath: "",
       lastPageViewAt: 0,
       trackedPurchases: {},
+      purchaseLocks: {},
     };
   }
 
@@ -190,6 +237,12 @@ const getGlobalState = () => {
     typeof win[GLOBAL_STATE_KEY].trackedPurchases !== "object"
   ) {
     win[GLOBAL_STATE_KEY].trackedPurchases = {};
+  }
+  if (
+    !win[GLOBAL_STATE_KEY].purchaseLocks ||
+    typeof win[GLOBAL_STATE_KEY].purchaseLocks !== "object"
+  ) {
+    win[GLOBAL_STATE_KEY].purchaseLocks = {};
   }
 
   return win[GLOBAL_STATE_KEY];
@@ -441,6 +494,7 @@ export const trackFacebookInitiateCheckout = ({
   value,
   quantity,
   currency = "BDT",
+  eventId,
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
@@ -453,8 +507,9 @@ export const trackFacebookInitiateCheckout = ({
     num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
   });
 
-  return callFbqTrack("InitiateCheckout", payload);
+  return callFbqTrack("InitiateCheckout", payload, { eventId });
 };
+
 
 export const trackFacebookPurchase = ({
   orderId,
@@ -467,27 +522,72 @@ export const trackFacebookPurchase = ({
   if (!ensureFacebookPixelReady()) return false;
 
   const state = getGlobalState();
-  const normalizedOrderId = String(orderId || "").trim();
+  const normalizedOrderId = normalizeOrderId(orderId);
 
-  if (normalizedOrderId && state?.trackedPurchases?.[normalizedOrderId]) {
-    debugPixel("skip:purchase-duplicate", { orderId: normalizedOrderId });
-    return false;
+  if (normalizedOrderId) {
+    if (state?.purchaseLocks?.[normalizedOrderId]) {
+      debugPixel("skip:purchase-in-flight", { orderId: normalizedOrderId });
+      return false;
+    }
+
+    if (state?.trackedPurchases?.[normalizedOrderId]) {
+      debugPixel("skip:purchase-duplicate-memory", { orderId: normalizedOrderId });
+      return false;
+    }
+
+    if (hasPersistentPurchaseMarker(normalizedOrderId)) {
+      if (state) {
+        state.trackedPurchases[normalizedOrderId] = Date.now();
+      }
+      debugPixel("skip:purchase-duplicate-storage", { orderId: normalizedOrderId });
+      return false;
+    }
+
+    if (state) {
+      state.purchaseLocks[normalizedOrderId] = Date.now();
+    }
   }
 
-  const normalizedItemIds = normalizeContentIds(itemIds);
-  const payload = normalizeEventPayload({
-    content_ids: normalizedItemIds.length > 0 ? normalizedItemIds : undefined,
-    content_type: normalizedItemIds.length > 0 ? "product" : undefined,
-    value: resolveEventValue(value),
-    currency: normalizeCurrency(currency, "BDT"),
-    num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
-    order_id: normalizedOrderId || undefined,
-  });
+  try {
+    const normalizedItemIds = normalizeContentIds(itemIds);
+    const payload = normalizeEventPayload({
+      content_ids: normalizedItemIds.length > 0 ? normalizedItemIds : undefined,
+      content_type: normalizedItemIds.length > 0 ? "product" : undefined,
+      value: resolveEventValue(value),
+      currency: normalizeCurrency(currency, "BDT"),
+      num_items: normalizeNumber(quantity, normalizedItemIds.length || 1),
+      order_id: normalizedOrderId || undefined,
+    });
 
-  const tracked = callFbqTrack("Purchase", payload, { eventId });
-  if (tracked && normalizedOrderId && state) {
-    state.trackedPurchases[normalizedOrderId] = Date.now();
+    const tracked = callFbqTrack("Purchase", payload, { eventId });
+    if (tracked && normalizedOrderId) {
+      if (state) {
+        state.trackedPurchases[normalizedOrderId] = Date.now();
+      }
+      persistPurchaseMarker(normalizedOrderId);
+    }
+
+    return tracked;
+  } finally {
+    if (normalizedOrderId && state?.purchaseLocks) {
+      delete state.purchaseLocks[normalizedOrderId];
+    }
+  }
+};
+
+export const hasTrackedFacebookPurchase = (orderId) => {
+  const normalizedOrderId = normalizeOrderId(orderId);
+  if (!normalizedOrderId) return false;
+
+  const state = getGlobalState();
+  if (state?.trackedPurchases?.[normalizedOrderId]) return true;
+
+  if (hasPersistentPurchaseMarker(normalizedOrderId)) {
+    if (state) {
+      state.trackedPurchases[normalizedOrderId] = Date.now();
+    }
+    return true;
   }
 
-  return tracked;
+  return false;
 };
