@@ -217,14 +217,13 @@ const ProductDetails = () => {
 
         trackFacebookViewContent({
             productId: product.id,
-            sku: product?.sku || product?.product_code || null,
             name: product?.name || null,
             value: Number(price) || Number(product?.new_price ?? product?.price ?? 0),
             quantity: 1,
         });
 
         trackedViewProductKeyRef.current = trackKey;
-    }, [product?.id, product?.sku, product?.product_code, product?.name, product?.new_price, product?.price, price]);
+    }, [product?.id, product?.name, product?.new_price, product?.price, price]);
 
     const handleAddToCart = async (redirectToCheckout = false) => {
         if (!product?.id) return;
@@ -253,7 +252,6 @@ const ProductDetails = () => {
 
             trackFacebookAddToCart({
                 productId: product.id,
-                sku: product?.sku || product?.product_code || null,
                 name: product?.name || null,
                 value: (Number(price) || 0) * (Number(qty) || 1),
                 quantity: Number(qty) || 1,

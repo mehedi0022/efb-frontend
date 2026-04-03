@@ -4,6 +4,8 @@ const GLOBAL_STATE_KEY = "__legacyFacebookPixelState";
 const SIMPLE_PIXEL_ID_PATTERN = /^\d{5,20}$/;
 const PIXEL_DEBUG_STORAGE_KEY = "pixel_debug";
 const TRUTHY_VALUES = ["1", "true", "yes", "on"];
+const SINGLE_CONTENT_ID_EVENTS = new Set(["ViewContent", "AddToCart"]);
+const NUMERIC_CONTENT_ID_PATTERN = /^\d+$/;
 
 const getWindowObject = () => (typeof window === "undefined" ? null : window);
 const getDocumentObject = () =>
@@ -74,7 +76,85 @@ const debugPixel = (message, payload) => {
 
 const normalizeContentIds = (ids = []) => {
   const source = Array.isArray(ids) ? ids : [ids];
-  return source.map((item) => String(item || "").trim()).filter(Boolean);
+  const seenIds = new Set();
+
+  return source
+    .map((item) => String(item || "").trim())
+    .filter((id) => {
+      if (!id || seenIds.has(id)) return false;
+      seenIds.add(id);
+      return true;
+    });
+};
+
+const pickPrimaryContentId = (ids = []) => {
+  const normalizedIds = normalizeContentIds(ids);
+  if (normalizedIds.length === 0) return "";
+
+  const numericId = normalizedIds.find((id) =>
+    NUMERIC_CONTENT_ID_PATTERN.test(id),
+  );
+  return numericId || normalizedIds[0];
+};
+
+const sanitizeSingleContentIdPayload = (eventName, payload) => {
+  if (!SINGLE_CONTENT_ID_EVENTS.has(String(eventName || "").trim())) {
+    return payload;
+  }
+  if (!payload || typeof payload !== "object") return payload;
+
+  const currentContentIds = payload.content_ids;
+  const primaryContentId = pickPrimaryContentId(currentContentIds);
+  if (!primaryContentId) return payload;
+
+  const currentNormalizedIds = normalizeContentIds(currentContentIds);
+  if (
+    currentNormalizedIds.length === 1 &&
+    currentNormalizedIds[0] === primaryContentId
+  ) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    content_ids: [primaryContentId],
+  };
+};
+
+const sanitizeFbqTrackArgs = (args = []) => {
+  if (!Array.isArray(args) || args.length === 0) return args;
+
+  const command = String(args[0] || "").trim();
+  let eventNameIndex = -1;
+  let payloadIndex = -1;
+
+  if (command === "track") {
+    eventNameIndex = 1;
+    payloadIndex = 2;
+  } else if (command === "trackSingle") {
+    eventNameIndex = 2;
+    payloadIndex = 3;
+  } else {
+    return args;
+  }
+
+  const eventName = String(args[eventNameIndex] || "").trim();
+  if (!SINGLE_CONTENT_ID_EVENTS.has(eventName)) return args;
+
+  const payload = args[payloadIndex];
+  if (!payload || typeof payload !== "object") return args;
+
+  const sanitizedPayload = sanitizeSingleContentIdPayload(eventName, payload);
+  if (sanitizedPayload === payload) return args;
+
+  debugPixel(`sanitize:${eventName}:content_ids`, {
+    before: payload.content_ids,
+    after: sanitizedPayload.content_ids,
+  });
+
+  const nextArgs = args.slice();
+  nextArgs[payloadIndex] = sanitizedPayload;
+  return nextArgs;
 };
 
 const normalizeEventPayload = (payload = {}) => {
@@ -137,13 +217,14 @@ const ensureFbqStub = () => {
   }
 
   const fbqWrapper = function (...args) {
-    trackInitCall(args);
+    const normalizedArgs = sanitizeFbqTrackArgs(args);
+    trackInitCall(normalizedArgs);
 
     if (typeof fbqWrapper.callMethod === "function") {
-      fbqWrapper.callMethod.apply(fbqWrapper, args);
+      fbqWrapper.callMethod.apply(fbqWrapper, normalizedArgs);
       return;
     }
-    fbqWrapper.queue.push(args);
+    fbqWrapper.queue.push(normalizedArgs);
   };
 
   fbqWrapper.__isLegacyWrapper = true;
@@ -210,24 +291,31 @@ const callFbqTrack = (eventName, payload, options = {}) => {
   const win = getWindowObject();
   if (!win || typeof win.fbq !== "function") return false;
 
+  const normalizedEventName = String(eventName || "").trim();
   const normalizedPayload =
     payload && typeof payload === "object" ? payload : undefined;
+  const sanitizedPayload =
+    normalizedPayload &&
+    typeof normalizedPayload === "object" &&
+    SINGLE_CONTENT_ID_EVENTS.has(normalizedEventName)
+      ? sanitizeSingleContentIdPayload(normalizedEventName, normalizedPayload)
+      : normalizedPayload;
   const normalizedOptions = normalizeTrackOptions(options);
   const hasPayload = !!(
-    normalizedPayload && Object.keys(normalizedPayload).length > 0
+    sanitizedPayload && Object.keys(sanitizedPayload).length > 0
   );
   const hasOptions = Object.keys(normalizedOptions).length > 0;
 
   try {
     debugPixel(`track:${eventName}`, {
-      ...(normalizedPayload || {}),
+      ...(sanitizedPayload || {}),
       ...(hasOptions ? { _meta_track_options: normalizedOptions } : {}),
     });
 
     if (hasPayload && hasOptions) {
-      win.fbq("track", eventName, normalizedPayload, normalizedOptions);
+      win.fbq("track", eventName, sanitizedPayload, normalizedOptions);
     } else if (hasPayload) {
-      win.fbq("track", eventName, normalizedPayload);
+      win.fbq("track", eventName, sanitizedPayload);
     } else if (hasOptions) {
       win.fbq("track", eventName, {}, normalizedOptions);
     } else {
@@ -266,6 +354,9 @@ export const initializeFacebookPixelId = (pixelId) => {
 
   try {
     window.fbq("init", normalizedId);
+    // Keep event payload fully controlled by our app code
+    // to avoid auto-enriched extra identifiers like SKU.
+    window.fbq("set", "autoConfig", false, normalizedId);
     if (state) {
       state.initializedIds[normalizedId] = true;
     }
@@ -303,7 +394,6 @@ export const trackFacebookPageView = () => {
 
 export const trackFacebookViewContent = ({
   productId,
-  sku,
   name,
   value,
   quantity = 1,
@@ -311,7 +401,7 @@ export const trackFacebookViewContent = ({
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
-  const contentIds = normalizeContentIds([productId, sku]);
+  const contentIds = normalizeContentIds([productId]);
   const payload = normalizeEventPayload({
     content_ids: contentIds.length > 0 ? contentIds : undefined,
     content_type: contentIds.length > 0 ? "product" : undefined,
@@ -326,7 +416,6 @@ export const trackFacebookViewContent = ({
 
 export const trackFacebookAddToCart = ({
   productId,
-  sku,
   name,
   value,
   quantity = 1,
@@ -334,7 +423,7 @@ export const trackFacebookAddToCart = ({
 } = {}) => {
   if (!ensureFacebookPixelReady()) return false;
 
-  const contentIds = normalizeContentIds([productId, sku]);
+  const contentIds = normalizeContentIds([productId]);
   const payload = normalizeEventPayload({
     content_ids: contentIds.length > 0 ? contentIds : undefined,
     content_type: contentIds.length > 0 ? "product" : undefined,
