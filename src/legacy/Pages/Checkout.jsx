@@ -70,6 +70,12 @@ const Checkout = () => {
     const navigate = useNavigate();
     const lastTrackedKeyRef = useRef('');
     const initiateCheckoutTrackedRef = useRef(false);
+    const initiateCheckoutSessionKey = useMemo(() => {
+        // Stable key based on cart ID only — does not change on qty/price updates
+        // This prevents the effect from re-firing when the user changes quantity
+        const cartId = String(cart?.id || '').trim();
+        return cartId ? `meta_ic_fired_cart_${cartId}` : '';
+    }, [cart?.id]);
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
     const shippingCharges = shippingResponse?.data || [];
@@ -198,11 +204,6 @@ const Checkout = () => {
             cart: cartSnapshotKey,
         });
     }, [canTrackIncomplete, trackingPayload, cartSnapshotKey]);
-    // Use subtotal (without shipping) for InitiateCheckout — shipping may not be selected yet
-    const initiateCheckoutTrackKey = useMemo(
-        () => `${cartItemContentIds.join(',')}|${trackingSubtotalValue}|${totalQuantity}`,
-        [cartItemContentIds, trackingSubtotalValue, totalQuantity]
-    );
 
     const handleQty = async (itemId, nextQty) => {
         if (nextQty < 1) return;
@@ -288,10 +289,30 @@ const Checkout = () => {
         };
     }, [canTrackIncomplete, trackingKey, trackingPayload]);
 
-    // Fire InitiateCheckout once pixel is initialized (wait for PixelCodeInjector to run fbq('init'))
+    // Fire InitiateCheckout ONCE per checkout session (wait for pixel to be initialized)
+    // Guard layers:
+    //   1. initiateCheckoutTrackedRef — in-memory, reset on full page reload
+    //   2. sessionStorage key (per cart ID) — survives React re-renders and hot-reloads
     useEffect(() => {
-        if (!items.length || !initiateCheckoutTrackKey) return;
+        if (!items.length) return;
+        // In-memory guard: already tracked in this component lifetime
         if (initiateCheckoutTrackedRef.current) return;
+
+        // Session-level guard: already tracked for this cart ID in this browser session
+        if (initiateCheckoutSessionKey) {
+            try {
+                if (window.sessionStorage.getItem(initiateCheckoutSessionKey) === '1') {
+                    initiateCheckoutTrackedRef.current = true;
+                    return;
+                }
+            } catch { /* sessionStorage unavailable — rely on in-memory guard only */ }
+        }
+
+        // Capture current snapshot of tracking data at the time the effect first runs.
+        // We do NOT include these in deps so qty/price changes don't re-trigger the effect.
+        const snapshotItemIds = cartItemContentIds;
+        const snapshotValue = parseMoney(subtotal, 0);
+        const snapshotQty = totalQuantity;
 
         let attempts = 0;
         const MAX_ATTEMPTS = 100; // ~30 seconds (100 × 300ms)
@@ -300,17 +321,23 @@ const Checkout = () => {
             attempts++;
             if (!hasInitializedPixel()) {
                 if (attempts < MAX_ATTEMPTS) return;
-                // Best-effort fallback: state did not confirm init within timeout.
-                // We still fire once so tracking is not silently dropped.
+                // Best-effort fallback: still fire once so tracking isn't silently dropped.
             }
 
             trackFacebookInitiateCheckout({
-                itemIds: cartItemContentIds,
-                value: parseMoney(subtotal, 0),
-                quantity: totalQuantity,
+                itemIds: snapshotItemIds,
+                value: snapshotValue,
+                quantity: snapshotQty,
                 currency: 'BDT',
+                eventId: initiateCheckoutSessionKey || undefined,
             });
             initiateCheckoutTrackedRef.current = true;
+
+            // Persist to sessionStorage so React re-mounts don't re-fire
+            if (initiateCheckoutSessionKey) {
+                try { window.sessionStorage.setItem(initiateCheckoutSessionKey, '1'); } catch { /* ignore */ }
+            }
+
             clearInterval(intervalId);
         };
 
@@ -318,7 +345,11 @@ const Checkout = () => {
         tryFireEvent(); // also try immediately
 
         return () => clearInterval(intervalId);
-    }, [initiateCheckoutTrackKey, items.length, cartItemContentIds, subtotal, totalQuantity]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [items.length, initiateCheckoutSessionKey]);
+    // ^ Intentionally stable deps: only re-run if cart goes from empty→non-empty
+    //   or if the cart ID changes (new cart session). Qty/price/subtotal changes
+    //   are captured in the snapshot above and do NOT re-trigger this effect.
 
     const handleSubmit = async (e) => {
         e.preventDefault();
