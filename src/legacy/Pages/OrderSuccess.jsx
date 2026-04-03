@@ -1,15 +1,20 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FiCheckCircle, FiHome, FiPhoneCall } from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
 import { useSiteData } from '../context/SiteDataContext';
-import { hasInitializedPixel, trackFacebookPurchase } from '../utils/facebookPixel';
+import {
+    hasInitializedPixel,
+    hasTrackedFacebookPurchase,
+    trackFacebookPurchase,
+} from '../utils/facebookPixel';
 
 const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
-const PURCHASE_TRACKED_KEY_PREFIX = 'meta_purchase_tracked_';
 const PURCHASE_EVENT_ID_PREFIX = 'purchase_';
+const ORDER_SUCCESS_ACCESS_KEY = 'order_success_access_token';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
+const normalizeOrderSuccessAccessToken = (value) => String(value || '').trim();
 
 const pickFirstValue = (...candidates) => {
     for (const candidate of candidates) {
@@ -59,10 +64,14 @@ const clearPurchaseTrackingHistoryState = () => {
 
     const currentUserState = currentHistoryState.usr;
     if (!currentUserState || typeof currentUserState !== 'object') return;
-    if (!Object.prototype.hasOwnProperty.call(currentUserState, 'purchaseTracking')) return;
+
+    const hasPurchaseTracking = Object.prototype.hasOwnProperty.call(currentUserState, 'purchaseTracking');
+    const hasOrderSuccessAccessToken = Object.prototype.hasOwnProperty.call(currentUserState, 'orderSuccessAccessToken');
+    if (!hasPurchaseTracking && !hasOrderSuccessAccessToken) return;
 
     const restUserState = { ...currentUserState };
     delete restUserState.purchaseTracking;
+    delete restUserState.orderSuccessAccessToken;
 
     try {
         window.history.replaceState(
@@ -85,6 +94,27 @@ const OrderSuccess = () => {
         () => normalizePurchaseTrackingPayload(location.state?.purchaseTracking),
         [location.state]
     );
+    const orderSuccessAccessToken = useMemo(
+        () => normalizeOrderSuccessAccessToken(location.state?.orderSuccessAccessToken),
+        [location.state]
+    );
+    const canAccessOrderSuccess = useMemo(() => {
+        if (!purchaseTrackingPayload) return false;
+        if (!orderSuccessAccessToken) return false;
+        if (typeof window === 'undefined') return false;
+
+        try {
+            const storedToken = normalizeOrderSuccessAccessToken(
+                window.sessionStorage.getItem(ORDER_SUCCESS_ACCESS_KEY)
+            );
+            return storedToken
+                ? storedToken === orderSuccessAccessToken
+                : true;
+        } catch {
+            // Fall back to state-based access if storage is unavailable.
+            return true;
+        }
+    }, [purchaseTrackingPayload, orderSuccessAccessToken]);
 
     const hotlineNumber = useMemo(
         () => pickFirstValue(
@@ -99,23 +129,17 @@ const OrderSuccess = () => {
     const hotlineHref = toDigits(hotlineNumber) ? `tel:${toDigits(hotlineNumber)}` : '#';
 
     useEffect(() => {
+        if (!canAccessOrderSuccess) return;
         if (!purchaseTrackingPayload || hasTrackedPurchaseRef.current) return;
         if (typeof window === 'undefined') return;
 
         const orderId = purchaseTrackingPayload.orderId;
-        const trackedKey = `${PURCHASE_TRACKED_KEY_PREFIX}${orderId}`;
         const purchaseEventId = buildPurchaseEventId(orderId);
 
-        try {
-            const alreadyTrackedInSession = window.sessionStorage.getItem(trackedKey) === '1';
-            const alreadyTrackedInLocal = window.localStorage.getItem(trackedKey) === '1';
-            if (alreadyTrackedInSession || alreadyTrackedInLocal) {
-                hasTrackedPurchaseRef.current = true;
-                clearPurchaseTrackingHistoryState();
-                return;
-            }
-        } catch {
-            // Ignore storage issues (private mode, strict browser settings).
+        if (hasTrackedFacebookPurchase(orderId)) {
+            hasTrackedPurchaseRef.current = true;
+            clearPurchaseTrackingHistoryState();
+            return;
         }
 
         let attempts = 0;
@@ -132,12 +156,13 @@ const OrderSuccess = () => {
             });
             if (tracked) {
                 hasTrackedPurchaseRef.current = true;
-                try {
-                    window.sessionStorage.setItem(trackedKey, '1');
-                    window.localStorage.setItem(trackedKey, '1');
-                } catch {
-                    // Ignore storage write issues and keep runtime dedupe only.
-                }
+                clearPurchaseTrackingHistoryState();
+                clearInterval(intervalId);
+                return;
+            }
+
+            if (hasTrackedFacebookPurchase(orderId)) {
+                hasTrackedPurchaseRef.current = true;
                 clearPurchaseTrackingHistoryState();
                 clearInterval(intervalId);
                 return;
@@ -152,7 +177,11 @@ const OrderSuccess = () => {
         tryTrackPurchase();
 
         return () => window.clearInterval(intervalId);
-    }, [purchaseTrackingPayload]);
+    }, [canAccessOrderSuccess, purchaseTrackingPayload]);
+
+    if (!canAccessOrderSuccess) {
+        return <Navigate to="/checkout" replace />;
+    }
 
     return (
         <div className="min-h-[65vh] bg-[#edf1f7] px-4 py-10 md:py-14">

@@ -163,9 +163,8 @@ const StorefrontProductCard = ({ item, product }) => {
 
       trackFacebookAddToCart({
         productId: isExternal
-          ? source?.external_product_id || source?.id || slug
-          : source?.id || info?.id || slug,
-        sku: sku || null,
+          ? source?.id || source?.external_product_id || null
+          : source?.id || info?.id || null,
         name,
         value: price,
         quantity: 1,

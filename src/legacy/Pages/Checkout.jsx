@@ -20,6 +20,8 @@ import {
 } from '../utils/facebookPixel';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
+const ORDER_SUCCESS_ACCESS_KEY = 'order_success_access_token';
+
 const parseMoney = (value, fallback = 0) => {
     if (typeof value === 'number') {
         return Number.isFinite(value) ? value : fallback;
@@ -36,6 +38,14 @@ const toTrackingValue = (value) => parseMoney(value, 0).toFixed(2);
 const isValidBdPhone = (value) => {
     const digits = toDigits(value);
     return /^01\d{9}$/.test(digits) || /^8801\d{9}$/.test(digits);
+};
+
+const createOrderSuccessAccessToken = (orderId) => {
+    const normalizedOrderId = String(orderId || 'order')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '_') || 'order';
+    const randomPart = Math.random().toString(36).slice(2, 10);
+    return `${normalizedOrderId}_${Date.now()}_${randomPart}`;
 };
 
 const Checkout = () => {
@@ -146,10 +156,18 @@ const Checkout = () => {
         [items]
     );
     const cartItemContentIds = useMemo(
-        () => items
-            .map((item) => item?.product_id || item?.external_product_id || item?.id || item?.options?.sku)
-            .map((id) => String(id || '').trim())
-            .filter(Boolean),
+        () => {
+            const seenIds = new Set();
+
+            return items
+                .map((item) => item?.product_id || item?.external_product_id || item?.id || item?.options?.sku)
+                .map((id) => String(id || '').trim())
+                .filter((id) => {
+                    if (!id || seenIds.has(id)) return false;
+                    seenIds.add(id);
+                    return true;
+                });
+        },
         [items]
     );
     const phoneDigits = String(formData.phone || '').replace(/\D/g, '');
@@ -356,10 +374,21 @@ const Checkout = () => {
                     quantity: totalQuantity,
                     currency: 'BDT',
                 };
+                const orderSuccessAccessToken = createOrderSuccessAccessToken(orderId);
+
+                if (typeof window !== 'undefined') {
+                    try {
+                        window.sessionStorage.setItem(ORDER_SUCCESS_ACCESS_KEY, orderSuccessAccessToken);
+                    } catch {
+                        // If session storage is blocked, OrderSuccess guard will safely reject access.
+                    }
+                }
+
                 lastTrackedKeyRef.current = '';
                 navigate('/order-success', {
                     state: {
                         purchaseTracking: purchaseTrackingPayload,
+                        orderSuccessAccessToken,
                     },
                 });
             } else {
