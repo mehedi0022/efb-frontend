@@ -7,10 +7,7 @@ import ProductDetailView from '../components/ProductDetailView';
 import { resolveMediaUrl } from '../utils/media';
 import { showSmartSuccessToast } from '../admin/utils/alerts';
 import { resolveBrowserTabTitle } from '../utils/tabTitle';
-import {
-    trackFacebookAddToCart,
-    trackFacebookViewContent,
-} from '../utils/facebookPixel';
+import { trackEvent } from '@/lib/pixel';
 
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
 const FALLBACK_WHATSAPP_PHONE = process.env.NEXT_PUBLIC_NOGOD_PHONE || FALLBACK_CONTACT_PHONE;
@@ -215,11 +212,13 @@ const ProductDetails = () => {
         const trackKey = String(product.id);
         if (trackedViewProductKeyRef.current === trackKey) return;
 
-        trackFacebookViewContent({
-            productId: product.id,
-            name: product?.name || null,
+        trackEvent('ViewContent', {
+            content_ids: [String(product.id)],
+            content_type: 'product',
+            content_name: product?.name || undefined,
             value: Number(price) || Number(product?.new_price ?? product?.price ?? 0),
-            quantity: 1,
+            currency: 'BDT',
+            num_items: 1,
         });
 
         trackedViewProductKeyRef.current = trackKey;
@@ -250,11 +249,13 @@ const ProductDetails = () => {
 
             await refreshCart();
 
-            trackFacebookAddToCart({
-                productId: product.id,
-                name: product?.name || null,
+            trackEvent('AddToCart', {
+                content_ids: [String(product.id)],
+                content_type: 'product',
+                content_name: product?.name || undefined,
                 value: (Number(price) || 0) * (Number(qty) || 1),
-                quantity: Number(qty) || 1,
+                currency: 'BDT',
+                num_items: Number(qty) || 1,
             });
 
             if (redirectToCheckout) {

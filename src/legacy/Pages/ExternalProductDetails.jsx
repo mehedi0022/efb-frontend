@@ -11,10 +11,7 @@ import {
     toExternalProductPath,
 } from '../utils/externalProduct';
 import { resolveBrowserTabTitle } from '../utils/tabTitle';
-import {
-    trackFacebookAddToCart,
-    trackFacebookViewContent,
-} from '../utils/facebookPixel';
+import { trackEvent } from '@/lib/pixel';
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE || 'https://freelancerbangladesh.com/';
 const FALLBACK_CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
@@ -159,11 +156,13 @@ const ExternalProductDetails = () => {
         const trackKey = String(productId);
         if (trackedViewProductKeyRef.current === trackKey) return;
 
-        trackFacebookViewContent({
-            productId,
-            name: productName,
+        trackEvent('ViewContent', {
+            content_ids: [String(productId)],
+            content_type: 'product',
+            content_name: productName || undefined,
             value: Number(price) || 0,
-            quantity: 1,
+            currency: 'BDT',
+            num_items: 1,
         });
 
         trackedViewProductKeyRef.current = trackKey;
@@ -200,12 +199,19 @@ const ExternalProductDetails = () => {
             await addExternalToCart(payload).unwrap();
             await refreshCart();
 
-            trackFacebookAddToCart({
-                productId: data?.id || data?.productId || data?.product_id || null,
-                name: productName,
-                value: (Number(price) || 0) * (Number(qty) || 1),
-                quantity: Number(qty) || 1,
-            });
+            const trackingProductId =
+                data?.id || data?.productId || data?.product_id || null;
+
+            if (trackingProductId) {
+                trackEvent('AddToCart', {
+                    content_ids: [String(trackingProductId)],
+                    content_type: 'product',
+                    content_name: productName || undefined,
+                    value: (Number(price) || 0) * (Number(qty) || 1),
+                    currency: 'BDT',
+                    num_items: Number(qty) || 1,
+                });
+            }
 
             if (redirectToCheckout) {
                 window.location.href = '/checkout';

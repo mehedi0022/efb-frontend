@@ -23,10 +23,7 @@ import {
 } from "react-icons/fi";
 import { useSettings } from "../context/SettingsContext";
 import { showErrorMessage } from "../admin/utils/alerts";
-import {
-  trackFacebookInitiateCheckout,
-  hasInitializedPixel,
-} from "../utils/facebookPixel";
+import { trackEvent } from "@/lib/pixel";
 
 const toDigits = (value) => String(value || "").replace(/\D/g, "");
 const ORDER_SUCCESS_ACCESS_KEY = "order_success_access_token";
@@ -328,7 +325,7 @@ const Checkout = () => {
     };
   }, [canTrackIncomplete, trackingKey, trackingPayload]);
 
-  // Fire InitiateCheckout ONCE per checkout session (wait for pixel to be initialized)
+  // Fire InitiateCheckout ONCE per checkout session.
   // Guard layers:
   //   1. initiateCheckoutTrackedRef — in-memory, reset on full page reload
   //   2. sessionStorage key (per cart ID) — survives React re-renders and hot-reloads
@@ -359,19 +356,30 @@ const Checkout = () => {
     const MAX_ATTEMPTS = 100; // ~30 seconds (100 × 300ms)
 
     const tryFireEvent = () => {
-      attempts++;
-      if (!hasInitializedPixel()) {
+      attempts += 1;
+
+      const tracked = trackEvent(
+        "InitiateCheckout",
+        {
+          content_ids:
+            snapshotItemIds.length > 0 ? snapshotItemIds : undefined,
+          content_type:
+            snapshotItemIds.length > 0 ? "product" : undefined,
+          value: snapshotValue,
+          currency: "BDT",
+          num_items: snapshotQty,
+        },
+        {
+          eventId: initiateCheckoutSessionKey || undefined,
+        },
+      );
+
+      if (!tracked) {
         if (attempts < MAX_ATTEMPTS) return;
-        // Best-effort fallback: still fire once so tracking isn't silently dropped.
+        clearInterval(intervalId);
+        return;
       }
 
-      trackFacebookInitiateCheckout({
-        itemIds: snapshotItemIds,
-        value: snapshotValue,
-        quantity: snapshotQty,
-        currency: "BDT",
-        eventId: initiateCheckoutSessionKey || undefined,
-      });
       initiateCheckoutTrackedRef.current = true;
 
       // Persist to sessionStorage so React re-mounts don't re-fire

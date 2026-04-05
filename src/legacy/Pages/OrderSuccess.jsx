@@ -3,18 +3,17 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FiCheckCircle, FiHome, FiPhoneCall } from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
 import { useSiteData } from '../context/SiteDataContext';
-import {
-    hasInitializedPixel,
-    hasTrackedFacebookPurchase,
-    trackFacebookPurchase,
-} from '../utils/facebookPixel';
+import { trackOrderEvent } from '@/lib/pixel';
 
 const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
 const PURCHASE_EVENT_ID_PREFIX = 'purchase_';
 const ORDER_SUCCESS_ACCESS_KEY = 'order_success_access_token';
+const ORDER_EVENT_STORAGE_PREFIX = 'meta_pixel_order_event_';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
 const normalizeOrderSuccessAccessToken = (value) => String(value || '').trim();
+const normalizeOrderEventKeyPart = (value) =>
+    String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
 const pickFirstValue = (...candidates) => {
     for (const candidate of candidates) {
@@ -48,11 +47,24 @@ const normalizePurchaseTrackingPayload = (payload) => {
 };
 
 const buildPurchaseEventId = (orderId) => {
-    const normalizedOrderId = String(orderId || '')
-        .trim()
-        .replace(/[^a-zA-Z0-9_-]/g, '_');
+    const normalizedOrderId = normalizeOrderEventKeyPart(orderId);
 
     return normalizedOrderId ? `${PURCHASE_EVENT_ID_PREFIX}${normalizedOrderId}` : '';
+};
+
+const hasTrackedPurchaseEvent = (orderId) => {
+    if (typeof window === 'undefined') return false;
+
+    const normalizedOrderId = normalizeOrderEventKeyPart(orderId);
+    if (!normalizedOrderId) return false;
+
+    try {
+        return window.localStorage.getItem(
+            `${ORDER_EVENT_STORAGE_PREFIX}purchase_${normalizedOrderId}`
+        ) === '1';
+    } catch {
+        return false;
+    }
 };
 
 const clearPurchaseTrackingHistoryState = () => {
@@ -136,7 +148,7 @@ const OrderSuccess = () => {
         const orderId = purchaseTrackingPayload.orderId;
         const purchaseEventId = buildPurchaseEventId(orderId);
 
-        if (hasTrackedFacebookPurchase(orderId)) {
+        if (hasTrackedPurchaseEvent(orderId)) {
             hasTrackedPurchaseRef.current = true;
             clearPurchaseTrackingHistoryState();
             return;
@@ -148,12 +160,23 @@ const OrderSuccess = () => {
         const tryTrackPurchase = () => {
             attempts += 1;
 
-            if (!hasInitializedPixel() && attempts < MAX_ATTEMPTS) return;
-
-            const tracked = trackFacebookPurchase({
-                ...purchaseTrackingPayload,
-                eventId: purchaseEventId || undefined,
-            });
+            const tracked = trackOrderEvent(
+                'Purchase',
+                orderId,
+                {
+                    order_id: orderId,
+                    content_ids: purchaseTrackingPayload.itemIds.length > 0
+                        ? purchaseTrackingPayload.itemIds
+                        : undefined,
+                    content_type: purchaseTrackingPayload.itemIds.length > 0 ? 'product' : undefined,
+                    value: purchaseTrackingPayload.value,
+                    currency: purchaseTrackingPayload.currency,
+                    num_items: purchaseTrackingPayload.quantity,
+                },
+                {
+                    eventId: purchaseEventId || undefined,
+                }
+            );
             if (tracked) {
                 hasTrackedPurchaseRef.current = true;
                 clearPurchaseTrackingHistoryState();
@@ -161,7 +184,7 @@ const OrderSuccess = () => {
                 return;
             }
 
-            if (hasTrackedFacebookPurchase(orderId)) {
+            if (hasTrackedPurchaseEvent(orderId)) {
                 hasTrackedPurchaseRef.current = true;
                 clearPurchaseTrackingHistoryState();
                 clearInterval(intervalId);

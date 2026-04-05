@@ -14,7 +14,7 @@ import {
   toExternalProductPath,
 } from "../utils/externalProduct";
 import { showSmartSuccessToast } from "../admin/utils/alerts";
-import { trackFacebookAddToCart } from "../utils/facebookPixel";
+import { trackEvent } from "@/lib/pixel";
 
 const toNumber = (value, fallback = 0) => {
   const parsed = Number(value);
@@ -161,14 +161,20 @@ const StorefrontProductCard = ({ item, product }) => {
 
       await refreshCart();
 
-      trackFacebookAddToCart({
-        productId: isExternal
-          ? source?.id || source?.external_product_id || null
-          : source?.id || info?.id || null,
-        name,
-        value: price,
-        quantity: 1,
-      });
+      const trackingProductId = isExternal
+        ? source?.id || source?.external_product_id || null
+        : source?.id || info?.id || null;
+
+      if (trackingProductId) {
+        trackEvent("AddToCart", {
+          content_ids: [String(trackingProductId)],
+          content_type: "product",
+          content_name: name || undefined,
+          value: price,
+          currency: "BDT",
+          num_items: 1,
+        });
+      }
 
       if (redirectToCheckout) {
         window.location.href = "/checkout";
