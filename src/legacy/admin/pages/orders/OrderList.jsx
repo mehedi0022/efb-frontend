@@ -1252,7 +1252,7 @@ const OrderList = () => {
                   size="small"
                   type={isEfbSent ? "default" : "primary"}
                   icon={<FiSend size={13} />}
-                  disabled={isEfbSent || isSendingEfb}
+                  disabled={isSendingEfb}
                   className={
                     isEfbSent
                       ? "!border-emerald-500 !text-emerald-600"
