@@ -42,8 +42,6 @@ const parseMoney = (value, fallback = 0) => {
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
-const toTrackingValue = (value) => parseMoney(value, 0).toFixed(2);
-
 const isValidBdPhone = (value) => {
   const digits = toDigits(value);
   return /^01\d{9}$/.test(digits) || /^8801\d{9}$/.test(digits);
@@ -78,6 +76,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const lastTrackedKeyRef = useRef("");
   const initiateCheckoutTrackedRef = useRef(false);
+  const submitLockRef = useRef(false);
   const initiateCheckoutSessionKey = useMemo(() => {
     // Stable key based on cart ID only — does not change on qty/price updates
     // This prevents the effect from re-firing when the user changes quantity
@@ -167,15 +166,6 @@ const Checkout = () => {
   }, [shippingCharges, formData.area]);
 
   const total = subtotal + shippingCost;
-  const trackingSubtotalValue = useMemo(
-    () => toTrackingValue(subtotal),
-    [subtotal],
-  );
-  const trackingShippingValue = useMemo(
-    () => toTrackingValue(shippingCost),
-    [shippingCost],
-  );
-  const trackingTotalValue = useMemo(() => toTrackingValue(total), [total]);
   const totalQuantity = useMemo(
     () => items.reduce((sum, item) => sum + parseMoney(item?.quantity, 0), 0),
     [items],
@@ -408,108 +398,114 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmittingOrder) return;
+    if (submitLockRef.current || isSubmittingOrder) return;
 
-    if (!shippingChargeIds.length) {
-      const message = "No delivery area is available right now.";
-      setFormErrors((prev) => ({ ...prev, area: message }));
-      showErrorMessage(message);
-      return;
-    }
+    submitLockRef.current = true;
 
     try {
-      await checkoutSchema.validate(formData, { abortEarly: false });
-      setFormErrors({});
-    } catch (validationError) {
-      const nextErrors = {};
-      if (validationError?.inner?.length) {
-        validationError.inner.forEach((item) => {
-          if (item?.path && !nextErrors[item.path]) {
-            nextErrors[item.path] = item.message;
+      if (!shippingChargeIds.length) {
+        const message = "No delivery area is available right now.";
+        setFormErrors((prev) => ({ ...prev, area: message }));
+        showErrorMessage(message);
+        return;
+      }
+
+      try {
+        await checkoutSchema.validate(formData, { abortEarly: false });
+        setFormErrors({});
+      } catch (validationError) {
+        const nextErrors = {};
+        if (validationError?.inner?.length) {
+          validationError.inner.forEach((item) => {
+            if (item?.path && !nextErrors[item.path]) {
+              nextErrors[item.path] = item.message;
+            }
+          });
+        } else if (validationError?.path) {
+          nextErrors[validationError.path] = validationError.message;
+        }
+
+        setFormErrors(nextErrors);
+
+        const areaMessage = nextErrors.area;
+        const firstMessage = areaMessage || Object.values(nextErrors)[0];
+        if (firstMessage) {
+          showErrorMessage(firstMessage);
+        } else {
+          showErrorMessage("Please provide valid checkout information.");
+        }
+        return;
+      }
+
+      setIsSubmittingOrder(true);
+      try {
+        const response = await checkoutMutation({
+          ...formData,
+          district: 64,
+        }).unwrap();
+
+        if (response?.order_id) {
+          const orderId = String(response.order_id).trim();
+          const purchaseTrackingPayload = {
+            orderId,
+            itemIds: cartItemContentIds,
+            value: parseMoney(total, 0),
+            quantity: totalQuantity,
+            currency: "BDT",
+          };
+          const orderSuccessAccessToken = createOrderSuccessAccessToken(orderId);
+
+          if (typeof window !== "undefined") {
+            try {
+              window.sessionStorage.setItem(
+                ORDER_SUCCESS_ACCESS_KEY,
+                orderSuccessAccessToken,
+              );
+            } catch {
+              // If session storage is blocked, OrderSuccess guard will safely reject access.
+            }
           }
-        });
-      } else if (validationError?.path) {
-        nextErrors[validationError.path] = validationError.message;
-      }
 
-      setFormErrors(nextErrors);
-
-      const areaMessage = nextErrors.area;
-      const firstMessage = areaMessage || Object.values(nextErrors)[0];
-      if (firstMessage) {
-        showErrorMessage(firstMessage);
-      } else {
-        showErrorMessage("Please provide valid checkout information.");
-      }
-      return;
-    }
-
-    setIsSubmittingOrder(true);
-    try {
-      const response = await checkoutMutation({
-        ...formData,
-        district: 64,
-      }).unwrap();
-
-      if (response?.order_id) {
-        const orderId = String(response.order_id).trim();
-        const purchaseTrackingPayload = {
-          orderId,
-          itemIds: cartItemContentIds,
-          value: parseMoney(total, 0),
-          quantity: totalQuantity,
-          currency: "BDT",
-        };
-        const orderSuccessAccessToken = createOrderSuccessAccessToken(orderId);
-
-        if (typeof window !== "undefined") {
-          try {
-            window.sessionStorage.setItem(
-              ORDER_SUCCESS_ACCESS_KEY,
+          lastTrackedKeyRef.current = "";
+          navigate("/order-success", {
+            state: {
+              purchaseTracking: purchaseTrackingPayload,
               orderSuccessAccessToken,
-            );
-          } catch {
-            // If session storage is blocked, OrderSuccess guard will safely reject access.
+            },
+          });
+        } else {
+          showErrorMessage("Order was placed but order ID was not returned.");
+          navigate("/");
+        }
+      } catch (error) {
+        const serverErrors =
+          error?.data?.errors && typeof error.data.errors === "object"
+            ? error.data.errors
+            : {};
+        const errorEntries = Object.entries(serverErrors);
+        const nextErrors = {};
+        errorEntries.forEach(([field, messages]) => {
+          const firstMessage = Array.isArray(messages) ? messages[0] : messages;
+          if (typeof firstMessage === "string" && firstMessage.trim()) {
+            nextErrors[field] = firstMessage.trim();
           }
-        }
-
-        lastTrackedKeyRef.current = "";
-        navigate("/order-success", {
-          state: {
-            purchaseTracking: purchaseTrackingPayload,
-            orderSuccessAccessToken,
-          },
         });
-      } else {
-        showErrorMessage("Order was placed but order ID was not returned.");
-        navigate("/");
-      }
-    } catch (error) {
-      const serverErrors =
-        error?.data?.errors && typeof error.data.errors === "object"
-          ? error.data.errors
-          : {};
-      const errorEntries = Object.entries(serverErrors);
-      const nextErrors = {};
-      errorEntries.forEach(([field, messages]) => {
-        const firstMessage = Array.isArray(messages) ? messages[0] : messages;
-        if (typeof firstMessage === "string" && firstMessage.trim()) {
-          nextErrors[field] = firstMessage.trim();
+
+        if (Object.keys(nextErrors).length > 0) {
+          setFormErrors((prev) => ({ ...prev, ...nextErrors }));
         }
-      });
 
-      if (Object.keys(nextErrors).length > 0) {
-        setFormErrors((prev) => ({ ...prev, ...nextErrors }));
+        const areaMessage =
+          (typeof nextErrors.area === "string" && nextErrors.area) ||
+          (Array.isArray(serverErrors.area) ? serverErrors.area[0] : null);
+        const fallbackMessage =
+          areaMessage || error?.data?.message || "Failed to confirm order.";
+        showErrorMessage(fallbackMessage);
+      } finally {
+        setIsSubmittingOrder(false);
       }
-
-      const areaMessage =
-        (typeof nextErrors.area === "string" && nextErrors.area) ||
-        (Array.isArray(serverErrors.area) ? serverErrors.area[0] : null);
-      const fallbackMessage =
-        areaMessage || error?.data?.message || "Failed to confirm order.";
-      showErrorMessage(fallbackMessage);
     } finally {
-      setIsSubmittingOrder(false);
+      submitLockRef.current = false;
     }
   };
 
@@ -691,12 +687,7 @@ const Checkout = () => {
                             style={{
                               color: isActive ? primaryColor : undefined,
                             }}
-                            className={`text-sm font-medium ${!isActive ? "text-gray-500" : ""}`}
-                            data-track="meta-shipping-option-value"
-                            data-meta-value-source="shipping_option_amount"
-                            data-meta-currency="BDT"
-                            data-meta-value={toTrackingValue(charge.amount)}
-                            data-shipping-option-id={String(charge.id)}>
+                            className={`text-sm font-medium ${!isActive ? "text-gray-500" : ""}`}>
                             ৳{charge.amount}
                           </span>
                         </label>
@@ -722,16 +713,7 @@ const Checkout = () => {
                     ) : (
                       <>
                         <span>Confirm Order •</span>
-                        <span
-                          id="meta-mobile-confirm-total-value"
-                          data-track="meta-mobile-confirm-total-value"
-                          data-meta-value-source="checkout_mobile_confirm_total"
-                          data-meta-currency="BDT"
-                          data-meta-value={trackingTotalValue}
-                          className="tabular-nums"
-                          title="Checkout mobile confirm total value source">
-                          ৳{total}
-                        </span>
+                        <span className="tabular-nums">৳{total}</span>
                       </>
                     )}
                   </button>
@@ -763,13 +745,6 @@ const Checkout = () => {
                     const lineTotal =
                       parseMoney(item?.price, 0) *
                       parseMoney(item?.quantity, 0);
-                    const lineTrackingValue = toTrackingValue(lineTotal);
-                    const lineTrackId = String(
-                      item?.id ||
-                        item?.external_product_id ||
-                        item?.product_id ||
-                        "",
-                    );
 
                     return (
                       <motion.div
@@ -832,15 +807,7 @@ const Checkout = () => {
                               </button>
                             </div>
                             <p className="text-sm font-bold text-gray-900">
-                              <span
-                                data-track="meta-line-total-value"
-                                data-meta-value-source="line_total"
-                                data-meta-currency="BDT"
-                                data-meta-value={lineTrackingValue}
-                                data-line-track-id={lineTrackId}
-                                className="tabular-nums">
-                                ৳{lineTotal}
-                              </span>
+                              <span className="tabular-nums">৳{lineTotal}</span>
                             </p>
                           </div>
                         </div>
@@ -853,44 +820,13 @@ const Checkout = () => {
               <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
                 <div className="flex justify-between text-sm text-gray-500">
                   <span>Subtotal</span>
-                  <span
-                    id="meta-subtotal-value"
-                    data-track="meta-subtotal-value"
-                    data-meta-value-source="checkout_subtotal_display"
-                    data-meta-currency="BDT"
-                    data-meta-value={trackingSubtotalValue}
-                    className="font-semibold text-gray-900 tabular-nums"
-                    title="Checkout subtotal value source">
+                  <span className="font-semibold text-gray-900 tabular-nums">
                     ৳{subtotal}
                   </span>
                 </div>
-                {/* <div
-                                    data-track="meta-value-container"
-                                    className="flex justify-between text-xs text-gray-400"
-                                >
-                                    <span>Meta Value Source (InitiateCheckout)</span>
-                                    <span
-                                        id="meta-initiate-checkout-value"
-                                        data-track="meta-initiate-checkout-value"
-                                        data-meta-value-source="initiate_checkout_subtotal"
-                                        data-meta-currency="BDT"
-                                        data-meta-value={trackingSubtotalValue}
-                                        className="font-semibold text-gray-500 tabular-nums"
-                                        title="Use this value in Meta Event Setup Tool"
-                                    >
-                                        {trackingSubtotalValue}
-                                    </span>
-                                </div> */}
                 <div className="flex justify-between text-sm text-gray-500 pb-1">
                   <span>Shipping</span>
-                  <span
-                    id="meta-shipping-value"
-                    data-track="meta-shipping-value"
-                    data-meta-value-source="checkout_shipping_display"
-                    data-meta-currency="BDT"
-                    data-meta-value={trackingShippingValue}
-                    className="font-semibold text-gray-900 tabular-nums"
-                    title="Checkout shipping value source">
+                  <span className="font-semibold text-gray-900 tabular-nums">
                     ৳{shippingCost}
                   </span>
                 </div>
@@ -899,38 +835,16 @@ const Checkout = () => {
                     Total Payable
                   </span>
                   <span
-                    id="meta-total-payable-value"
-                    data-track="meta-total-payable-value"
-                    data-meta-value-source="checkout_total_payable_display"
-                    data-meta-currency="BDT"
-                    data-meta-value={trackingTotalValue}
                     style={{ color: primaryColor }}
-                    className="text-xl font-black tabular-nums"
-                    title="Checkout total payable value source">
+                    className="text-xl font-black tabular-nums">
                     ৳{total}
                   </span>
                 </div>
-                {/* <div
-                                    data-track="meta-value-container"
-                                    className="flex justify-between text-xs text-gray-400"
-                                >
-                                    <span>Meta Value Source (Purchase)</span>
-                                    <span
-                                        id="meta-purchase-value"
-                                        data-track="meta-purchase-value"
-                                        data-meta-value-source="purchase_total"
-                                        data-meta-currency="BDT"
-                                        data-meta-value={trackingTotalValue}
-                                        className="font-semibold text-gray-500 tabular-nums"
-                                        title="Use this value in Meta Event Setup Tool"
-                                    >
-                                        {trackingTotalValue}
-                                    </span>
-                                </div> */}
               </div>
 
               <div className="p-6 pt-0">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     handleSubmit(e);
