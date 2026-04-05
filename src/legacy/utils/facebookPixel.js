@@ -7,6 +7,7 @@ const PIXEL_DEBUG_STORAGE_KEY = "pixel_debug";
 const TRUTHY_VALUES = ["1", "true", "yes", "on"];
 const SINGLE_CONTENT_ID_EVENTS = new Set(["ViewContent", "AddToCart"]);
 const NUMERIC_CONTENT_ID_PATTERN = /^\d+$/;
+const BLOCKED_PLUGIN_EVENT_ID_PATTERN = /^ob3_plugin-set_/i;
 
 const getWindowObject = () => (typeof window === "undefined" ? null : window);
 const getDocumentObject = () =>
@@ -203,6 +204,54 @@ const sanitizeFbqTrackArgs = (args = []) => {
   return nextArgs;
 };
 
+const shouldBlockExternalSetupTrack = (args = []) => {
+  if (!Array.isArray(args) || args.length === 0) return false;
+
+  const command = String(args[0] || "").trim();
+  let eventNameIndex = -1;
+  let payloadIndex = -1;
+  let optionsIndex = -1;
+
+  if (command === "track") {
+    eventNameIndex = 1;
+    payloadIndex = 2;
+    optionsIndex = 3;
+  } else if (command === "trackSingle") {
+    eventNameIndex = 2;
+    payloadIndex = 3;
+    optionsIndex = 4;
+  } else {
+    return false;
+  }
+
+  const eventName = String(args[eventNameIndex] || "").trim();
+  const payload =
+    args[payloadIndex] && typeof args[payloadIndex] === "object"
+      ? args[payloadIndex]
+      : null;
+  const options =
+    args[optionsIndex] && typeof args[optionsIndex] === "object"
+      ? args[optionsIndex]
+      : null;
+  const eventId = String(
+    options?.eventID || options?.eventId || payload?.eventID || payload?.eventId || "",
+  ).trim();
+  const setupToolFlag = payload?.cs_est === true;
+
+  if (!eventId && !setupToolFlag) return false;
+  if (!BLOCKED_PLUGIN_EVENT_ID_PATTERN.test(eventId) && !setupToolFlag) {
+    return false;
+  }
+
+  debugPixel(`block:external-setup:${eventName || "unknown"}`, {
+    eventId: eventId || undefined,
+    setupToolFlag,
+    payload,
+  });
+
+  return true;
+};
+
 const normalizeEventPayload = (payload = {}) => {
   const normalized = {};
   Object.entries(payload).forEach(([key, value]) => {
@@ -272,6 +321,9 @@ const ensureFbqStub = () => {
   const fbqWrapper = function (...args) {
     const normalizedArgs = sanitizeFbqTrackArgs(args);
     trackInitCall(normalizedArgs);
+    if (shouldBlockExternalSetupTrack(normalizedArgs)) {
+      return;
+    }
 
     if (typeof fbqWrapper.callMethod === "function") {
       fbqWrapper.callMethod.apply(fbqWrapper, normalizedArgs);
