@@ -3,17 +3,12 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FiCheckCircle, FiHome, FiPhoneCall } from 'react-icons/fi';
 import { useSettings } from '../context/SettingsContext';
 import { useSiteData } from '../context/SiteDataContext';
-import { trackOrderEvent } from '@/lib/pixel';
 
 const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
-const PURCHASE_EVENT_ID_PREFIX = 'purchase_';
 const ORDER_SUCCESS_ACCESS_KEY = 'order_success_access_token';
-const ORDER_EVENT_STORAGE_PREFIX = 'meta_pixel_order_event_';
 
 const toDigits = (value) => String(value || '').replace(/\D/g, '');
 const normalizeOrderSuccessAccessToken = (value) => String(value || '').trim();
-const normalizeOrderEventKeyPart = (value) =>
-  String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
 const pickFirstValue = (...candidates) => {
   for (const candidate of candidates) {
@@ -45,28 +40,6 @@ const normalizePurchaseTrackingPayload = (payload) => {
         : (itemIds.length || 1),
     currency: String(payload.currency || 'BDT').trim() || 'BDT',
   };
-};
-
-const buildPurchaseEventId = (orderId) => {
-  const normalizedOrderId = normalizeOrderEventKeyPart(orderId);
-  return normalizedOrderId ? `${PURCHASE_EVENT_ID_PREFIX}${normalizedOrderId}` : '';
-};
-
-const hasTrackedPurchaseEvent = (orderId) => {
-  if (typeof window === 'undefined') return false;
-
-  const normalizedOrderId = normalizeOrderEventKeyPart(orderId);
-  if (!normalizedOrderId) return false;
-
-  try {
-    return (
-      window.localStorage.getItem(
-        `${ORDER_EVENT_STORAGE_PREFIX}purchase_${normalizedOrderId}`,
-      ) === '1'
-    );
-  } catch {
-    return false;
-  }
 };
 
 const clearPurchaseTrackingHistoryState = () => {
@@ -150,66 +123,32 @@ const OrderSuccess = () => {
   useEffect(() => {
     if (!canAccessOrderSuccess) return;
     if (!purchaseTrackingPayload || hasTrackedPurchaseRef.current) return;
-    if (typeof window === 'undefined') return;
+    hasTrackedPurchaseRef.current = true;
+    clearPurchaseTrackingHistoryState();
 
-    const orderId = purchaseTrackingPayload.orderId;
-    const purchaseEventId = buildPurchaseEventId(orderId);
-
-    if (hasTrackedPurchaseEvent(orderId)) {
-      hasTrackedPurchaseRef.current = true;
-      clearPurchaseTrackingHistoryState();
-      return;
-    }
-
-    let attempts = 0;
-    const MAX_ATTEMPTS = 100; // ~30 seconds (100 × 300ms)
-
-    const tryTrackPurchase = () => {
-      attempts += 1;
-
-      const tracked = trackOrderEvent(
-        'Purchase',
-        orderId,
-        {
-          order_id: orderId,
-          content_ids:
-            purchaseTrackingPayload.itemIds.length > 0
-              ? purchaseTrackingPayload.itemIds
-              : undefined,
-          content_type:
-            purchaseTrackingPayload.itemIds.length > 0 ? 'product' : undefined,
-          value: purchaseTrackingPayload.value,
-          currency: purchaseTrackingPayload.currency,
-          num_items: purchaseTrackingPayload.quantity,
-        },
-        {
-          eventId: purchaseEventId || undefined,
-        },
-      );
-
-      if (tracked) {
-        hasTrackedPurchaseRef.current = true;
-        clearPurchaseTrackingHistoryState();
-        clearInterval(intervalId);
-        return;
-      }
-
-      if (hasTrackedPurchaseEvent(orderId)) {
-        hasTrackedPurchaseRef.current = true;
-        clearPurchaseTrackingHistoryState();
-        clearInterval(intervalId);
-        return;
-      }
-
-      if (attempts >= MAX_ATTEMPTS) {
-        clearInterval(intervalId);
-      }
-    };
-
-    const intervalId = window.setInterval(tryTrackPurchase, 300);
-    tryTrackPurchase();
-
-    return () => window.clearInterval(intervalId);
+    // TEMP DISABLED: Manual Purchase Event
+    // trackOrderEvent(
+    //   'Purchase',
+    //   purchaseTrackingPayload.orderId,
+    //   {
+    //     order_id: purchaseTrackingPayload.orderId,
+    //     content_ids:
+    //       purchaseTrackingPayload.itemIds.length > 0
+    //         ? purchaseTrackingPayload.itemIds
+    //         : undefined,
+    //     content_type:
+    //       purchaseTrackingPayload.itemIds.length > 0 ? 'product' : undefined,
+    //     value: purchaseTrackingPayload.value,
+    //     currency: purchaseTrackingPayload.currency,
+    //     num_items: purchaseTrackingPayload.quantity,
+    //   },
+    //   {
+    //     eventId:
+    //       `purchase_${String(purchaseTrackingPayload.orderId || '')
+    //         .trim()
+    //         .replace(/[^a-zA-Z0-9_-]/g, '_')}` || undefined,
+    //   },
+    // );
   }, [canAccessOrderSuccess, purchaseTrackingPayload]);
 
   if (!canAccessOrderSuccess) {

@@ -611,7 +611,9 @@ export const trackFacebookPurchase = ({
       order_id: normalizedOrderId || undefined,
     });
 
-    const tracked = callFbqTrack("Purchase", payload, { eventId });
+    // TEMP DISABLED: Manual Purchase Event
+    // const tracked = callFbqTrack("Purchase", payload, { eventId });
+    const tracked = false;
     if (tracked && normalizedOrderId) {
       if (state) {
         state.trackedPurchases[normalizedOrderId] = Date.now();
