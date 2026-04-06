@@ -233,20 +233,22 @@ const menuItems = [
       },
     ],
   },
-  {
-    title: "Pixel and GTM",
-    icon: FiSave,
-    key: "pixel",
-    prefixes: ["/pixels", "/tag-managers"],
-    children: [
-      { title: "Pixels Setting", path: "/pixels", permission: "pixels.view" },
-      {
-        title: "GTM Setting",
-        path: "/tag-managers",
-        permission: "tag-managers.view",
-      },
-    ],
-  },
+
+  // TEMP DISABLED: Pixel and GTM{
+  //   title: "Pixel and GTM",
+  // icon: FiSave,
+  //   key: "pixel",
+  // prefixes: ["/pixels", "/tag-managers"],
+  //  children: [
+  //     { title: "Pixels Setting", path: "/pixels", permission: "pixels.view" },
+  //   {
+  //       title: "GTM Setting",
+  //      path: "/tag-managers",
+  //       permission: "tag-managers.view",
+  //    },
+  //   ],
+  //},
+
   {
     title: "Banner & Ads",
     icon: FiImage,
@@ -354,16 +356,14 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
       className={clsx(
         "left-side-menu fixed inset-y-0 left-0 z-40 h-screen w-72 shrink-0 transform overflow-y-auto bg-admin-dark text-[13px] text-gray-300 shadow-xl transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:w-64 lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full",
-      )}
-    >
+      )}>
       <div className="flex h-full min-h-0 flex-col" data-simplebar>
         {/* Logo Box */}
         <div className="h-16 flex items-center justify-center border-b border-gray-700 bg-admin-dark sticky top-0 z-10">
           <Link
             to={hasPermission("dashboard.view", authUser) ? "/dashboard" : "/"}
             onClick={onNavigate}
-            className="flex items-center gap-2 px-4"
-          >
+            className="flex items-center gap-2 px-4">
             {sidebarLogo ? (
               <img
                 src={sidebarLogo}
@@ -404,8 +404,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
         {/* Sidebar Menu */}
         <div
           id="sidebar-menu"
-          className="min-h-0 flex-1 overflow-y-auto py-2.5 pb-24"
-        >
+          className="min-h-0 flex-1 overflow-y-auto py-2.5 pb-24">
           <ul className="space-y-1 px-3">
             {visibleMenuItems.map((item, index) => {
               const isMenuActive = isMenuRouteActive(item);
@@ -422,8 +421,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                           menuOpen || isMenuActive
                             ? "bg-white/5 text-white"
                             : "text-gray-400 hover:bg-white/5 hover:text-white",
-                        )}
-                      >
+                        )}>
                         <div className="flex items-center gap-3">
                           <item.icon
                             className={clsx(
@@ -451,8 +449,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                       <motion.div
                         initial={false}
                         animate={{ height: menuOpen ? "auto" : 0 }}
-                        className="overflow-hidden"
-                      >
+                        className="overflow-hidden">
                         <ul className="space-y-1 py-1 pl-4">
                           {item.children.map((child, childIndex) => (
                             <li key={childIndex}>
@@ -464,8 +461,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                                   isActive(child.path)
                                     ? "bg-gradient-to-r from-admin-primary to-green-400 text-white shadow-lg"
                                     : "text-gray-400 hover:pl-5 hover:text-white",
-                                )}
-                              >
+                                )}>
                                 <span className="flex items-center gap-3">
                                   <FiCircle
                                     className={clsx(
@@ -484,8 +480,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                                       isActive(child.path)
                                         ? "bg-white/20 text-white"
                                         : "bg-gradient-to-r from-rose-500 to-red-500 text-white",
-                                    )}
-                                  >
+                                    )}>
                                     {child.badge}
                                   </span>
                                 )}
@@ -504,8 +499,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                         isActive(item.path)
                           ? "bg-gradient-to-r from-admin-primary to-green-400 text-white shadow-lg"
                           : "text-gray-400 hover:bg-white/5 hover:text-white",
-                      )}
-                    >
+                      )}>
                       <item.icon
                         className={clsx(
                           "h-5 w-5",
