@@ -14,7 +14,6 @@ import {
   toExternalProductPath,
 } from "../utils/externalProduct";
 import { showSmartSuccessToast } from "../admin/utils/alerts";
-import { trackEvent } from "@/lib/pixel";
 
 const toNumber = (value, fallback = 0) => {
   const parsed = Number(value);
@@ -24,6 +23,12 @@ const toNumber = (value, fallback = 0) => {
 const formatMoney = (value) => {
   const amount = toNumber(value, 0);
   return new Intl.NumberFormat("en-BD").format(Math.round(amount));
+};
+
+const toTrackingMoney = (value, fallback = "0.00") => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return fallback;
+  return amount.toFixed(2);
 };
 
 const clampRating = (value) => {
@@ -161,21 +166,6 @@ const StorefrontProductCard = ({ item, product }) => {
 
       await refreshCart();
 
-      const trackingProductId = isExternal
-        ? source?.id || source?.external_product_id || null
-        : source?.id || info?.id || null;
-
-      if (trackingProductId) {
-        trackEvent("AddToCart", {
-          content_ids: [String(trackingProductId)],
-          content_type: "product",
-          content_name: name || undefined,
-          value: price,
-          currency: "BDT",
-          num_items: 1,
-        });
-      }
-
       if (redirectToCheckout) {
         window.location.href = "/checkout";
         return;
@@ -192,6 +182,10 @@ const StorefrontProductCard = ({ item, product }) => {
       setActionInFlight(null);
     }
   };
+
+  const isAddToCartVisible = Number(setting?.is_add_to_cart_show ?? 1) === 1;
+
+  console.log("user settings :" + isAddToCartVisible);
 
   return (
     <div className="flex flex-col justify-between h-full theme-product-card overflow-hidden rounded-2xl border border-[#dde3ea] bg-white shadow-[0_2px_10px_rgba(15,23,42,0.08)]">
@@ -251,7 +245,11 @@ const StorefrontProductCard = ({ item, product }) => {
         ) : null}
 
         <div className="mt-1.5 flex items-end gap-2">
-          <span className="text-[30px] font-extrabold leading-none text-[#111827]">
+          <span
+            className="text-[30px] font-extrabold leading-none text-[#111827]"
+            data-meta-event-value={toTrackingMoney(price)}
+            data-meta-currency="BDT"
+            data-meta-value-source="product-card-price">
             ৳{formatMoney(price)}
           </span>
           {previousPrice > 0 ? (
@@ -285,25 +283,27 @@ const StorefrontProductCard = ({ item, product }) => {
               : "Order Now"}
         </button>
 
-        <button
-          type="button"
-          onClick={() => handleAddToCart(false)}
-          disabled={isOutOfStock}
-          aria-disabled={
-            isOutOfStock || isAddToCartLoading || isAddToCartLocked
-          }
-          className={`theme-btn-secondary flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-bold transition ${
-            isOutOfStock
-              ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-500"
-              : isAddToCartLoading
-                ? "cursor-wait pointer-events-none"
-                : isAddToCartLocked
-                  ? "cursor-not-allowed pointer-events-none opacity-90"
-                  : ""
-          }`}>
-          <FiShoppingBag className="text-base" />
-          {isAddToCartLoading ? "Adding..." : "Add to Cart"}
-        </button>
+        {isAddToCartVisible && (
+          <button
+            type="button"
+            onClick={() => handleAddToCart(false)}
+            disabled={isOutOfStock}
+            aria-disabled={
+              isOutOfStock || isAddToCartLoading || isAddToCartLocked
+            }
+            className={`theme-btn-secondary flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-bold transition ${
+              isOutOfStock
+                ? "cursor-not-allowed border-gray-300 bg-gray-100 text-gray-500"
+                : isAddToCartLoading
+                  ? "cursor-wait pointer-events-none"
+                  : isAddToCartLocked
+                    ? "cursor-not-allowed pointer-events-none opacity-90"
+                    : ""
+            }`}>
+            <FiShoppingBag className="text-base" />
+            {isAddToCartLoading ? "Adding..." : "Add to Cart"}
+          </button>
+        )}
       </div>
     </div>
   );
