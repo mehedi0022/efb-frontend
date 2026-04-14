@@ -509,19 +509,24 @@ const App = () => {
             }
           />
           {/* Pixels & Tag Managers */}
-          {/* 
-                    <Route path="pixels" element={<RequirePermission permission="pixels.view"><PixelList /></RequirePermission>} />
-            */}
-          {/* 
-                    <Route
-                        path="tag-managers"
-                        element={
-                        <RequirePermission permission="tag-managers.view">
-                            <TagManagerList />
-                        </RequirePermission>
-                        }
-                    />
-             */}
+
+          {/* <Route
+            path="pixels"
+            element={
+              <RequirePermission permission="pixels.view">
+                <PixelList />
+              </RequirePermission>
+            }
+          />
+
+          <Route
+            path="tag-managers"
+            element={
+              <RequirePermission permission="tag-managers.view">
+                <TagManagerList />
+              </RequirePermission>
+            }
+          /> */}
 
           {/* Banners */}
           <Route

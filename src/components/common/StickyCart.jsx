@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import {
   FiShoppingCart,
   FiX,
@@ -52,6 +53,8 @@ const resolveCartItemImage = (item) => {
 };
 
 const StickyCart = () => {
+  const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef(null);
 
