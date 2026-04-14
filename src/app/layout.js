@@ -1,19 +1,28 @@
-import './globals.css';
-import Script from 'next/script';
-import AppProviders from '@/providers/AppProviders';
-import { buildApiUrl, env } from '@/config/env';
-import PixelPageTracker from '@/hooks/usePixel';
+import "./globals.css";
+import Script from "next/script";
+import AppProviders from "@/providers/AppProviders";
+import { buildApiUrl, env } from "@/config/env";
+import PixelPageTracker from "@/hooks/usePixel";
+import ScrollToTop from "@/components/common/ScrollToTop";
+import StickyCart from "@/components/common/StickyCart";
 
-const DEFAULT_TITLE = env.appName || 'Naxt Ecommerce';
-const DEFAULT_DESCRIPTION = 'Next.js frontend and admin panel for ecommerce platform';
-const META_PIXEL_ID = String(process.env.NEXT_PUBLIC_META_PIXEL_ID || '').trim();
+const DEFAULT_TITLE = env.appName || "Naxt Ecommerce";
+const DEFAULT_DESCRIPTION =
+  "Next.js frontend and admin panel for ecommerce platform";
+const META_PIXEL_ID = String(
+  process.env.NEXT_PUBLIC_META_PIXEL_ID || "",
+).trim();
 
 const normalizeText = (value) => {
-  if (typeof value !== 'string') return '';
+  if (typeof value !== "string") return "";
   return value.trim();
 };
 
-const stripHtml = (value) => normalizeText(String(value || '').replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ');
+const stripHtml = (value) =>
+  normalizeText(String(value || "").replace(/<[^>]*>/g, " ")).replace(
+    /\s+/g,
+    " ",
+  );
 
 const buildMetaPixelSnippet = (pixelId) => `
   !(function(f,b,e,v,n,t,s){
@@ -36,27 +45,27 @@ const buildMetaPixelSnippet = (pixelId) => `
 
 const resolveMediaUrl = (value) => {
   const normalized = normalizeText(value);
-  if (!normalized) return '';
+  if (!normalized) return "";
   if (/^(https?:)?\/\//i.test(normalized)) return normalized;
-  if (/^(data:|blob:)/i.test(normalized)) return '';
+  if (/^(data:|blob:)/i.test(normalized)) return "";
 
-  const cleanPath = normalized.replace(/^\/+/, '');
-  if (!cleanPath) return '';
+  const cleanPath = normalized.replace(/^\/+/, "");
+  if (!cleanPath) return "";
 
-  const apiBase = normalizeText(env.apiBaseUrl || '');
+  const apiBase = normalizeText(env.apiBaseUrl || "");
   if (apiBase) return `${apiBase}/${cleanPath}`;
 
   return `/${cleanPath}`;
 };
 
 const fetchPublicSettings = async () => {
-  const endpoint = buildApiUrl('/api/v1/settings');
+  const endpoint = buildApiUrl("/api/v1/settings");
   if (!endpoint) return null;
 
   try {
     const response = await fetch(endpoint, {
-      method: 'GET',
-      cache: 'no-store'
+      method: "GET",
+      cache: "no-store",
     });
 
     if (!response.ok) return null;
@@ -83,10 +92,10 @@ export async function generateMetadata() {
       ? {
           icons: {
             icon: favicon,
-            shortcut: favicon
-          }
+            shortcut: favicon,
+          },
         }
-      : {})
+      : {}),
   };
 }
 
@@ -100,13 +109,17 @@ export default function RootLayout({ children }) {
               id="meta-pixel-base"
               strategy="afterInteractive"
               dangerouslySetInnerHTML={{
-                __html: buildMetaPixelSnippet(META_PIXEL_ID)
+                __html: buildMetaPixelSnippet(META_PIXEL_ID),
               }}
             />
             <PixelPageTracker />
           </>
         ) : null}
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <ScrollToTop />
+          <StickyCart />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

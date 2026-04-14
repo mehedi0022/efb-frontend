@@ -42,13 +42,18 @@ const Header = () => {
   const [expandedDrawerCategories, setExpandedDrawerCategories] = useState({});
   const [expandedDrawerSubcategories, setExpandedDrawerSubcategories] =
     useState({});
-
   const [activeDesktopCategoryId, setActiveDesktopCategoryId] = useState(null);
   const [removingCartItemId, setRemovingCartItemId] = useState(null);
+
+  // ✅ Single ref covers the entire category zone (button + panel)
+  const categoryZoneRef = useRef(null);
   const categoryPanelRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const desktopSearchRef = useRef(null);
   const desktopMenuCloseTimeoutRef = useRef(null);
+  // ✅ Timeout ref so we don't close panel instantly when moving between button and panel
+  const categoryHoverTimeoutRef = useRef(null);
+
   const [deleteCartItem] = useDeleteCartItemMutation();
 
   useEffect(() => {
@@ -91,7 +96,6 @@ const Header = () => {
     event.preventDefault();
     event.stopPropagation();
     if (!itemId || removingCartItemId !== null) return;
-
     setRemovingCartItemId(itemId);
     try {
       await deleteCartItem(itemId).unwrap();
@@ -139,6 +143,28 @@ const Header = () => {
     }, 180);
   };
 
+  // ✅ NEW: Hover handlers with delay so gap between button/panel doesn't close it
+  const handleCategoryZoneEnter = () => {
+    if (categoryHoverTimeoutRef.current) {
+      clearTimeout(categoryHoverTimeoutRef.current);
+      categoryHoverTimeoutRef.current = null;
+    }
+    if (!shouldFetchMenu) {
+      setShouldFetchMenu(true);
+      setMenuPage(1);
+    }
+    setShowCategoryPanel(true);
+  };
+
+  const handleCategoryZoneLeave = () => {
+    // Only auto-close if not pinned by click
+    if (!isCategoryPinned) {
+      categoryHoverTimeoutRef.current = setTimeout(() => {
+        setShowCategoryPanel(false);
+      }, 150);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedKeyword(searchKeyword.trim());
@@ -176,9 +202,7 @@ const Header = () => {
 
   const renderSearchDropdown = (target) => {
     if (searchOpenTarget !== target) return null;
-
     const canSearch = debouncedKeyword.length >= 2;
-
     return (
       <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-2xl">
         {!canSearch ? (
@@ -210,13 +234,11 @@ const Header = () => {
               return (
                 <li
                   key={item?.id || item?.product_id || slug || index}
-                  className="border-b border-gray-100 last:border-b-0"
-                >
+                  className="border-b border-gray-100 last:border-b-0">
                   <Link
                     to={toExternalProductPath(slug)}
                     onClick={() => setSearchOpenTarget(null)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
-                  >
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
                     <img
                       src={resolveExternalProductImage(item)}
                       alt={name}
@@ -287,25 +309,21 @@ const Header = () => {
     if (!value) return "";
     let normalized = String(value).trim();
     if (!normalized) return "";
-
     try {
       normalized = decodeURIComponent(normalized);
     } catch {
-      // Keep original value when decodeURIComponent fails.
+      // Keep original value
     }
-
     normalized =
       normalized
         .replace(/^\/+|\/+$/g, "")
         .split("/")
         .pop() || "";
-
     normalized = normalized
       .replace(/[_\s]+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-+|-+$/g, "")
       .toLowerCase();
-
     return normalized;
   };
 
@@ -313,7 +331,6 @@ const Header = () => {
     if (!value) return "";
     const text = String(value).trim();
     if (!text) return "";
-
     const withoutQuery = text.split("?")[0].split("#")[0];
     const segment =
       withoutQuery
@@ -335,10 +352,8 @@ const Header = () => {
       slugFromUrl(category?.url),
       slugFromUrl(category?.link),
     );
-
     const normalizedDirectSlug = normalizeCategorySlug(directSlug);
     if (normalizedDirectSlug) return normalizedDirectSlug;
-
     const fallbackName = pickCategoryText(
       category?.category_name,
       category?.name,
@@ -349,7 +364,6 @@ const Header = () => {
       category?.category_info?.name,
       category?.category_info?.category_name,
     );
-
     return normalizeCategorySlug(fallbackName);
   };
 
@@ -364,18 +378,6 @@ const Header = () => {
     ? menuCategories
     : [];
 
-  const openCategoryPanel = () => {
-    setShowCategoryPanel(true);
-    if (!shouldFetchMenu) {
-      setShouldFetchMenu(true);
-      setMenuPage(1);
-    }
-  };
-
-  const closeCategoryPanel = () => {
-    setShowCategoryPanel(false);
-  };
-
   const toggleCategoryPanel = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -388,14 +390,8 @@ const Header = () => {
         }
         return true;
       }
-
-      if (isCategoryPinned) {
-        setIsCategoryPinned(false);
-        return false;
-      }
-
-      setIsCategoryPinned(true);
-      return true;
+      setIsCategoryPinned(false);
+      return false;
     });
   };
 
@@ -425,8 +421,7 @@ const Header = () => {
             onClick={() => handleMenuPage(externalMenuMeta.page - 1)}
             disabled={externalMenuMeta.page <= 1 || isExternalMenuLoadingState}
             className="theme-btn-skip inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            aria-label="Previous categories"
-          >
+            aria-label="Previous categories">
             <FaChevronLeft />
           </button>
           <button
@@ -437,8 +432,7 @@ const Header = () => {
               isExternalMenuLoadingState
             }
             className="theme-btn-skip inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            aria-label="Next categories"
-          >
+            aria-label="Next categories">
             <FaChevronRight />
           </button>
         </div>
@@ -473,15 +467,15 @@ const Header = () => {
                     onItemClick();
                   }
                 }}
-                className={`flex items-center rounded-md border border-gray-100 px-3 py-2.5 text-sm font-semibold transition ${
+                // ✅ Hover effect on each category item
+                className={`flex items-center rounded-md border px-3 py-2.5 text-sm font-semibold transition-all duration-150 ${
                   slug
-                    ? "text-gray-800 hover:border-gray-300 hover:bg-gray-50"
-                    : "cursor-not-allowed text-gray-400"
+                    ? "border-gray-100 text-gray-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
+                    : "cursor-not-allowed border-gray-100 text-gray-400"
                 }`}
                 onMouseDown={(event) => {
                   if (!slug) event.preventDefault();
-                }}
-              >
+                }}>
                 <span className="line-clamp-1 capitalize">{name}</span>
               </Link>
             );
@@ -491,12 +485,13 @@ const Header = () => {
     </>
   );
 
+  // ✅ Outside click closes panel
   useEffect(() => {
     if (!showCategoryPanel) return undefined;
     const handleOutsideClick = (event) => {
       if (
-        categoryPanelRef.current &&
-        !categoryPanelRef.current.contains(event.target)
+        categoryZoneRef.current &&
+        !categoryZoneRef.current.contains(event.target)
       ) {
         setShowCategoryPanel(false);
         setIsCategoryPinned(false);
@@ -535,11 +530,19 @@ const Header = () => {
 
   useEffect(() => () => clearDesktopMenuCloseTimeout(), []);
 
+  // Cleanup category hover timeout on unmount
+  useEffect(
+    () => () => {
+      if (categoryHoverTimeoutRef.current)
+        clearTimeout(categoryHoverTimeoutRef.current);
+    },
+    [],
+  );
+
   return (
     <header
       className="relative"
-      style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
-    >
+      style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
       <div className="bg-white py-1 md:hidden">
         {marqueeHtml ? (
           <marquee
@@ -557,8 +560,7 @@ const Header = () => {
           <button
             type="button"
             className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-            onClick={openMobileDrawer}
-          >
+            onClick={openMobileDrawer}>
             <FaBars size={20} />
           </button>
           <Link to="/" className="flex items-center gap-2">
@@ -578,8 +580,7 @@ const Header = () => {
             <Link
               to="/cart"
               className="relative text-gray-700"
-              aria-label={`Cart (${count})`}
-            >
+              aria-label={`Cart (${count})`}>
               <FaShoppingCart size={18} />
               <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold text-white">
                 {cartBadgeCount}
@@ -587,13 +588,11 @@ const Header = () => {
             </Link>
           </div>
         </div>
-        <div className="px-4 pb-1 text-center"></div>
         <div className="px-4 pb-3">
           <form
             ref={mobileSearchRef}
             onSubmit={handleSearch}
-            className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[420px] items-center gap-2 rounded-full border border-gray-200 bg-white px-3 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10"
-          >
+            className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[420px] items-center gap-2 rounded-full border border-gray-200 bg-white px-3 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
             <input
               type="text"
               placeholder="Search products..."
@@ -607,8 +606,7 @@ const Header = () => {
             />
             <button
               type="submit"
-              className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black"
-            >
+              className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
               Search
             </button>
             {renderSearchDropdown("mobile")}
@@ -618,8 +616,7 @@ const Header = () => {
           <button
             type="button"
             onClick={openMobileCategoryModal}
-            className="theme-btn-skip flex w-full items-center justify-center gap-2 rounded-md bg-[#2563eb] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-[#1d4ed8]"
-          >
+            className="theme-btn-skip flex w-full items-center justify-center gap-2 rounded-md bg-[#2563eb] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-[#1d4ed8]">
             <FaBars />
             <span>Category</span>
           </button>
@@ -628,8 +625,7 @@ const Header = () => {
 
       <div
         className="hidden md:block"
-        style={{ backgroundColor: headerBgColor }}
-      >
+        style={{ backgroundColor: headerBgColor }}>
         <div className="container mx-auto px-4 py-2">
           {marqueeHtml ? (
             <marquee
@@ -645,8 +641,7 @@ const Header = () => {
 
       <div
         className="hidden md:block border-b"
-        style={{ backgroundColor: headerBgColor }}
-      >
+        style={{ backgroundColor: headerBgColor }}>
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2">
             {isSettingsLoading ? (
@@ -665,8 +660,7 @@ const Header = () => {
             <form
               ref={desktopSearchRef}
               onSubmit={handleSearch}
-              className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[520px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10"
-            >
+              className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[520px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
               <input
                 type="text"
                 placeholder="Search products..."
@@ -680,8 +674,7 @@ const Header = () => {
               />
               <button
                 type="submit"
-                className="rounded-full bg-gray-900 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black"
-              >
+                className="rounded-full bg-gray-900 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
                 Search
               </button>
               {renderSearchDropdown("desktop")}
@@ -691,8 +684,7 @@ const Header = () => {
             <div className="relative group">
               <Link
                 to="/cart"
-                className="flex items-center gap-2 text-gray-800"
-              >
+                className="flex items-center gap-2 text-gray-800">
                 <span className="font-semibold">Cart</span>
                 <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-xs font-semibold text-white">
                   {count}
@@ -712,8 +704,7 @@ const Header = () => {
                         return (
                           <li
                             key={itemId || `cart-item-${index}`}
-                            className="flex items-start gap-3"
-                          >
+                            className="flex items-start gap-3">
                             <img
                               src={resolveCartImage(item)}
                               alt={
@@ -745,8 +736,7 @@ const Header = () => {
                                     itemId === null ||
                                     removingCartItemId !== null
                                   }
-                                  className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
+                                  className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60">
                                   {isRemovingItem ? "Removing..." : "Remove"}
                                 </button>
                               </div>
@@ -760,8 +750,7 @@ const Header = () => {
                     </div>
                     <Link
                       to="/checkout"
-                      className="theme-btn-info mt-3 block rounded border px-4 py-2 text-center text-sm font-semibold"
-                    >
+                      className="theme-btn-info mt-3 block rounded border px-4 py-2 text-center text-sm font-semibold">
                       Order Now
                     </Link>
                   </>
@@ -771,16 +760,14 @@ const Header = () => {
             {user ? (
               <Link
                 to="/account"
-                className="flex items-center gap-2 text-gray-800"
-              >
+                className="flex items-center gap-2 text-gray-800">
                 <FaUser />
                 <span className="font-semibold">Account</span>
               </Link>
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-2 text-gray-800"
-              >
+                className="flex items-center gap-2 text-gray-800">
                 <FaUser />
                 <span className="font-semibold">Account</span>
               </Link>
@@ -789,28 +776,33 @@ const Header = () => {
         </div>
       </div>
 
+      {/* ✅ FIXED: Category nav bar - entire zone (button + panel) shares one ref and hover handlers */}
       <div className="hidden md:block border-b bg-white">
         <div className="container mx-auto px-4 py-3 flex items-center gap-6">
+          {/* ✅ categoryZoneRef wraps both the button AND the dropdown panel */}
           <div
+            ref={categoryZoneRef}
             className="relative"
-            ref={categoryPanelRef}
-            onMouseEnter={() => {
-              if (!isCategoryPinned) openCategoryPanel();
-            }}
-            onMouseLeave={() => {
-              if (!isCategoryPinned) closeCategoryPanel();
-            }}
-          >
+            onMouseEnter={handleCategoryZoneEnter}
+            onMouseLeave={handleCategoryZoneLeave}>
+            {/* Category Button */}
             <button
               type="button"
               onClick={toggleCategoryPanel}
-              className="theme-btn-skip flex items-center gap-2 rounded bg-gray-200 px-4 py-2 text-sm font-bold uppercase text-gray-800 hover:bg-gray-300"
-            >
+              className={`theme-btn-skip flex items-center gap-2 rounded px-4 py-2 text-sm font-bold uppercase transition-colors duration-150 ${
+                showCategoryPanel
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-800 hover:bg-blue-600 hover:text-white"
+              }`}>
               <FaBars />
               Category
             </button>
+
+            {/* ✅ Panel is INSIDE the same hover zone — no gap issue */}
             {showCategoryPanel && (
-              <div className="absolute left-0 top-full z-50 mt-2 w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl">
+              <div
+                ref={categoryPanelRef}
+                className="absolute left-0 top-full z-50 mt-1 w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl">
                 {renderExternalCategoryPanelContent(() => {
                   setShowCategoryPanel(false);
                   setIsCategoryPinned(false);
@@ -818,22 +810,22 @@ const Header = () => {
               </div>
             )}
           </div>
+
+          {/* Nav menu items */}
           <ul className="hidden lg:flex flex-1 items-center gap-4 m-0">
             {menuCategories.map((category) => (
               <li
                 key={category.id}
                 className="relative"
                 onMouseEnter={() => openDesktopSubmenu(category.id)}
-                onMouseLeave={closeDesktopSubmenuWithDelay}
-              >
+                onMouseLeave={closeDesktopSubmenuWithDelay}>
                 <Link
                   to={`/category/${category.slug}`}
-                  className="flex items-center gap-1 text-sm font-semibold text-gray-800"
-                  onFocus={() => openDesktopSubmenu(category.id)}
-                >
+                  className="flex items-center gap-1 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors duration-150"
+                  onFocus={() => openDesktopSubmenu(category.id)}>
                   <span>{category.name}</span>
                   {category.subcategories?.length > 0 && (
-                    <span className="text-xs text-gray-500">▾</span>
+                    <span className="text-xs text-gray-400">▾</span>
                   )}
                 </Link>
                 {category.subcategories?.length > 0 && (
@@ -844,15 +836,13 @@ const Header = () => {
                         : "hidden"
                     }`}
                     onMouseEnter={() => openDesktopSubmenu(category.id)}
-                    onMouseLeave={closeDesktopSubmenuWithDelay}
-                  >
+                    onMouseLeave={closeDesktopSubmenuWithDelay}>
                     <div className="rounded-md border border-gray-200 bg-white p-4 shadow-xl">
                       {category.subcategories.map((sub) => (
                         <div key={sub.id} className="mb-3 last:mb-0">
                           <Link
                             to={`/subcategory/${sub.slug}`}
-                            className="text-sm font-semibold text-gray-800"
-                          >
+                            className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">
                             {sub.subcategoryName}
                           </Link>
                           {sub.childcategories?.length > 0 && (
@@ -861,7 +851,7 @@ const Header = () => {
                                 <Link
                                   key={child.id}
                                   to={`/childcategory/${child.slug}`}
-                                >
+                                  className="hover:text-blue-600 transition-colors">
                                   {child.childcategoryName}
                                 </Link>
                               ))}
@@ -878,15 +868,14 @@ const Header = () => {
         </div>
       </div>
 
+      {/* Mobile Drawer */}
       {mobileDrawerOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/40 md:hidden"
-          onClick={() => setMobileDrawerOpen(false)}
-        >
+          onClick={() => setMobileDrawerOpen(false)}>
           <div
             className="absolute left-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-4 shadow-xl"
-            onClick={(event) => event.stopPropagation()}
-          >
+            onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h4 className="text-base font-semibold text-gray-900">
                 Categories
@@ -895,12 +884,10 @@ const Header = () => {
                 type="button"
                 onClick={() => setMobileDrawerOpen(false)}
                 className="theme-btn-skip inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200"
-                aria-label="Close category drawer"
-              >
+                aria-label="Close category drawer">
                 <FaTimes />
               </button>
             </div>
-
             {mobileDrawerCategories.length === 0 ? (
               <div className="py-8 text-center text-sm text-gray-500">
                 No categories found.
@@ -917,33 +904,32 @@ const Header = () => {
                   const subcategories = Array.isArray(category?.subcategories)
                     ? category.subcategories
                     : [];
-
                   return (
                     <div
                       key={categoryKey}
-                      className="rounded-md border border-gray-100"
-                    >
+                      className="rounded-md border border-gray-100">
                       <div className="flex items-center justify-between px-3 py-2.5">
                         <Link
                           to={categorySlug ? `/category/${categorySlug}` : "#"}
-                          className={`line-clamp-1 text-sm font-semibold ${categorySlug ? "text-gray-800" : "text-gray-400 pointer-events-none"}`}
+                          className={`line-clamp-1 text-sm font-semibold ${
+                            categorySlug
+                              ? "text-gray-800 hover:text-blue-600"
+                              : "text-gray-400 pointer-events-none"
+                          }`}
                           onClick={() => {
                             if (categorySlug) setMobileDrawerOpen(false);
-                          }}
-                        >
+                          }}>
                           {categoryName}
                         </Link>
                         {subcategories.length > 0 && (
                           <button
                             type="button"
                             className="theme-btn-skip inline-flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-100"
-                            onClick={() => toggleDrawerCategory(categoryKey)}
-                          >
+                            onClick={() => toggleDrawerCategory(categoryKey)}>
                             {expandedDrawerCategories[categoryKey] ? "-" : "+"}
                           </button>
                         )}
                       </div>
-
                       {expandedDrawerCategories[categoryKey] &&
                         subcategories.length > 0 && (
                           <div className="space-y-2 border-t border-gray-100 bg-gray-50 px-3 py-2">
@@ -960,7 +946,6 @@ const Header = () => {
                               )
                                 ? sub.childcategories
                                 : [];
-
                               return (
                                 <div key={subKey}>
                                   <div className="flex items-center justify-between">
@@ -970,11 +955,14 @@ const Header = () => {
                                           ? `/subcategory/${subSlug}`
                                           : "#"
                                       }
-                                      className={`line-clamp-1 text-sm font-medium ${subSlug ? "text-gray-700" : "text-gray-400 pointer-events-none"}`}
+                                      className={`line-clamp-1 text-sm font-medium ${
+                                        subSlug
+                                          ? "text-gray-700 hover:text-blue-600"
+                                          : "text-gray-400 pointer-events-none"
+                                      }`}
                                       onClick={() => {
                                         if (subSlug) setMobileDrawerOpen(false);
-                                      }}
-                                    >
+                                      }}>
                                       {subName}
                                     </Link>
                                     {childcategories.length > 0 && (
@@ -983,15 +971,13 @@ const Header = () => {
                                         className="theme-btn-skip inline-flex h-5 w-5 items-center justify-center rounded border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100"
                                         onClick={() =>
                                           toggleDrawerSubcategory(subKey)
-                                        }
-                                      >
+                                        }>
                                         {expandedDrawerSubcategories[subKey]
                                           ? "-"
                                           : "+"}
                                       </button>
                                     )}
                                   </div>
-
                                   {expandedDrawerSubcategories[subKey] &&
                                     childcategories.length > 0 && (
                                       <div className="mt-1 space-y-1 pl-3">
@@ -1006,7 +992,6 @@ const Header = () => {
                                             const childName =
                                               child?.childcategoryName ||
                                               "Childcategory";
-
                                             return (
                                               <Link
                                                 key={childKey}
@@ -1015,12 +1000,15 @@ const Header = () => {
                                                     ? `/childcategory/${childSlug}`
                                                     : "#"
                                                 }
-                                                className={`block text-xs ${childSlug ? "text-gray-600" : "text-gray-400 pointer-events-none"}`}
+                                                className={`block text-xs ${
+                                                  childSlug
+                                                    ? "text-gray-600 hover:text-blue-600"
+                                                    : "text-gray-400 pointer-events-none"
+                                                }`}
                                                 onClick={() => {
                                                   if (childSlug)
                                                     setMobileDrawerOpen(false);
-                                                }}
-                                              >
+                                                }}>
                                                 {childName}
                                               </Link>
                                             );
@@ -1042,26 +1030,24 @@ const Header = () => {
         </div>
       )}
 
+      {/* Mobile Category Modal */}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-3 py-6 md:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        >
+          onClick={() => setMobileMenuOpen(false)}>
           <div className="w-[720px] max-w-[90vw]">
             <div className="mb-2 flex justify-end">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow hover:bg-gray-100"
-                aria-label="Close categories modal"
-              >
+                aria-label="Close categories modal">
                 <FaTimes />
               </button>
             </div>
             <div
               className="w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl"
-              onClick={(event) => event.stopPropagation()}
-            >
+              onClick={(event) => event.stopPropagation()}>
               {renderExternalCategoryPanelContent(() => {
                 setMobileMenuOpen(false);
               })}
