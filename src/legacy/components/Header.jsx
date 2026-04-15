@@ -143,7 +143,6 @@ const Header = () => {
     }, 180);
   };
 
-  // ✅ NEW: Hover handlers with delay so gap between button/panel doesn't close it
   const handleCategoryZoneEnter = () => {
     if (categoryHoverTimeoutRef.current) {
       clearTimeout(categoryHoverTimeoutRef.current);
@@ -540,522 +539,531 @@ const Header = () => {
   );
 
   return (
-    <header
-      className="relative"
-      style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
-      <div className="bg-white py-1 md:hidden">
-        {marqueeHtml ? (
-          <marquee
-            className="mx-2 text-black text-sm"
-            behavior="scroll"
-            direction="left"
-            scrollamount="5"
-            dangerouslySetInnerHTML={{ __html: marqueeHtml }}
-          />
-        ) : null}
-      </div>
-
-      <div className="md:hidden bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-            type="button"
-            className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-            onClick={openMobileDrawer}>
-            <FaBars size={20} />
-          </button>
-          <Link to="/" className="flex items-center gap-2">
-            {isSettingsLoading ? (
-              <span className="inline-block h-9 w-28 animate-pulse rounded-md bg-gray-200" />
-            ) : logoSrc ? (
-              <img
-                src={logoSrc}
-                alt={siteName}
-                className="h-9 w-auto object-contain"
-              />
-            ) : (
-              <span className="font-semibold text-lg">{siteName}</span>
-            )}
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              to="/cart"
-              className="relative text-gray-700"
-              aria-label={`Cart (${count})`}>
-              <FaShoppingCart size={18} />
-              <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold text-white">
-                {cartBadgeCount}
-              </span>
-            </Link>
-          </div>
-        </div>
-        <div className="px-4 pb-3">
-          <form
-            ref={mobileSearchRef}
-            onSubmit={handleSearch}
-            className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[420px] items-center gap-2 rounded-full border border-gray-200 bg-white px-3 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchKeyword}
-              onFocus={() => setSearchOpenTarget("mobile")}
-              onChange={(event) => {
-                setSearchKeyword(event.target.value);
-                setSearchOpenTarget("mobile");
-              }}
-              className="h-full flex-1 bg-transparent px-1 text-sm text-gray-700 outline-none placeholder:text-gray-400"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
-              Search
-            </button>
-            {renderSearchDropdown("mobile")}
-          </form>
-        </div>
-        <div className="px-4 pb-4">
-          <button
-            type="button"
-            onClick={openMobileCategoryModal}
-            className="theme-btn-skip flex w-full items-center justify-center gap-2 rounded-md bg-[#2563eb] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-[#1d4ed8]">
-            <FaBars />
-            <span>Category</span>
-          </button>
-        </div>
-      </div>
-
-      <div
-        className="hidden md:block"
-        style={{ backgroundColor: headerBgColor }}>
-        <div className="container mx-auto px-4 py-2">
+    <>
+      <header
+        className="sticky top-0 z-50 bg-white shadow-md backdrop-blur"
+        style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
+        <div className="bg-white py-1 md:hidden">
           {marqueeHtml ? (
             <marquee
+              className="mx-2 text-black text-sm"
               behavior="scroll"
               direction="left"
               scrollamount="5"
-              className="font-semibold text-black"
               dangerouslySetInnerHTML={{ __html: marqueeHtml }}
             />
           ) : null}
         </div>
-      </div>
 
-      <div
-        className="hidden md:block border-b"
-        style={{ backgroundColor: headerBgColor }}>
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2">
-            {isSettingsLoading ? (
-              <span className="inline-block h-12 w-36 animate-pulse rounded-md bg-gray-200" />
-            ) : logoSrc ? (
-              <img
-                src={logoSrc}
-                alt={siteName}
-                className="h-12 w-auto object-contain"
-              />
-            ) : (
-              <span className="text-xl font-semibold">{siteName}</span>
-            )}
-          </Link>
-          <div className="flex-1">
+        <div className="md:hidden bg-white shadow-sm">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <button
+              type="button"
+              className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              onClick={openMobileDrawer}>
+              <FaBars size={20} />
+            </button>
+            <Link to="/" className="flex items-center gap-2">
+              {isSettingsLoading ? (
+                <span className="inline-block h-9 w-28 animate-pulse rounded-md bg-gray-200" />
+              ) : logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt={siteName}
+                  className="h-9 w-auto object-contain"
+                />
+              ) : (
+                <span className="font-semibold text-lg">{siteName}</span>
+              )}
+            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/cart"
+                className="relative text-gray-700"
+                aria-label={`Cart (${count})`}>
+                <FaShoppingCart size={18} />
+                <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold text-white">
+                  {cartBadgeCount}
+                </span>
+              </Link>
+            </div>
+          </div>
+          <div className="px-4 pb-3">
             <form
-              ref={desktopSearchRef}
+              ref={mobileSearchRef}
               onSubmit={handleSearch}
-              className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[520px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
+              className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[420px] items-center gap-2 rounded-full border border-gray-200 bg-white px-3 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchKeyword}
-                onFocus={() => setSearchOpenTarget("desktop")}
+                onFocus={() => setSearchOpenTarget("mobile")}
                 onChange={(event) => {
                   setSearchKeyword(event.target.value);
-                  setSearchOpenTarget("desktop");
+                  setSearchOpenTarget("mobile");
                 }}
                 className="h-full flex-1 bg-transparent px-1 text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
               <button
                 type="submit"
-                className="rounded-full bg-gray-900 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
+                className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
                 Search
               </button>
-              {renderSearchDropdown("desktop")}
+              {renderSearchDropdown("mobile")}
             </form>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <Link
-                to="/cart"
-                className="flex items-center gap-2 text-gray-800">
-                <span className="font-semibold">Cart</span>
-                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-xs font-semibold text-white">
-                  {count}
-                </span>
-              </Link>
-              <div className="absolute right-0 top-full z-50 hidden w-80 rounded-md border border-gray-200 bg-white p-4 shadow-lg group-hover:block">
-                {cartItems.length === 0 ? (
-                  <p className="text-sm text-gray-500">Your cart is empty.</p>
-                ) : (
-                  <>
-                    <ul className="space-y-3">
-                      {cartItems.map((item, index) => {
-                        const itemId = item?.id || item?.cart_item_id || null;
-                        const isRemovingItem =
-                          itemId !== null &&
-                          String(removingCartItemId) === String(itemId);
-                        return (
-                          <li
-                            key={itemId || `cart-item-${index}`}
-                            className="flex items-start gap-3">
-                            <img
-                              src={resolveCartImage(item)}
-                              alt={
-                                item.product?.name ||
-                                item.product_name ||
-                                "Product"
-                              }
-                              className="h-12 w-12 rounded object-cover"
-                            />
-                            <div className="min-w-0 flex-1 text-sm">
-                              <p className="font-semibold text-gray-800 line-clamp-1">
-                                {item.product?.name ||
-                                  item.product_name ||
-                                  "Product"}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Qty: {item.quantity}
-                              </p>
-                              <div className="mt-1 flex items-center justify-between gap-2">
-                                <p className="text-sm font-semibold text-gray-800">
-                                  ৳{item.price}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={(event) =>
-                                    handleRemovePopupCartItem(itemId, event)
-                                  }
-                                  disabled={
-                                    itemId === null ||
-                                    removingCartItemId !== null
-                                  }
-                                  className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60">
-                                  {isRemovingItem ? "Removing..." : "Remove"}
-                                </button>
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    <div className="mt-3 border-t pt-3 text-sm font-semibold">
-                      Total: ৳{subtotal}
-                    </div>
-                    <Link
-                      to="/checkout"
-                      className="theme-btn-info mt-3 block rounded border px-4 py-2 text-center text-sm font-semibold">
-                      Order Now
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-            {user ? (
-              <Link
-                to="/account"
-                className="flex items-center gap-2 text-gray-800">
-                <FaUser />
-                <span className="font-semibold">Account</span>
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-2 text-gray-800">
-                <FaUser />
-                <span className="font-semibold">Account</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ✅ FIXED: Category nav bar - entire zone (button + panel) shares one ref and hover handlers */}
-      <div className="hidden md:block border-b bg-white">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-6">
-          {/* ✅ categoryZoneRef wraps both the button AND the dropdown panel */}
-          <div
-            ref={categoryZoneRef}
-            className="relative"
-            onMouseEnter={handleCategoryZoneEnter}
-            onMouseLeave={handleCategoryZoneLeave}>
-            {/* Category Button */}
+          <div className="px-4 pb-4">
             <button
               type="button"
-              onClick={toggleCategoryPanel}
-              className={`theme-btn-skip flex items-center gap-2 rounded px-4 py-2 text-sm font-bold uppercase transition-colors duration-150 ${
-                showCategoryPanel
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-800 hover:bg-blue-600 hover:text-white"
-              }`}>
+              onClick={openMobileCategoryModal}
+              className="theme-btn-skip flex w-full items-center justify-center gap-2 rounded-md bg-[#2563eb] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-[#1d4ed8]">
               <FaBars />
-              Category
+              <span>Category</span>
             </button>
-
-            {/* ✅ Panel is INSIDE the same hover zone — no gap issue */}
-            {showCategoryPanel && (
-              <div
-                ref={categoryPanelRef}
-                className="absolute left-0 top-full z-50 mt-1 w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl">
-                {renderExternalCategoryPanelContent(() => {
-                  setShowCategoryPanel(false);
-                  setIsCategoryPinned(false);
-                })}
-              </div>
-            )}
           </div>
+        </div>
 
-          {/* Nav menu items */}
-          <ul className="hidden lg:flex flex-1 items-center gap-4 m-0">
-            {menuCategories.map((category) => (
-              <li
-                key={category.id}
-                className="relative"
-                onMouseEnter={() => openDesktopSubmenu(category.id)}
-                onMouseLeave={closeDesktopSubmenuWithDelay}>
+        <div
+          className="hidden md:block"
+          style={{ backgroundColor: headerBgColor }}>
+          <div className="container mx-auto px-4 py-2">
+            {marqueeHtml ? (
+              <marquee
+                behavior="scroll"
+                direction="left"
+                scrollamount="5"
+                className="font-semibold text-black"
+                dangerouslySetInnerHTML={{ __html: marqueeHtml }}
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          className="hidden md:block border-b"
+          style={{ backgroundColor: headerBgColor }}>
+          <div className="container mx-auto px-4 py-4 flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2">
+              {isSettingsLoading ? (
+                <span className="inline-block h-12 w-36 animate-pulse rounded-md bg-gray-200" />
+              ) : logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt={siteName}
+                  className="h-12 w-auto object-contain"
+                />
+              ) : (
+                <span className="text-xl font-semibold">{siteName}</span>
+              )}
+            </Link>
+            <div className="flex-1">
+              <form
+                ref={desktopSearchRef}
+                onSubmit={handleSearch}
+                className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[520px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchKeyword}
+                  onFocus={() => setSearchOpenTarget("desktop")}
+                  onChange={(event) => {
+                    setSearchKeyword(event.target.value);
+                    setSearchOpenTarget("desktop");
+                  }}
+                  className="h-full flex-1 bg-transparent px-1 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-gray-900 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
+                  Search
+                </button>
+                {renderSearchDropdown("desktop")}
+              </form>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="relative group">
                 <Link
-                  to={`/category/${category.slug}`}
-                  className="flex items-center gap-1 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors duration-150"
-                  onFocus={() => openDesktopSubmenu(category.id)}>
-                  <span>{category.name}</span>
-                  {category.subcategories?.length > 0 && (
-                    <span className="text-xs text-gray-400">▾</span>
-                  )}
+                  to="/cart"
+                  className="flex items-center gap-2 text-gray-800">
+                  <span className="font-semibold">Cart</span>
+                  <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-xs font-semibold text-white">
+                    {count}
+                  </span>
                 </Link>
-                {category.subcategories?.length > 0 && (
-                  <div
-                    className={`absolute left-0 top-full z-40 min-w-[240px] pt-2 ${
-                      activeDesktopCategoryId === category.id
-                        ? "block"
-                        : "hidden"
-                    }`}
-                    onMouseEnter={() => openDesktopSubmenu(category.id)}
-                    onMouseLeave={closeDesktopSubmenuWithDelay}>
-                    <div className="rounded-md border border-gray-200 bg-white p-4 shadow-xl">
-                      {category.subcategories.map((sub) => (
-                        <div key={sub.id} className="mb-3 last:mb-0">
+                <div className="absolute right-0 top-full z-50 hidden w-80 rounded-md border border-gray-200 bg-white p-4 shadow-lg group-hover:block">
+                  {cartItems.length === 0 ? (
+                    <p className="text-sm text-gray-500">Your cart is empty.</p>
+                  ) : (
+                    <>
+                      <ul className="space-y-3">
+                        {cartItems.map((item, index) => {
+                          const itemId = item?.id || item?.cart_item_id || null;
+                          const isRemovingItem =
+                            itemId !== null &&
+                            String(removingCartItemId) === String(itemId);
+                          return (
+                            <li
+                              key={itemId || `cart-item-${index}`}
+                              className="flex items-start gap-3">
+                              <img
+                                src={resolveCartImage(item)}
+                                alt={
+                                  item.product?.name ||
+                                  item.product_name ||
+                                  "Product"
+                                }
+                                className="h-12 w-12 rounded object-cover"
+                              />
+                              <div className="min-w-0 flex-1 text-sm">
+                                <p className="font-semibold text-gray-800 line-clamp-1">
+                                  {item.product?.name ||
+                                    item.product_name ||
+                                    "Product"}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Qty: {item.quantity}
+                                </p>
+                                <div className="mt-1 flex items-center justify-between gap-2">
+                                  <p className="text-sm font-semibold text-gray-800">
+                                    ৳{item.price}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={(event) =>
+                                      handleRemovePopupCartItem(itemId, event)
+                                    }
+                                    disabled={
+                                      itemId === null ||
+                                      removingCartItemId !== null
+                                    }
+                                    className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60">
+                                    {isRemovingItem ? "Removing..." : "Remove"}
+                                  </button>
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="mt-3 border-t pt-3 text-sm font-semibold">
+                        Total: ৳{subtotal}
+                      </div>
+                      <Link
+                        to="/checkout"
+                        className="theme-btn-info mt-3 block rounded border px-4 py-2 text-center text-sm font-semibold">
+                        Order Now
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+              {user ? (
+                <Link
+                  to="/account"
+                  className="flex items-center gap-2 text-gray-800">
+                  <FaUser />
+                  <span className="font-semibold">Account</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 text-gray-800">
+                  <FaUser />
+                  <span className="font-semibold">Account</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ FIXED: Category nav bar - entire zone (button + panel) shares one ref and hover handlers */}
+        <div className="hidden md:block border-b bg-white">
+          <div className="container mx-auto px-4 py-3 flex items-center gap-6">
+            {/* ✅ categoryZoneRef wraps both the button AND the dropdown panel */}
+            <div
+              ref={categoryZoneRef}
+              className="relative"
+              onMouseEnter={handleCategoryZoneEnter}
+              onMouseLeave={handleCategoryZoneLeave}>
+              {/* Category Button */}
+              <button
+                type="button"
+                onClick={toggleCategoryPanel}
+                className={`theme-btn-skip flex items-center gap-2 rounded px-4 py-2 text-sm font-bold uppercase transition-colors duration-150 ${
+                  showCategoryPanel
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-800 hover:bg-blue-600 hover:text-white"
+                }`}>
+                <FaBars />
+                Category
+              </button>
+
+              {/* ✅ Panel is INSIDE the same hover zone — no gap issue */}
+              {showCategoryPanel && (
+                <div
+                  ref={categoryPanelRef}
+                  className="absolute left-0 top-full z-50 mt-1 w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl">
+                  {renderExternalCategoryPanelContent(() => {
+                    setShowCategoryPanel(false);
+                    setIsCategoryPinned(false);
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Nav menu items */}
+            <ul className="hidden lg:flex flex-1 items-center gap-4 m-0">
+              {menuCategories.map((category) => (
+                <li
+                  key={category.id}
+                  className="relative"
+                  onMouseEnter={() => openDesktopSubmenu(category.id)}
+                  onMouseLeave={closeDesktopSubmenuWithDelay}>
+                  <Link
+                    to={`/category/${category.slug}`}
+                    className="flex items-center gap-1 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors duration-150"
+                    onFocus={() => openDesktopSubmenu(category.id)}>
+                    <span>{category.name}</span>
+                    {category.subcategories?.length > 0 && (
+                      <span className="text-xs text-gray-400">▾</span>
+                    )}
+                  </Link>
+                  {category.subcategories?.length > 0 && (
+                    <div
+                      className={`absolute left-0 top-full z-40 min-w-[240px] pt-2 ${
+                        activeDesktopCategoryId === category.id
+                          ? "block"
+                          : "hidden"
+                      }`}
+                      onMouseEnter={() => openDesktopSubmenu(category.id)}
+                      onMouseLeave={closeDesktopSubmenuWithDelay}>
+                      <div className="rounded-md border border-gray-200 bg-white p-4 shadow-xl">
+                        {category.subcategories.map((sub) => (
+                          <div key={sub.id} className="mb-3 last:mb-0">
+                            <Link
+                              to={`/subcategory/${sub.slug}`}
+                              className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">
+                              {sub.subcategoryName}
+                            </Link>
+                            {sub.childcategories?.length > 0 && (
+                              <div className="mt-1 flex flex-col gap-1 pl-3 text-xs text-gray-600">
+                                {sub.childcategories.map((child) => (
+                                  <Link
+                                    key={child.id}
+                                    to={`/childcategory/${child.slug}`}
+                                    className="hover:text-blue-600 transition-colors">
+                                    {child.childcategoryName}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Mobile Drawer */}
+        {mobileDrawerOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/40 md:hidden"
+            onClick={() => setMobileDrawerOpen(false)}>
+            <div
+              className="absolute left-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-4 shadow-xl"
+              onClick={(event) => event.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between">
+                <h4 className="text-base font-semibold text-gray-900">
+                  Categories
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className="theme-btn-skip inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  aria-label="Close category drawer">
+                  <FaTimes />
+                </button>
+              </div>
+              {mobileDrawerCategories.length === 0 ? (
+                <div className="py-8 text-center text-sm text-gray-500">
+                  No categories found.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {mobileDrawerCategories.map((category, index) => {
+                    const categoryKey =
+                      category?.id || category?.slug || `cat-${index}`;
+                    const categorySlug = category?.slug
+                      ? String(category.slug).trim()
+                      : "";
+                    const categoryName = category?.name || "Category";
+                    const subcategories = Array.isArray(category?.subcategories)
+                      ? category.subcategories
+                      : [];
+                    return (
+                      <div
+                        key={categoryKey}
+                        className="rounded-md border border-gray-100">
+                        <div className="flex items-center justify-between px-3 py-2.5">
                           <Link
-                            to={`/subcategory/${sub.slug}`}
-                            className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">
-                            {sub.subcategoryName}
+                            to={
+                              categorySlug ? `/category/${categorySlug}` : "#"
+                            }
+                            className={`line-clamp-1 text-sm font-semibold ${
+                              categorySlug
+                                ? "text-gray-800 hover:text-blue-600"
+                                : "text-gray-400 pointer-events-none"
+                            }`}
+                            onClick={() => {
+                              if (categorySlug) setMobileDrawerOpen(false);
+                            }}>
+                            {categoryName}
                           </Link>
-                          {sub.childcategories?.length > 0 && (
-                            <div className="mt-1 flex flex-col gap-1 pl-3 text-xs text-gray-600">
-                              {sub.childcategories.map((child) => (
-                                <Link
-                                  key={child.id}
-                                  to={`/childcategory/${child.slug}`}
-                                  className="hover:text-blue-600 transition-colors">
-                                  {child.childcategoryName}
-                                </Link>
-                              ))}
-                            </div>
+                          {subcategories.length > 0 && (
+                            <button
+                              type="button"
+                              className="theme-btn-skip inline-flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-100"
+                              onClick={() => toggleDrawerCategory(categoryKey)}>
+                              {expandedDrawerCategories[categoryKey]
+                                ? "-"
+                                : "+"}
+                            </button>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      {mobileDrawerOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/40 md:hidden"
-          onClick={() => setMobileDrawerOpen(false)}>
-          <div
-            className="absolute left-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-4 shadow-xl"
-            onClick={(event) => event.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h4 className="text-base font-semibold text-gray-900">
-                Categories
-              </h4>
-              <button
-                type="button"
-                onClick={() => setMobileDrawerOpen(false)}
-                className="theme-btn-skip inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200"
-                aria-label="Close category drawer">
-                <FaTimes />
-              </button>
-            </div>
-            {mobileDrawerCategories.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-500">
-                No categories found.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {mobileDrawerCategories.map((category, index) => {
-                  const categoryKey =
-                    category?.id || category?.slug || `cat-${index}`;
-                  const categorySlug = category?.slug
-                    ? String(category.slug).trim()
-                    : "";
-                  const categoryName = category?.name || "Category";
-                  const subcategories = Array.isArray(category?.subcategories)
-                    ? category.subcategories
-                    : [];
-                  return (
-                    <div
-                      key={categoryKey}
-                      className="rounded-md border border-gray-100">
-                      <div className="flex items-center justify-between px-3 py-2.5">
-                        <Link
-                          to={categorySlug ? `/category/${categorySlug}` : "#"}
-                          className={`line-clamp-1 text-sm font-semibold ${
-                            categorySlug
-                              ? "text-gray-800 hover:text-blue-600"
-                              : "text-gray-400 pointer-events-none"
-                          }`}
-                          onClick={() => {
-                            if (categorySlug) setMobileDrawerOpen(false);
-                          }}>
-                          {categoryName}
-                        </Link>
-                        {subcategories.length > 0 && (
-                          <button
-                            type="button"
-                            className="theme-btn-skip inline-flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-100"
-                            onClick={() => toggleDrawerCategory(categoryKey)}>
-                            {expandedDrawerCategories[categoryKey] ? "-" : "+"}
-                          </button>
-                        )}
-                      </div>
-                      {expandedDrawerCategories[categoryKey] &&
-                        subcategories.length > 0 && (
-                          <div className="space-y-2 border-t border-gray-100 bg-gray-50 px-3 py-2">
-                            {subcategories.map((sub, subIndex) => {
-                              const subKey =
-                                sub?.id || `${categoryKey}-sub-${subIndex}`;
-                              const subSlug = sub?.slug
-                                ? String(sub.slug).trim()
-                                : "";
-                              const subName =
-                                sub?.subcategoryName || "Subcategory";
-                              const childcategories = Array.isArray(
-                                sub?.childcategories,
-                              )
-                                ? sub.childcategories
-                                : [];
-                              return (
-                                <div key={subKey}>
-                                  <div className="flex items-center justify-between">
-                                    <Link
-                                      to={
-                                        subSlug
-                                          ? `/subcategory/${subSlug}`
-                                          : "#"
-                                      }
-                                      className={`line-clamp-1 text-sm font-medium ${
-                                        subSlug
-                                          ? "text-gray-700 hover:text-blue-600"
-                                          : "text-gray-400 pointer-events-none"
-                                      }`}
-                                      onClick={() => {
-                                        if (subSlug) setMobileDrawerOpen(false);
-                                      }}>
-                                      {subName}
-                                    </Link>
-                                    {childcategories.length > 0 && (
-                                      <button
-                                        type="button"
-                                        className="theme-btn-skip inline-flex h-5 w-5 items-center justify-center rounded border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100"
-                                        onClick={() =>
-                                          toggleDrawerSubcategory(subKey)
-                                        }>
-                                        {expandedDrawerSubcategories[subKey]
-                                          ? "-"
-                                          : "+"}
-                                      </button>
-                                    )}
+                        {expandedDrawerCategories[categoryKey] &&
+                          subcategories.length > 0 && (
+                            <div className="space-y-2 border-t border-gray-100 bg-gray-50 px-3 py-2">
+                              {subcategories.map((sub, subIndex) => {
+                                const subKey =
+                                  sub?.id || `${categoryKey}-sub-${subIndex}`;
+                                const subSlug = sub?.slug
+                                  ? String(sub.slug).trim()
+                                  : "";
+                                const subName =
+                                  sub?.subcategoryName || "Subcategory";
+                                const childcategories = Array.isArray(
+                                  sub?.childcategories,
+                                )
+                                  ? sub.childcategories
+                                  : [];
+                                return (
+                                  <div key={subKey}>
+                                    <div className="flex items-center justify-between">
+                                      <Link
+                                        to={
+                                          subSlug
+                                            ? `/subcategory/${subSlug}`
+                                            : "#"
+                                        }
+                                        className={`line-clamp-1 text-sm font-medium ${
+                                          subSlug
+                                            ? "text-gray-700 hover:text-blue-600"
+                                            : "text-gray-400 pointer-events-none"
+                                        }`}
+                                        onClick={() => {
+                                          if (subSlug)
+                                            setMobileDrawerOpen(false);
+                                        }}>
+                                        {subName}
+                                      </Link>
+                                      {childcategories.length > 0 && (
+                                        <button
+                                          type="button"
+                                          className="theme-btn-skip inline-flex h-5 w-5 items-center justify-center rounded border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                                          onClick={() =>
+                                            toggleDrawerSubcategory(subKey)
+                                          }>
+                                          {expandedDrawerSubcategories[subKey]
+                                            ? "-"
+                                            : "+"}
+                                        </button>
+                                      )}
+                                    </div>
+                                    {expandedDrawerSubcategories[subKey] &&
+                                      childcategories.length > 0 && (
+                                        <div className="mt-1 space-y-1 pl-3">
+                                          {childcategories.map(
+                                            (child, childIndex) => {
+                                              const childKey =
+                                                child?.id ||
+                                                `${subKey}-child-${childIndex}`;
+                                              const childSlug = child?.slug
+                                                ? String(child.slug).trim()
+                                                : "";
+                                              const childName =
+                                                child?.childcategoryName ||
+                                                "Childcategory";
+                                              return (
+                                                <Link
+                                                  key={childKey}
+                                                  to={
+                                                    childSlug
+                                                      ? `/childcategory/${childSlug}`
+                                                      : "#"
+                                                  }
+                                                  className={`block text-xs ${
+                                                    childSlug
+                                                      ? "text-gray-600 hover:text-blue-600"
+                                                      : "text-gray-400 pointer-events-none"
+                                                  }`}
+                                                  onClick={() => {
+                                                    if (childSlug)
+                                                      setMobileDrawerOpen(
+                                                        false,
+                                                      );
+                                                  }}>
+                                                  {childName}
+                                                </Link>
+                                              );
+                                            },
+                                          )}
+                                        </div>
+                                      )}
                                   </div>
-                                  {expandedDrawerSubcategories[subKey] &&
-                                    childcategories.length > 0 && (
-                                      <div className="mt-1 space-y-1 pl-3">
-                                        {childcategories.map(
-                                          (child, childIndex) => {
-                                            const childKey =
-                                              child?.id ||
-                                              `${subKey}-child-${childIndex}`;
-                                            const childSlug = child?.slug
-                                              ? String(child.slug).trim()
-                                              : "";
-                                            const childName =
-                                              child?.childcategoryName ||
-                                              "Childcategory";
-                                            return (
-                                              <Link
-                                                key={childKey}
-                                                to={
-                                                  childSlug
-                                                    ? `/childcategory/${childSlug}`
-                                                    : "#"
-                                                }
-                                                className={`block text-xs ${
-                                                  childSlug
-                                                    ? "text-gray-600 hover:text-blue-600"
-                                                    : "text-gray-400 pointer-events-none"
-                                                }`}
-                                                onClick={() => {
-                                                  if (childSlug)
-                                                    setMobileDrawerOpen(false);
-                                                }}>
-                                                {childName}
-                                              </Link>
-                                            );
-                                          },
-                                        )}
-                                      </div>
-                                    )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                    </div>
-                  );
+                                );
+                              })}
+                            </div>
+                          )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Category Modal */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-3 py-6 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}>
+            <div className="w-[720px] max-w-[90vw]">
+              <div className="mb-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow hover:bg-gray-100"
+                  aria-label="Close categories modal">
+                  <FaTimes />
+                </button>
+              </div>
+              <div
+                className="w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl"
+                onClick={(event) => event.stopPropagation()}>
+                {renderExternalCategoryPanelContent(() => {
+                  setMobileMenuOpen(false);
                 })}
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Category Modal */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-3 py-6 md:hidden"
-          onClick={() => setMobileMenuOpen(false)}>
-          <div className="w-[720px] max-w-[90vw]">
-            <div className="mb-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow hover:bg-gray-100"
-                aria-label="Close categories modal">
-                <FaTimes />
-              </button>
-            </div>
-            <div
-              className="w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl"
-              onClick={(event) => event.stopPropagation()}>
-              {renderExternalCategoryPanelContent(() => {
-                setMobileMenuOpen(false);
-              })}
             </div>
           </div>
-        </div>
-      )}
-    </header>
+        )}
+      </header>
+    </>
   );
 };
 

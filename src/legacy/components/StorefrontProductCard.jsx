@@ -202,7 +202,7 @@ const StorefrontProductCard = ({ item, product }) => {
         </Link>
 
         {discountAmount > 0 ? (
-          <div className="theme-product-badge absolute right-[0px] top-[0px] rounded-[0px] rounded-bl-[22px] bg-[#1196af] px-4 py-2 text-sm font-semibold text-white shadow-md">
+          <div className="theme-product-badge absolute right-[0px] top-[0px] rounded-[0px] rounded-bl-[22px] bg-[#1196af] px-3 py-1.5 text-xs font-semibold text-white shadow-md">
             <span>
               {discountPercent > 0
                 ? `${discountPercent}% Off`
@@ -246,7 +246,7 @@ const StorefrontProductCard = ({ item, product }) => {
 
         <div className="mt-1.5 flex items-end gap-2">
           <span
-            className="text-[30px] font-extrabold leading-none text-[#111827]"
+            className="text-[22px] md:text-[24px] font-extrabold leading-none text-[#111827]"
             data-meta-event-value={toTrackingMoney(price)}
             data-meta-currency="BDT"
             data-meta-value-source="product-card-price">

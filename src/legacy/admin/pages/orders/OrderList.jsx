@@ -818,6 +818,35 @@ const OrderList = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    const confirmed = await showConfirmAlert({
+      title: "Delete Order?",
+      content: "This action cannot be undone.",
+      okText: "Yes, Delete",
+      cancelText: "Cancel",
+      okType: "danger",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const result = await adminAction({
+        url: `/admin/orders/delete`,
+        method: "DELETE",
+        body: { order_ids: [orderId] },
+        invalidates: [tagKey, "orders"],
+        notifySuccess: false,
+      }).unwrap();
+
+      showSuccessAlert({
+        title: "Deleted",
+        content: result?.message || "Order deleted successfully.",
+      });
+    } catch (error) {
+      showErrorMessage(error?.data?.message || "Delete failed.");
+    }
+  };
+
   const handleBulkCourierDispatch = async (courier) => {
     if (!selectedOrderIds.length) {
       showErrorMessage("Select at least one order.");
@@ -1144,6 +1173,8 @@ const OrderList = () => {
       onHeaderCell: () => ({ style: { whiteSpace: "nowrap" } }),
       render: (row) => {
         const orderId = Number(row.id);
+        const isNewOrder =
+          String(row?.status?.name || "").toLowerCase() === "new order";
         const isSendingEfb = sendingEfbOrderIds.includes(orderId);
         const isEfbSent =
           Number(row.is_complete_order) === 1 ||
@@ -1175,6 +1206,15 @@ const OrderList = () => {
               onClick: () => openStatusUpdateModal(row),
             },
           );
+
+          if (isNewOrder) {
+            mobileMenuItems.push({
+              key: `delete-${orderId}`,
+              label: "Delete",
+              icon: <FiTrash2 size={14} />,
+              onClick: () => handleDeleteOrder(orderId),
+            });
+          }
 
           if (isCompleted) {
             mobileMenuItems.push({
@@ -1247,6 +1287,17 @@ const OrderList = () => {
                 disabled={statusUpdateOptions.length === 0}>
                 Update
               </AntButton>
+
+              {isNewOrder && (
+                <AntButton
+                  size="small"
+                  danger
+                  icon={<FiTrash2 size={13} />}
+                  onClick={() => handleDeleteOrder(row.id)}>
+                  Delete
+                </AntButton>
+              )}
+
               {isCompleted ? (
                 <AntButton
                   size="small"
