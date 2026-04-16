@@ -143,9 +143,9 @@ const Home = () => {
   const fallbackBanners = [
     {
       id: "fallback-banner-1",
-      title: "Featured Collections",
+      title: "",
       link: "/products",
-      image: "https://placehold.co/1200x400?text=Featured+Collections",
+      image: "https://placehold.co/1200x400/D3D3D3/D3D3D3",
     },
   ];
 
@@ -297,7 +297,7 @@ const Home = () => {
   const bannerTitle = String(activeBanner?.title || "").trim();
   const bannerImage = resolveMediaUrl(
     activeBanner?.image,
-    "https://placehold.co/1200x400?text=Banner",
+    "https://placehold.co/1200x400/D3D3D3/D3D3D3",
   );
   const normalizedBannerLink = bannerLink
     ? isExternalHttpUrl(bannerLink)
