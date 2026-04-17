@@ -129,6 +129,7 @@ const OrderList = () => {
   const [statusModalValue, setStatusModalValue] = useState(undefined);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [sendingEfbOrderIds, setSendingEfbOrderIds] = useState([]);
+  const [sendingSteadfastOrderIds, setSendingSteadfastOrderIds] = useState([]);
   const [efbSentOrderIds, setEfbSentOrderIds] = useState([]);
   const [selectedOrderIds, setSelectedOrderIds] = useState([]);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
@@ -350,6 +351,90 @@ const OrderList = () => {
       });
     } finally {
       setSendingEfbOrderIds((prev) => prev.filter((id) => id !== orderId));
+    }
+  };
+
+  const isCourierDispatchLocked = (order) => {
+    const trackingCode = String(order?.courier_order_id || "").trim();
+    if (trackingCode) {
+      return true;
+    }
+
+    const courierName = String(order?.courier_name || "")
+      .trim()
+      .toLowerCase();
+    if (!courierName) {
+      return false;
+    }
+
+    const courierStatus = String(order?.courier_status || "")
+      .trim()
+      .toLowerCase();
+
+    return [
+      "sent",
+      "booked",
+      "created",
+      "processing",
+      "in_transit",
+      "in-transit",
+      "pending_pickup",
+      "picked",
+    ].includes(courierStatus);
+  };
+
+  const handleSendToSteadfast = async (order) => {
+    const orderId = Number(order?.id || 0);
+    if (!Number.isFinite(orderId) || orderId <= 0) return;
+
+    if (!isCompletedOrder(order)) {
+      showErrorMessage(
+        "Send to Steadfast is available for completed orders only.",
+      );
+      return;
+    }
+
+    if (isCourierDispatchLocked(order)) {
+      showErrorMessage(
+        order?.courier_order_id
+          ? `Order already sent to courier. Tracking code: ${order.courier_order_id}.`
+          : "Order already sent to courier.",
+      );
+      return;
+    }
+
+    const confirmed = await showConfirmAlert({
+      title: "Send to Steadfast?",
+      content: "You are about to send this completed order to Steadfast.",
+      okText: "Yes, Send",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    setSendingSteadfastOrderIds((prev) => [...new Set([...prev, orderId])]);
+
+    try {
+      const result = await adminAction({
+        url: "/admin/orders/courier/steadfast",
+        method: "POST",
+        body: { order_id: orderId },
+        invalidates: [tagKey, "orders", "courier-orders"],
+        notifySuccess: false,
+      }).unwrap();
+
+      showSuccessAlert({
+        title: "Steadfast Dispatch Complete",
+        content: result?.message || "Order sent to Steadfast successfully.",
+      });
+    } catch (submitError) {
+      showErrorMessage(
+        submitError?.data?.message || "Failed to send order to Steadfast.",
+      );
+    } finally {
+      setSendingSteadfastOrderIds((prev) =>
+        prev.filter((id) => id !== orderId),
+      );
     }
   };
 
@@ -1176,10 +1261,12 @@ const OrderList = () => {
         const isNewOrder =
           String(row?.status?.name || "").toLowerCase() === "new order";
         const isSendingEfb = sendingEfbOrderIds.includes(orderId);
+        const isSendingSteadfast = sendingSteadfastOrderIds.includes(orderId);
         const isEfbSent =
           Number(row.is_complete_order) === 1 ||
           efbSentOrderIds.includes(orderId);
         const isCompleted = queryStatus === "complete" && isCompletedOrder(row);
+        const isSteadfastSent = isCourierDispatchLocked(row);
         const isFbSentList = queryStatus === "fb-sent";
         const mobileMenuItems = [
           {
@@ -1227,6 +1314,18 @@ const OrderList = () => {
               icon: <FiSend size={14} />,
               disabled: isEfbSent || isSendingEfb,
               onClick: () => handleSendToFb(row),
+            });
+
+            mobileMenuItems.push({
+              key: `send-steadfast-${orderId}`,
+              label: isSteadfastSent
+                ? "Steadfast Sent"
+                : isSendingSteadfast
+                  ? "Sending..."
+                  : "Send Steadfast",
+              icon: <FiTruck size={14} />,
+              disabled: isSteadfastSent || isSendingSteadfast,
+              onClick: () => handleSendToSteadfast(row),
             });
           }
         }
@@ -1299,19 +1398,38 @@ const OrderList = () => {
               )}
 
               {isCompleted ? (
-                <AntButton
-                  size="small"
-                  type={isEfbSent ? "default" : "primary"}
-                  icon={<FiSend size={13} />}
-                  disabled={isSendingEfb}
-                  className={
-                    isEfbSent
-                      ? "!border-emerald-500 !text-emerald-600"
-                      : "!bg-admin-accent hover:!bg-admin-accent/90"
-                  }
-                  onClick={() => handleSendToFb(row)}>
-                  {isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB"}
-                </AntButton>
+                <>
+                  <AntButton
+                    size="small"
+                    type={isEfbSent ? "default" : "primary"}
+                    icon={<FiSend size={13} />}
+                    disabled={isSendingEfb}
+                    className={
+                      isEfbSent
+                        ? "!border-emerald-500 !text-emerald-600"
+                        : "!bg-admin-accent hover:!bg-admin-accent/90"
+                    }
+                    onClick={() => handleSendToFb(row)}>
+                    {isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB"}
+                  </AntButton>
+                  <AntButton
+                    size="small"
+                    type={isSteadfastSent ? "default" : "primary"}
+                    icon={<FiTruck size={13} />}
+                    disabled={isSteadfastSent || isSendingSteadfast}
+                    className={
+                      isSteadfastSent
+                        ? "!border-sky-500 !text-sky-600"
+                        : "!bg-sky-600 hover:!bg-sky-700"
+                    }
+                    onClick={() => handleSendToSteadfast(row)}>
+                    {isSteadfastSent
+                      ? "Steadfast Sent"
+                      : isSendingSteadfast
+                        ? "Sending..."
+                        : "Send Steadfast"}
+                  </AntButton>
+                </>
               ) : null}
             </div>
             <div className="md:hidden">

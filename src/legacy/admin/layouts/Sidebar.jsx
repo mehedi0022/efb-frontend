@@ -231,6 +231,11 @@ const menuItems = [
         path: "/integrations/courier",
         permission: "integrations.view",
       },
+      {
+        title: "Steadfast Settings",
+        path: "/integrations/steadfast",
+        permission: "integrations.view",
+      },
     ],
   },
 
