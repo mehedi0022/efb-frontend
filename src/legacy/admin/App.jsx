@@ -519,7 +519,7 @@ const App = () => {
           />
           {/* Pixels & Tag Managers */}
 
-          {/* <Route
+          <Route
             path="pixels"
             element={
               <RequirePermission permission="pixels.view">
@@ -528,7 +528,7 @@ const App = () => {
             }
           />
 
-          <Route
+          {/* <Route
             path="tag-managers"
             element={
               <RequirePermission permission="tag-managers.view">

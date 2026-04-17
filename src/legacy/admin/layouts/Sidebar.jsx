@@ -240,20 +240,20 @@ const menuItems = [
   },
 
   // // TEMP DISABLED: Pixel and GTM
-  // {
-  //   title: "Pixel and GTM",
-  //   icon: FiSave,
-  //   key: "pixel",
-  //   prefixes: ["/pixels", "/tag-managers"],
-  //   children: [
-  //     { title: "Pixels Setting", path: "/pixels", permission: "pixels.view" },
-  //     {
-  //       title: "GTM Setting",
-  //       path: "/tag-managers",
-  //       permission: "tag-managers.view",
-  //     },
-  //   ],
-  // },
+  {
+    title: "Pixel Config",
+    icon: FiSave,
+    key: "pixel",
+    prefixes: ["/pixels", "/tag-managers"],
+    children: [
+      { title: "Pixels Setting", path: "/pixels", permission: "pixels.view" },
+      // {
+      //   title: "GTM Setting",
+      //   path: "/tag-managers",
+      //   permission: "tag-managers.view",
+      // },
+    ],
+  },
 
   {
     title: "Banner & Ads",
