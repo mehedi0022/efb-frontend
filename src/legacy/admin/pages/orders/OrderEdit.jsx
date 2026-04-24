@@ -607,68 +607,134 @@ const OrderEdit = () => {
             </p>
           </div>
 
-          {/* City / District Dropdown */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              City / District
-            </label>
-            <select
-              className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
-              value={selectedCity}
-              onChange={(e) => handleCityChange(e.target.value)}>
-              <option value="">Select city</option>
-              {BANGLADESH_DISTRICTS.map((district) => (
-                <option key={district} value={district}>
-                  {district}
-                </option>
-              ))}
-            </select>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {/* City / District Dropdown */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                City / District
+              </label>
+              <select
+                className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                value={selectedCity}
+                onChange={(e) => handleCityChange(e.target.value)}>
+                <option value="">Select city</option>
+                {BANGLADESH_DISTRICTS.map((district) => (
+                  <option key={district} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Input
+                label="Address"
+                value={formData.shipping_address}
+                onChange={(e) =>
+                  handleChange("shipping_address", e.target.value)
+                }
+                error={errors.shipping_address}
+                required
+              />
+            </div>
+
+            {/* Delivery Charge */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Delivery Charge
+                {selectedCity ? (
+                  <span className="ml-2 text-xs font-normal text-gray-400">
+                    (
+                    {selectedCity === "Dhaka"
+                      ? "Inside Dhaka"
+                      : "Outside Dhaka"}
+                    )
+                  </span>
+                ) : null}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                readOnly={productSource === "fb"}
+                className={`w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary ${
+                  productSource === "fb"
+                    ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                    : "bg-white"
+                }`}
+                value={formData.shipping_charge}
+                onChange={(e) => {
+                  if (productSource === "own") {
+                    handleChange(
+                      "shipping_charge",
+                      Math.max(0, Number(e.target.value) || 0),
+                    );
+                  }
+                }}
+              />
+              {productSource === "fb" ? (
+                <p className="mt-1 text-xs text-gray-400">
+                  Fixed for FB products. Switch to Own Product to edit.
+                </p>
+              ) : null}
+            </div>
           </div>
 
-          <Input
-            label="Address"
-            value={formData.shipping_address}
-            onChange={(e) => handleChange("shipping_address", e.target.value)}
-            error={errors.shipping_address}
-            required
-          />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {/* Discount Type */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Discount Type
+              </label>
+              <select
+                className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                value={formData.discount_type}
+                onChange={(e) => handleChange("discount_type", e.target.value)}>
+                <option value="fixed">Fixed Amount</option>
+                <option value="percentage">Percentage (%)</option>
+              </select>
+            </div>
 
-          {/* Delivery Charge */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Delivery Charge
-              {selectedCity ? (
-                <span className="ml-2 text-xs font-normal text-gray-400">
-                  ({selectedCity === "Dhaka" ? "Inside Dhaka" : "Outside Dhaka"}
-                  )
-                </span>
-              ) : null}
-            </label>
-            <input
+            {/* Discount Value */}
+            <Input
+              label={
+                formData.discount_type === "percentage"
+                  ? "Discount (%)"
+                  : "Discount Amount"
+              }
               type="number"
               min="0"
               step="1"
-              readOnly={productSource === "fb"}
-              className={`w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary ${
-                productSource === "fb"
-                  ? "bg-gray-50 text-gray-500 cursor-not-allowed"
-                  : "bg-white"
-              }`}
-              value={formData.shipping_charge}
-              onChange={(e) => {
-                if (productSource === "own") {
-                  handleChange(
-                    "shipping_charge",
-                    Math.max(0, Number(e.target.value) || 0),
-                  );
-                }
-              }}
+              value={formData.discount_value}
+              onChange={(e) => handleChange("discount_value", e.target.value)}
+              error={errors.discount_value}
             />
-            {productSource === "fb" ? (
-              <p className="mt-1 text-xs text-gray-400">
-                Fixed for FB products. Switch to Own Product to edit.
-              </p>
-            ) : null}
+
+            {/* Order Status */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Order Status
+              </label>
+              <select
+                className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary ${
+                  errors.order_status ? "border-red-500" : "border-gray-300"
+                }`}
+                value={formData.order_status}
+                onChange={(e) => handleChange("order_status", e.target.value)}
+                required>
+                <option value="">Select status</option>
+                {statuses.slice(1).map((status) => (
+                  <option key={status.id} value={status.id}>
+                    {status.name}
+                  </option>
+                ))}
+              </select>
+              {errors.order_status ? (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.order_status}
+                </p>
+              ) : null}
+            </div>
           </div>
 
           <div>
