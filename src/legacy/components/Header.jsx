@@ -45,13 +45,11 @@ const Header = () => {
   const [activeDesktopCategoryId, setActiveDesktopCategoryId] = useState(null);
   const [removingCartItemId, setRemovingCartItemId] = useState(null);
 
-  // ✅ Single ref covers the entire category zone (button + panel)
   const categoryZoneRef = useRef(null);
   const categoryPanelRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const desktopSearchRef = useRef(null);
   const desktopMenuCloseTimeoutRef = useRef(null);
-  // ✅ Timeout ref so we don't close panel instantly when moving between button and panel
   const categoryHoverTimeoutRef = useRef(null);
 
   const [deleteCartItem] = useDeleteCartItemMutation();
@@ -81,7 +79,6 @@ const Header = () => {
       typeof item?.product?.feature_image === "string"
         ? item.product.feature_image
         : item?.product?.feature_image?.image;
-
     const image =
       item?.product_image ||
       item?.options?.product_image ||
@@ -156,7 +153,6 @@ const Header = () => {
   };
 
   const handleCategoryZoneLeave = () => {
-    // Only auto-close if not pinned by click
     if (!isCategoryPinned) {
       categoryHoverTimeoutRef.current = setTimeout(() => {
         setShowCategoryPanel(false);
@@ -311,7 +307,7 @@ const Header = () => {
     try {
       normalized = decodeURIComponent(normalized);
     } catch {
-      // Keep original value
+      // keep original
     }
     normalized =
       normalized
@@ -410,81 +406,149 @@ const Header = () => {
     setMobileMenuOpen(true);
   };
 
+  // ── MYNTRA-STYLE MULTI-COLUMN MEGA MENU ───────────────────────────────────
   const renderExternalCategoryPanelContent = (onItemClick) => (
     <>
-      <div className="mb-3 flex items-center justify-between">
-        <h4 className="text-base font-semibold">All Categories</h4>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => handleMenuPage(externalMenuMeta.page - 1)}
-            disabled={externalMenuMeta.page <= 1 || isExternalMenuLoadingState}
-            className="theme-btn-skip inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            aria-label="Previous categories">
-            <FaChevronLeft />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleMenuPage(externalMenuMeta.page + 1)}
-            disabled={
-              externalMenuMeta.page >= externalMenuMeta.last_page ||
-              isExternalMenuLoadingState
-            }
-            className="theme-btn-skip inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            aria-label="Next categories">
-            <FaChevronRight />
-          </button>
+      {externalMenuMeta.last_page > 1 && (
+        <div className="flex items-center justify-between pb-0 mb-0 border-b border-gray-100">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+            All Categories
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleMenuPage(externalMenuMeta.page - 1)}
+              disabled={
+                externalMenuMeta.page <= 1 || isExternalMenuLoadingState
+              }
+              className="theme-btn-skip inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-40 transition-colors"
+              aria-label="Previous">
+              <FaChevronLeft size={10} />
+            </button>
+            <span className="text-xs text-gray-400 font-medium tabular-nums">
+              {externalMenuMeta.page}/{externalMenuMeta.last_page}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleMenuPage(externalMenuMeta.page + 1)}
+              disabled={
+                externalMenuMeta.page >= externalMenuMeta.last_page ||
+                isExternalMenuLoadingState
+              }
+              className="theme-btn-skip inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-40 transition-colors"
+              aria-label="Next">
+              <FaChevronRight size={10} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {isExternalMenuLoadingState ? (
-        <div className="py-10 text-center text-sm text-gray-500">
-          Loading categories...
+        <div className="flex items-center justify-center py-10 text-sm text-gray-400">
+          <span className="animate-pulse">Loading categories…</span>
         </div>
       ) : externalMenuError ? (
-        <div className="py-10 text-center text-sm text-red-600">
+        <div className="py-8 text-center text-sm text-red-500">
           Failed to load categories.
         </div>
       ) : externalMenuCategories.length === 0 ? (
-        <div className="py-10 text-center text-sm text-gray-500">
+        <div className="py-8 text-center text-sm text-gray-400">
           No categories found.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "0",
+          }}>
           {externalMenuCategories.map((category, index) => {
             const slug = resolveExternalCategorySlug(category);
             const name = resolveExternalCategoryName(category);
             const categoryPath = slug
               ? `/category/external/${encodeURIComponent(slug)}`
               : "#";
+            const children = Array.isArray(category.childern)
+              ? category.childern
+              : [];
+
+            /* alternating column tint — odd=0 is blue-tinted, even=1 is warm white */
+            const isOdd = index % 2 === 0;
+            const colBg = isOdd ? "#f5f7ff" : "#fffdf9";
+
             return (
-              <Link
+              <div
                 key={category.id || slug || index}
-                to={categoryPath}
-                onClick={() => {
-                  if (slug && typeof onItemClick === "function") {
-                    onItemClick();
-                  }
+                style={{
+                  backgroundColor: colBg,
+                  padding: "14px 14px 16px",
+                  borderRight: "1px solid #eef0f4",
+                  borderBottom: "1px solid #eef0f4",
                 }}
-                // ✅ Hover effect on each category item
-                className={`flex items-center rounded-md border px-3 py-2.5 text-sm font-semibold transition-all duration-150 ${
-                  slug
-                    ? "border-gray-100 text-gray-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
-                    : "cursor-not-allowed border-gray-100 text-gray-400"
-                }`}
-                onMouseDown={(event) => {
-                  if (!slug) event.preventDefault();
-                }}>
-                <span className="line-clamp-1 capitalize">{name}</span>
-              </Link>
+                className="flex flex-col">
+                {/* Category heading */}
+                <Link
+                  to={categoryPath}
+                  onClick={() => {
+                    if (slug && typeof onItemClick === "function")
+                      onItemClick();
+                  }}
+                  className={`group mb-1.5 ${!slug ? "pointer-events-none" : ""}`}>
+                  <span
+                    className={`block text-[13.5px] font-bold capitalize leading-snug transition-all hover:translate-x-1  duration-300 ${
+                      slug
+                        ? "text-gray-600 group-hover:text-gray-900"
+                        : "text-gray-400"
+                    }`}>
+                    {name}
+                  </span>
+                </Link>
+
+                {/* Children list */}
+                {children.length > 0 ? (
+                  <ul className="flex flex-col mt-1" style={{ gap: "1px" }}>
+                    {children.map((child, idx) => {
+                      const childSlug = resolveExternalCategorySlug(child);
+                      const childName = resolveExternalCategoryName(child);
+                      return (
+                        <li key={child.id || childSlug || idx}>
+                          <Link
+                            to={
+                              childSlug
+                                ? `/category/external/${encodeURIComponent(childSlug)}`
+                                : "#"
+                            }
+                            onClick={() => {
+                              if (
+                                childSlug &&
+                                typeof onItemClick === "function"
+                              )
+                                onItemClick();
+                            }}
+                            className={`group/child flex items-center gap-1 text-[12.5px] font-bold capitalize transition-all duration-150 ${
+                              childSlug
+                                ? "text-gray-500 hover:text-blue-600"
+                                : "text-gray-300 pointer-events-none"
+                            }`}>
+                            {" "}
+                            <span className="line-clamp-1 group-hover/child:translate-x-0.5 transition-transform duration-150">
+                              {childName}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+              </div>
             );
           })}
         </div>
       )}
     </>
   );
+  // ── END MEGA MENU ──────────────────────────────────────────────────────────
 
-  // ✅ Outside click closes panel
   useEffect(() => {
     if (!showCategoryPanel) return undefined;
     const handleOutsideClick = (event) => {
@@ -529,7 +593,6 @@ const Header = () => {
 
   useEffect(() => () => clearDesktopMenuCloseTimeout(), []);
 
-  // Cleanup category hover timeout on unmount
   useEffect(
     () => () => {
       if (categoryHoverTimeoutRef.current)
@@ -543,6 +606,7 @@ const Header = () => {
       <header
         className="sticky top-0 z-50 bg-white shadow-md backdrop-blur"
         style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
+        {/* ── Mobile marquee ── */}
         <div className="bg-white py-1 md:hidden">
           {marqueeHtml ? (
             <marquee
@@ -555,6 +619,7 @@ const Header = () => {
           ) : null}
         </div>
 
+        {/* ── Mobile top bar ── */}
         <div className="md:hidden bg-white shadow-sm">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <button
@@ -588,6 +653,8 @@ const Header = () => {
               </Link>
             </div>
           </div>
+
+          {/* Mobile search */}
           <div className="px-4 pb-3">
             <form
               ref={mobileSearchRef}
@@ -612,6 +679,8 @@ const Header = () => {
               {renderSearchDropdown("mobile")}
             </form>
           </div>
+
+          {/* Mobile category button */}
           <div className="px-4 pb-4">
             <button
               type="button"
@@ -623,6 +692,7 @@ const Header = () => {
           </div>
         </div>
 
+        {/* ── Desktop marquee ── */}
         <div
           className="hidden md:block"
           style={{ backgroundColor: headerBgColor }}>
@@ -639,6 +709,7 @@ const Header = () => {
           </div>
         </div>
 
+        {/* ── Desktop logo / search / cart ── */}
         <div
           className="hidden md:block border-b"
           style={{ backgroundColor: headerBgColor }}>
@@ -656,6 +727,7 @@ const Header = () => {
                 <span className="text-xl font-semibold">{siteName}</span>
               )}
             </Link>
+
             <div className="flex-1">
               <form
                 ref={desktopSearchRef}
@@ -680,7 +752,9 @@ const Header = () => {
                 {renderSearchDropdown("desktop")}
               </form>
             </div>
+
             <div className="flex items-center gap-6">
+              {/* Cart hover popup */}
               <div className="relative group">
                 <Link
                   to="/cart"
@@ -757,6 +831,8 @@ const Header = () => {
                   )}
                 </div>
               </div>
+
+              {/* Account */}
               {user ? (
                 <Link
                   to="/account"
@@ -776,16 +852,15 @@ const Header = () => {
           </div>
         </div>
 
-        {/* ✅ FIXED: Category nav bar - entire zone (button + panel) shares one ref and hover handlers */}
+        {/* ── Desktop nav bar ── */}
         <div className="hidden md:block border-b bg-white">
           <div className="container mx-auto px-4 py-3 flex items-center gap-6">
-            {/* ✅ categoryZoneRef wraps both the button AND the dropdown panel */}
+            {/* Category zone — button + panel share one ref/hover zone */}
             <div
               ref={categoryZoneRef}
               className="relative"
               onMouseEnter={handleCategoryZoneEnter}
               onMouseLeave={handleCategoryZoneLeave}>
-              {/* Category Button */}
               <button
                 type="button"
                 onClick={toggleCategoryPanel}
@@ -798,11 +873,17 @@ const Header = () => {
                 Category
               </button>
 
-              {/* ✅ Panel is INSIDE the same hover zone — no gap issue */}
+              {/* Mega menu panel */}
               {showCategoryPanel && (
                 <div
                   ref={categoryPanelRef}
-                  className="absolute left-0 top-full z-50 mt-1 w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl">
+                  className="absolute left-0 top-full z-50 mt-1 rounded-xl border border-gray-100 bg-white shadow-2xl overflow-hidden"
+                  style={{
+                    width: "min(960px, 90vw)",
+                    maxHeight: "520px",
+                    overflowY: "auto",
+                    padding: "0",
+                  }}>
                   {renderExternalCategoryPanelContent(() => {
                     setShowCategoryPanel(false);
                     setIsCategoryPinned(false);
@@ -811,7 +892,6 @@ const Header = () => {
               )}
             </div>
 
-            {/* Nav menu items */}
             <ul className="hidden lg:flex flex-1 items-center gap-4 m-0">
               {menuCategories.map((category) => (
                 <li
@@ -868,7 +948,6 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Drawer */}
         {mobileDrawerOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 md:hidden"
@@ -1036,13 +1115,11 @@ const Header = () => {
             </div>
           </div>
         )}
-
-        {/* Mobile Category Modal */}
         {mobileMenuOpen && (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-3 py-6 md:hidden"
             onClick={() => setMobileMenuOpen(false)}>
-            <div className="w-[720px] max-w-[90vw]">
+            <div className="w-full max-w-[95vw]">
               <div className="mb-2 flex justify-end">
                 <button
                   type="button"
@@ -1053,11 +1130,16 @@ const Header = () => {
                 </button>
               </div>
               <div
-                className="w-[720px] max-w-[90vw] rounded-md border border-gray-200 bg-white p-4 shadow-xl"
+                className="w-full rounded-xl border border-gray-100 bg-white shadow-2xl overflow-hidden"
+                style={{
+                  maxHeight: "80vh",
+                  overflowY: "auto",
+                  padding: "16px 16px 0",
+                }}
                 onClick={(event) => event.stopPropagation()}>
-                {renderExternalCategoryPanelContent(() => {
-                  setMobileMenuOpen(false);
-                })}
+                {renderExternalCategoryPanelContent(() =>
+                  setMobileMenuOpen(false),
+                )}
               </div>
             </div>
           </div>
