@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useGetExternalCategoryBySlugQuery } from "../store/publicApi";
 import StorefrontProductCard from "../components/StorefrontProductCard";
@@ -84,13 +84,15 @@ const Pagination = ({ current, last, onPage }) => {
 
 const ExternalCategoryListing = () => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams(); // ← read query params
+  const categoryId = searchParams.get("category_id") || null;
   const normalizedSlug = useMemo(() => normalizeCategorySlug(slug), [slug]);
   const [page, setPage] = useState(1);
   const limit = 20;
 
   useEffect(() => {
     setPage(1);
-  }, [normalizedSlug]);
+  }, [normalizedSlug, categoryId]);
 
   const {
     data: response,
@@ -99,7 +101,12 @@ const ExternalCategoryListing = () => {
     error,
   } = useGetExternalCategoryBySlugQuery(
     normalizedSlug
-      ? { slug: normalizedSlug, page, limit }
+      ? {
+          slug: normalizedSlug,
+          page,
+          limit,
+          ...(categoryId && { category_id: categoryId }),
+        }
       : { slug: "", page, limit },
     { skip: !normalizedSlug },
   );

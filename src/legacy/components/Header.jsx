@@ -510,27 +510,31 @@ const Header = () => {
                     {children.map((child, idx) => {
                       const childSlug = resolveExternalCategorySlug(child);
                       const childName = resolveExternalCategoryName(child);
+
+                      // ✅ Always use PARENT slug as the route, child.id to filter products
+                      const childPath =
+                        child.id && slug
+                          ? `/category/external/${encodeURIComponent(slug)}?category_id=${child.id}`
+                          : childSlug
+                            ? `/category/external/${encodeURIComponent(childSlug)}`
+                            : "#";
+
                       return (
                         <li key={child.id || childSlug || idx}>
                           <Link
-                            to={
-                              childSlug
-                                ? `/category/external/${encodeURIComponent(childSlug)}`
-                                : "#"
-                            }
+                            to={childPath}
                             onClick={() => {
                               if (
-                                childSlug &&
+                                childPath !== "#" &&
                                 typeof onItemClick === "function"
                               )
                                 onItemClick();
                             }}
                             className={`group/child flex items-center gap-1 text-[12.5px] font-bold capitalize transition-all duration-150 ${
-                              childSlug
+                              childPath !== "#"
                                 ? "text-gray-500 hover:text-blue-600"
                                 : "text-gray-300 pointer-events-none"
                             }`}>
-                            {" "}
                             <span className="line-clamp-1 group-hover/child:translate-x-0.5 transition-transform duration-150">
                               {childName}
                             </span>

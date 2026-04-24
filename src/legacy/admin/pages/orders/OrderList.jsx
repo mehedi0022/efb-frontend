@@ -305,6 +305,14 @@ const OrderList = () => {
   }, []);
 
   const handleSendToFb = async (order) => {
+    if (order.shipping_charge !== 120 && order.shipping_charge !== 70) {
+      return showErrorAlert({
+        title: "দুঃখিত!",
+        content:
+          "ফ্রিলান্সার বাংলাদেশ এ নিরধারিত ডেলিভারি চার্জ আপনার চার্জ এর সাথে মিল নেই ঢাকার ভিতরে ( ৭০ টাকা) ঢাকার বাহিরে ( ১২০ টাকা)  । অর্ডারটি FB-তে পাঠাতে ডেলিভারি চার্জ সমন্নয় করুন।",
+      });
+    }
+
     const orderId = Number(order.id);
     if (!Number.isFinite(orderId) || orderId <= 0) return;
     if (!isCompletedOrder(order)) {
