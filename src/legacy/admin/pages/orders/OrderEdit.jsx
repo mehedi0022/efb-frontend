@@ -310,8 +310,8 @@ const OrderEdit = () => {
 
   const [selectedCity, setSelectedCity] = useState("");
 
-  const FB_CHARGE_MAP = { Dhaka: 70, default: 130 };
-  const OWN_CHARGE_MAP = { Dhaka: 70, default: 130 };
+  const FB_CHARGE_MAP = { Dhaka: 70, default: 120 };
+  const OWN_CHARGE_MAP = { Dhaka: 70, default: 120 };
 
   const handleCityChange = (city) => {
     setSelectedCity(city);
