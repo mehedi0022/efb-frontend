@@ -229,11 +229,13 @@ const Header = () => {
               return (
                 <li
                   key={item?.id || item?.product_id || slug || index}
-                  className="border-b border-gray-100 last:border-b-0">
+                  className="border-b border-gray-100 last:border-b-0"
+                >
                   <Link
                     to={toExternalProductPath(slug)}
                     onClick={() => setSearchOpenTarget(null)}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
+                  >
                     <img
                       src={resolveExternalProductImage(item)}
                       alt={name}
@@ -422,7 +424,8 @@ const Header = () => {
                 externalMenuMeta.page <= 1 || isExternalMenuLoadingState
               }
               className="theme-btn-skip inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-40 transition-colors"
-              aria-label="Previous">
+              aria-label="Previous"
+            >
               <FaChevronLeft size={10} />
             </button>
             <span className="text-xs text-gray-400 font-medium tabular-nums">
@@ -436,7 +439,8 @@ const Header = () => {
                 isExternalMenuLoadingState
               }
               className="theme-btn-skip inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-40 transition-colors"
-              aria-label="Next">
+              aria-label="Next"
+            >
               <FaChevronRight size={10} />
             </button>
           </div>
@@ -461,7 +465,8 @@ const Header = () => {
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
             gap: "0",
-          }}>
+          }}
+        >
           {externalMenuCategories.map((category, index) => {
             const slug = resolveExternalCategorySlug(category);
             const name = resolveExternalCategoryName(category);
@@ -485,7 +490,8 @@ const Header = () => {
                   borderRight: "1px solid #eef0f4",
                   borderBottom: "1px solid #eef0f4",
                 }}
-                className="flex flex-col">
+                className="flex flex-col"
+              >
                 {/* Category heading */}
                 <Link
                   to={categoryPath}
@@ -493,13 +499,15 @@ const Header = () => {
                     if (slug && typeof onItemClick === "function")
                       onItemClick();
                   }}
-                  className={`group mb-1.5 ${!slug ? "pointer-events-none" : ""}`}>
+                  className={`group mb-1.5 ${!slug ? "pointer-events-none" : ""}`}
+                >
                   <span
                     className={`block text-[13.5px] font-bold capitalize leading-snug transition-all hover:translate-x-1  duration-300 ${
                       slug
                         ? "text-gray-600 group-hover:text-gray-900"
                         : "text-gray-400"
-                    }`}>
+                    }`}
+                  >
                     {name}
                   </span>
                 </Link>
@@ -512,12 +520,9 @@ const Header = () => {
                       const childName = resolveExternalCategoryName(child);
 
                       // ✅ Always use PARENT slug as the route, child.id to filter products
-                      const childPath =
-                        child.id && slug
-                          ? `/category/external/${encodeURIComponent(slug)}?category_id=${child.id}`
-                          : childSlug
-                            ? `/category/external/${encodeURIComponent(childSlug)}`
-                            : "#";
+                      const childPath = childSlug
+                        ? `/subcategory/external/${encodeURIComponent(childSlug)}`
+                        : "#";
 
                       return (
                         <li key={child.id || childSlug || idx}>
@@ -534,7 +539,8 @@ const Header = () => {
                               childPath !== "#"
                                 ? "text-gray-500 hover:text-blue-600"
                                 : "text-gray-300 pointer-events-none"
-                            }`}>
+                            }`}
+                          >
                             <span className="line-clamp-1 group-hover/child:translate-x-0.5 transition-transform duration-150">
                               {childName}
                             </span>
@@ -609,7 +615,8 @@ const Header = () => {
     <>
       <header
         className="sticky top-0 z-50 bg-white shadow-md backdrop-blur"
-        style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
+        style={{ fontFamily: "Arial, Helvetica, sans-serif" }}
+      >
         {/* ── Mobile marquee ── */}
         <div className="bg-white py-1 md:hidden">
           {marqueeHtml ? (
@@ -629,7 +636,8 @@ const Header = () => {
             <button
               type="button"
               className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-              onClick={openMobileDrawer}>
+              onClick={openMobileDrawer}
+            >
               <FaBars size={20} />
             </button>
             <Link to="/" className="flex items-center gap-2">
@@ -649,7 +657,8 @@ const Header = () => {
               <Link
                 to="/cart"
                 className="relative text-gray-700"
-                aria-label={`Cart (${count})`}>
+                aria-label={`Cart (${count})`}
+              >
                 <FaShoppingCart size={18} />
                 <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold text-white">
                   {cartBadgeCount}
@@ -663,7 +672,8 @@ const Header = () => {
             <form
               ref={mobileSearchRef}
               onSubmit={handleSearch}
-              className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[420px] items-center gap-2 rounded-full border border-gray-200 bg-white px-3 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
+              className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[420px] items-center gap-2 rounded-full border border-gray-200 bg-white px-3 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10"
+            >
               <input
                 type="text"
                 placeholder="Search products..."
@@ -677,7 +687,8 @@ const Header = () => {
               />
               <button
                 type="submit"
-                className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
+                className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black"
+              >
                 Search
               </button>
               {renderSearchDropdown("mobile")}
@@ -689,7 +700,8 @@ const Header = () => {
             <button
               type="button"
               onClick={openMobileCategoryModal}
-              className="theme-btn-skip flex w-full items-center justify-center gap-2 rounded-md bg-[#2563eb] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-[#1d4ed8]">
+              className="theme-btn-skip flex w-full items-center justify-center gap-2 rounded-md bg-[#2563eb] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white hover:bg-[#1d4ed8]"
+            >
               <FaBars />
               <span>Category</span>
             </button>
@@ -699,7 +711,8 @@ const Header = () => {
         {/* ── Desktop marquee ── */}
         <div
           className="hidden md:block"
-          style={{ backgroundColor: headerBgColor }}>
+          style={{ backgroundColor: headerBgColor }}
+        >
           <div className="container mx-auto px-4 py-2">
             {marqueeHtml ? (
               <marquee
@@ -716,7 +729,8 @@ const Header = () => {
         {/* ── Desktop logo / search / cart ── */}
         <div
           className="hidden md:block border-b"
-          style={{ backgroundColor: headerBgColor }}>
+          style={{ backgroundColor: headerBgColor }}
+        >
           <div className="container mx-auto px-4 py-4 flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2">
               {isSettingsLoading ? (
@@ -736,7 +750,8 @@ const Header = () => {
               <form
                 ref={desktopSearchRef}
                 onSubmit={handleSearch}
-                className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[520px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10">
+                className="relative mx-auto flex h-[50px] max-h-[50px] w-full max-w-[520px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm focus-within:border-gray-300 focus-within:ring-2 focus-within:ring-black/10"
+              >
                 <input
                   type="text"
                   placeholder="Search products..."
@@ -750,7 +765,8 @@ const Header = () => {
                 />
                 <button
                   type="submit"
-                  className="rounded-full bg-gray-900 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black">
+                  className="rounded-full bg-gray-900 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black"
+                >
                   Search
                 </button>
                 {renderSearchDropdown("desktop")}
@@ -762,7 +778,8 @@ const Header = () => {
               <div className="relative group">
                 <Link
                   to="/cart"
-                  className="flex items-center gap-2 text-gray-800">
+                  className="flex items-center gap-2 text-gray-800"
+                >
                   <span className="font-semibold">Cart</span>
                   <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-black px-1 text-xs font-semibold text-white">
                     {count}
@@ -782,7 +799,8 @@ const Header = () => {
                           return (
                             <li
                               key={itemId || `cart-item-${index}`}
-                              className="flex items-start gap-3">
+                              className="flex items-start gap-3"
+                            >
                               <img
                                 src={resolveCartImage(item)}
                                 alt={
@@ -814,7 +832,8 @@ const Header = () => {
                                       itemId === null ||
                                       removingCartItemId !== null
                                     }
-                                    className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60">
+                                    className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
                                     {isRemovingItem ? "Removing..." : "Remove"}
                                   </button>
                                 </div>
@@ -828,7 +847,8 @@ const Header = () => {
                       </div>
                       <Link
                         to="/checkout"
-                        className="theme-btn-info mt-3 block rounded border px-4 py-2 text-center text-sm font-semibold">
+                        className="theme-btn-info mt-3 block rounded border px-4 py-2 text-center text-sm font-semibold"
+                      >
                         Order Now
                       </Link>
                     </>
@@ -840,14 +860,16 @@ const Header = () => {
               {user ? (
                 <Link
                   to="/account"
-                  className="flex items-center gap-2 text-gray-800">
+                  className="flex items-center gap-2 text-gray-800"
+                >
                   <FaUser />
                   <span className="font-semibold">Account</span>
                 </Link>
               ) : (
                 <Link
                   to="/login"
-                  className="flex items-center gap-2 text-gray-800">
+                  className="flex items-center gap-2 text-gray-800"
+                >
                   <FaUser />
                   <span className="font-semibold">Account</span>
                 </Link>
@@ -864,7 +886,8 @@ const Header = () => {
               ref={categoryZoneRef}
               className="relative"
               onMouseEnter={handleCategoryZoneEnter}
-              onMouseLeave={handleCategoryZoneLeave}>
+              onMouseLeave={handleCategoryZoneLeave}
+            >
               <button
                 type="button"
                 onClick={toggleCategoryPanel}
@@ -872,7 +895,8 @@ const Header = () => {
                   showCategoryPanel
                     ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-800 hover:bg-blue-600 hover:text-white"
-                }`}>
+                }`}
+              >
                 <FaBars />
                 Category
               </button>
@@ -887,7 +911,8 @@ const Header = () => {
                     maxHeight: "520px",
                     overflowY: "auto",
                     padding: "0",
-                  }}>
+                  }}
+                >
                   {renderExternalCategoryPanelContent(() => {
                     setShowCategoryPanel(false);
                     setIsCategoryPinned(false);
@@ -902,11 +927,13 @@ const Header = () => {
                   key={category.id}
                   className="relative"
                   onMouseEnter={() => openDesktopSubmenu(category.id)}
-                  onMouseLeave={closeDesktopSubmenuWithDelay}>
+                  onMouseLeave={closeDesktopSubmenuWithDelay}
+                >
                   <Link
                     to={`/category/${category.slug}`}
                     className="flex items-center gap-1 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors duration-150"
-                    onFocus={() => openDesktopSubmenu(category.id)}>
+                    onFocus={() => openDesktopSubmenu(category.id)}
+                  >
                     <span>{category.name}</span>
                     {category.subcategories?.length > 0 && (
                       <span className="text-xs text-gray-400">▾</span>
@@ -920,13 +947,15 @@ const Header = () => {
                           : "hidden"
                       }`}
                       onMouseEnter={() => openDesktopSubmenu(category.id)}
-                      onMouseLeave={closeDesktopSubmenuWithDelay}>
+                      onMouseLeave={closeDesktopSubmenuWithDelay}
+                    >
                       <div className="rounded-md border border-gray-200 bg-white p-4 shadow-xl">
                         {category.subcategories.map((sub) => (
                           <div key={sub.id} className="mb-3 last:mb-0">
                             <Link
                               to={`/subcategory/${sub.slug}`}
-                              className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors">
+                              className="text-sm font-semibold text-gray-800 hover:text-blue-600 transition-colors"
+                            >
                               {sub.subcategoryName}
                             </Link>
                             {sub.childcategories?.length > 0 && (
@@ -935,7 +964,8 @@ const Header = () => {
                                   <Link
                                     key={child.id}
                                     to={`/childcategory/${child.slug}`}
-                                    className="hover:text-blue-600 transition-colors">
+                                    className="hover:text-blue-600 transition-colors"
+                                  >
                                     {child.childcategoryName}
                                   </Link>
                                 ))}
@@ -955,10 +985,12 @@ const Header = () => {
         {mobileDrawerOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 md:hidden"
-            onClick={() => setMobileDrawerOpen(false)}>
+            onClick={() => setMobileDrawerOpen(false)}
+          >
             <div
               className="absolute left-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-4 shadow-xl"
-              onClick={(event) => event.stopPropagation()}>
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="mb-4 flex items-center justify-between">
                 <h4 className="text-base font-semibold text-gray-900">
                   Categories
@@ -967,7 +999,8 @@ const Header = () => {
                   type="button"
                   onClick={() => setMobileDrawerOpen(false)}
                   className="theme-btn-skip inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  aria-label="Close category drawer">
+                  aria-label="Close category drawer"
+                >
                   <FaTimes />
                 </button>
               </div>
@@ -990,7 +1023,8 @@ const Header = () => {
                     return (
                       <div
                         key={categoryKey}
-                        className="rounded-md border border-gray-100">
+                        className="rounded-md border border-gray-100"
+                      >
                         <div className="flex items-center justify-between px-3 py-2.5">
                           <Link
                             to={
@@ -1003,14 +1037,16 @@ const Header = () => {
                             }`}
                             onClick={() => {
                               if (categorySlug) setMobileDrawerOpen(false);
-                            }}>
+                            }}
+                          >
                             {categoryName}
                           </Link>
                           {subcategories.length > 0 && (
                             <button
                               type="button"
                               className="theme-btn-skip inline-flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-100"
-                              onClick={() => toggleDrawerCategory(categoryKey)}>
+                              onClick={() => toggleDrawerCategory(categoryKey)}
+                            >
                               {expandedDrawerCategories[categoryKey]
                                 ? "-"
                                 : "+"}
@@ -1050,7 +1086,8 @@ const Header = () => {
                                         onClick={() => {
                                           if (subSlug)
                                             setMobileDrawerOpen(false);
-                                        }}>
+                                        }}
+                                      >
                                         {subName}
                                       </Link>
                                       {childcategories.length > 0 && (
@@ -1059,7 +1096,8 @@ const Header = () => {
                                           className="theme-btn-skip inline-flex h-5 w-5 items-center justify-center rounded border border-gray-300 bg-white text-xs font-semibold text-gray-600 hover:bg-gray-100"
                                           onClick={() =>
                                             toggleDrawerSubcategory(subKey)
-                                          }>
+                                          }
+                                        >
                                           {expandedDrawerSubcategories[subKey]
                                             ? "-"
                                             : "+"}
@@ -1098,7 +1136,8 @@ const Header = () => {
                                                       setMobileDrawerOpen(
                                                         false,
                                                       );
-                                                  }}>
+                                                  }}
+                                                >
                                                   {childName}
                                                 </Link>
                                               );
@@ -1122,14 +1161,16 @@ const Header = () => {
         {mobileMenuOpen && (
           <div
             className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-3 py-6 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}>
+            onClick={() => setMobileMenuOpen(false)}
+          >
             <div className="w-full max-w-[95vw]">
               <div className="mb-2 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
                   className="theme-btn-skip inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow hover:bg-gray-100"
-                  aria-label="Close categories modal">
+                  aria-label="Close categories modal"
+                >
                   <FaTimes />
                 </button>
               </div>
@@ -1140,7 +1181,8 @@ const Header = () => {
                   overflowY: "auto",
                   padding: "16px 16px 0",
                 }}
-                onClick={(event) => event.stopPropagation()}>
+                onClick={(event) => event.stopPropagation()}
+              >
                 {renderExternalCategoryPanelContent(() =>
                   setMobileMenuOpen(false),
                 )}

@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { buildApiUrl } from '@/config/env';
-import { tokenStorage } from '@/lib/auth/tokens';
-import { createReauthBaseQuery } from './createReauthBaseQuery';
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { buildApiUrl } from "@/config/env";
+import { tokenStorage } from "@/lib/auth/tokens";
+import { createReauthBaseQuery } from "./createReauthBaseQuery";
 
-const isBrowser = typeof window !== 'undefined';
-const BLOCKED_PAGE_PATH = '/blocked';
+const isBrowser = typeof window !== "undefined";
+const BLOCKED_PAGE_PATH = "/blocked";
 
 const resolveBlockedPayload = (result) => {
   const errorStatus = result?.error?.status;
@@ -15,22 +15,25 @@ const resolveBlockedPayload = (result) => {
   }
 
   const payload = result?.error?.data;
-  if (!payload || typeof payload !== 'object') {
+  if (!payload || typeof payload !== "object") {
     return null;
   }
 
-  const code = String(payload.code || '').trim().toLowerCase();
+  const code = String(payload.code || "")
+    .trim()
+    .toLowerCase();
   const blockedFlag = payload.blocked === true;
-  const message = String(payload.message || '').toLowerCase();
-  const looksLikeBlockMessage = message.includes('restricted') && message.includes('access');
+  const message = String(payload.message || "").toLowerCase();
+  const looksLikeBlockMessage =
+    message.includes("restricted") && message.includes("access");
 
-  if (!(code === 'ip_blocked' || blockedFlag || looksLikeBlockMessage)) {
+  if (!(code === "ip_blocked" || blockedFlag || looksLikeBlockMessage)) {
     return null;
   }
 
   return {
-    reason: typeof payload.reason === 'string' ? payload.reason.trim() : '',
-    ip: typeof payload.ip === 'string' ? payload.ip.trim() : '',
+    reason: typeof payload.reason === "string" ? payload.reason.trim() : "",
+    ip: typeof payload.ip === "string" ? payload.ip.trim() : "",
   };
 };
 
@@ -40,31 +43,33 @@ const redirectToBlockedPage = (blockedPayload) => {
 
   const params = new URLSearchParams();
   if (blockedPayload?.reason) {
-    params.set('reason', blockedPayload.reason);
+    params.set("reason", blockedPayload.reason);
   }
   if (blockedPayload?.ip) {
-    params.set('ip', blockedPayload.ip);
+    params.set("ip", blockedPayload.ip);
   }
 
   const queryString = params.toString();
-  const destination = queryString ? `${BLOCKED_PAGE_PATH}?${queryString}` : BLOCKED_PAGE_PATH;
+  const destination = queryString
+    ? `${BLOCKED_PAGE_PATH}?${queryString}`
+    : BLOCKED_PAGE_PATH;
   window.location.replace(destination);
 };
 
 const rawBaseQuery = createReauthBaseQuery({
-  baseUrl: buildApiUrl('/api/v1'),
+  baseUrl: buildApiUrl("/api/v1"),
   getAccessToken: tokenStorage.getCustomerAccessToken,
   getRefreshToken: tokenStorage.getCustomerRefreshToken,
   setTokens: tokenStorage.setCustomerTokens,
   clearTokens: tokenStorage.clearCustomerTokens,
-  refreshUrl: '/refresh-token',
+  refreshUrl: "/refresh-token",
   attachExtraHeaders: (headers) => {
     if (!isBrowser) return;
-    const cartId = window.localStorage.getItem('cart_id');
+    const cartId = window.localStorage.getItem("cart_id");
     if (cartId) {
-      headers.set('X-Cart-ID', cartId);
+      headers.set("X-Cart-ID", cartId);
     }
-  }
+  },
 });
 
 const baseQuery = async (args, api, extraOptions) => {
@@ -76,171 +81,190 @@ const baseQuery = async (args, api, extraOptions) => {
   }
 
   if (isBrowser && result?.data?.cart_id) {
-    window.localStorage.setItem('cart_id', result.data.cart_id);
+    window.localStorage.setItem("cart_id", result.data.cart_id);
   }
 
   return result;
 };
 
 export const publicApi = createApi({
-  reducerPath: 'publicApi',
+  reducerPath: "publicApi",
   baseQuery,
-  tagTypes: ['Cart', 'Settings', 'SiteData', 'User', 'Products', 'Pages', 'External'],
+  tagTypes: [
+    "Cart",
+    "Settings",
+    "SiteData",
+    "User",
+    "Products",
+    "Pages",
+    "External",
+  ],
   endpoints: (builder) => ({
     getSettings: builder.query({
-      query: () => '/settings',
+      query: () => "/settings",
       transformResponse: (response) => response?.data ?? null,
-      providesTags: ['Settings']
+      providesTags: ["Settings"],
     }),
     getSiteData: builder.query({
-      query: () => '/site-data',
+      query: () => "/site-data",
       transformResponse: (response) => response?.data ?? null,
-      providesTags: ['SiteData']
+      providesTags: ["SiteData"],
     }),
     getProducts: builder.query({
-      query: (params) => ({ url: '/products', params }),
-      providesTags: ['Products']
+      query: (params) => ({ url: "/products", params }),
+      providesTags: ["Products"],
     }),
     getBanners: builder.query({
-      query: (params) => ({ url: '/banners', params }),
-      providesTags: ['SiteData']
+      query: (params) => ({ url: "/banners", params }),
+      providesTags: ["SiteData"],
     }),
     getProductBySlug: builder.query({
       query: (slug) => `/products/${slug}`,
-      providesTags: ['Products']
+      providesTags: ["Products"],
     }),
     getPageBySlug: builder.query({
       query: (slug) => `/pages/${slug}`,
-      providesTags: ['Pages']
+      providesTags: ["Pages"],
     }),
     getCart: builder.query({
-      query: () => '/cart',
+      query: () => "/cart",
       transformResponse: (response) => response?.data ?? null,
-      providesTags: ['Cart']
+      providesTags: ["Cart"],
     }),
     updateCartItem: builder.mutation({
       query: ({ id, quantity }) => ({
         url: `/cart/items/${id}`,
-        method: 'PUT',
-        body: { quantity }
+        method: "PUT",
+        body: { quantity },
       }),
-      invalidatesTags: ['Cart']
+      invalidatesTags: ["Cart"],
     }),
     deleteCartItem: builder.mutation({
       query: (id) => ({
         url: `/cart/items/${id}`,
-        method: 'DELETE'
+        method: "DELETE",
       }),
-      invalidatesTags: ['Cart']
+      invalidatesTags: ["Cart"],
     }),
     addToCart: builder.mutation({
       query: (payload) => ({
-        url: '/cart/add',
-        method: 'POST',
-        body: payload
+        url: "/cart/add",
+        method: "POST",
+        body: payload,
       }),
-      invalidatesTags: ['Cart']
+      invalidatesTags: ["Cart"],
     }),
     addExternalToCart: builder.mutation({
       query: (payload) => ({
-        url: '/cart/external/add',
-        method: 'POST',
-        body: payload
+        url: "/cart/external/add",
+        method: "POST",
+        body: payload,
       }),
-      invalidatesTags: ['Cart']
+      invalidatesTags: ["Cart"],
     }),
     getShippingCharges: builder.query({
-      query: () => '/shipping-charges'
+      query: () => "/shipping-charges",
     }),
     checkout: builder.mutation({
       query: (payload) => ({
-        url: '/checkout',
-        method: 'POST',
-        body: payload
+        url: "/checkout",
+        method: "POST",
+        body: payload,
       }),
-      invalidatesTags: ['Cart']
+      invalidatesTags: ["Cart"],
     }),
     trackIncompleteOrder: builder.mutation({
       query: (payload) => ({
-        url: '/incomplete-orders/track',
-        method: 'POST',
-        body: payload
-      })
+        url: "/incomplete-orders/track",
+        method: "POST",
+        body: payload,
+      }),
     }),
     getUser: builder.query({
-      query: () => '/user',
-      providesTags: ['User']
+      query: () => "/user",
+      providesTags: ["User"],
     }),
     login: builder.mutation({
       query: ({ phone, password }) => ({
-        url: '/login',
-        method: 'POST',
-        body: { phone, password }
-      })
+        url: "/login",
+        method: "POST",
+        body: { phone, password },
+      }),
     }),
     register: builder.mutation({
       query: (payload) => ({
-        url: '/register',
-        method: 'POST',
-        body: payload
-      })
+        url: "/register",
+        method: "POST",
+        body: payload,
+      }),
     }),
     refreshToken: builder.mutation({
       query: (payload) => ({
-        url: '/refresh-token',
-        method: 'POST',
-        body: payload
-      })
+        url: "/refresh-token",
+        method: "POST",
+        body: payload,
+      }),
     }),
     logout: builder.mutation({
       query: (payload) => ({
-        url: '/logout',
-        method: 'POST',
-        body: payload
+        url: "/logout",
+        method: "POST",
+        body: payload,
       }),
-      invalidatesTags: ['User', 'Cart']
+      invalidatesTags: ["User", "Cart"],
     }),
     getExternalProduct: builder.query({
-      query: (slug) => `/external/product/${encodeURIComponent(String(slug || '').trim())}`,
-      providesTags: ['External']
+      query: (slug) =>
+        `/external/product/${encodeURIComponent(String(slug || "").trim())}`,
+      providesTags: ["External"],
     }),
     getExternalFeaturedCategories: builder.query({
-      query: (params) => ({ url: '/external/featured-categories', params }),
-      providesTags: ['External']
+      query: (params) => ({ url: "/external/featured-categories", params }),
+      providesTags: ["External"],
     }),
     getExternalMenuCategories: builder.query({
-      query: (params) => ({ url: '/external/menu-categories', params }),
-      providesTags: ['External']
+      query: (params) => ({ url: "/external/menu-categories", params }),
+      providesTags: ["External"],
     }),
     getExternalTopSell: builder.query({
-      query: (params) => ({ url: '/external/top-sell', params }),
-      providesTags: ['External']
+      query: (params) => ({ url: "/external/top-sell", params }),
+      providesTags: ["External"],
     }),
     getExternalHotDeals: builder.query({
-      query: (params) => ({ url: '/external/hot-deals', params }),
-      providesTags: ['External']
+      query: (params) => ({ url: "/external/hot-deals", params }),
+      providesTags: ["External"],
     }),
     getNewArrivals: builder.query({
-      query: (params) => ({ url: '/products/new-arrivals', params }),
-      providesTags: ['Products']
+      query: (params) => ({ url: "/products/new-arrivals", params }),
+      providesTags: ["Products"],
     }),
     getExternalCategoryProducts: builder.query({
-      query: (params) => ({ url: '/external/category-products', params }),
-      providesTags: ['External']
+      query: (params) => ({ url: "/external/category-products", params }),
+      providesTags: ["External"],
+    }),
+    getExternalSubCategoryProducts: builder.query({
+      query: ({ slug, ...params }) => ({
+        url: `/external/user-subcategory-products/${slug}`,
+        params,
+      }),
+      providesTags: ["External"],
     }),
     getExternalCategoryBySlug: builder.query({
-      query: ({ slug, ...params }) => ({ url: `/external/category/${slug}`, params }),
-      providesTags: ['External']
+      query: ({ slug, ...params }) => ({
+        url: `/external/category/${slug}`,
+        params,
+      }),
+      providesTags: ["External"],
     }),
     getExternalSearch: builder.query({
-      query: (params) => ({ url: '/external/search', params }),
-      providesTags: ['External']
+      query: (params) => ({ url: "/external/search", params }),
+      providesTags: ["External"],
     }),
     getHomeCategories: builder.query({
-      query: () => '/home-categories',
-      providesTags: ['Products']
-    })
-  })
+      query: () => "/home-categories",
+      providesTags: ["Products"],
+    }),
+  }),
 });
 
 export const {
@@ -270,7 +294,8 @@ export const {
   useGetExternalHotDealsQuery,
   useGetNewArrivalsQuery,
   useGetExternalCategoryProductsQuery,
+  useGetExternalSubCategoryProductsQuery,
   useGetExternalCategoryBySlugQuery,
   useGetExternalSearchQuery,
-  useGetHomeCategoriesQuery
+  useGetHomeCategoriesQuery,
 } = publicApi;
