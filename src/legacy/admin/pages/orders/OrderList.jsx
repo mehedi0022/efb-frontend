@@ -1188,7 +1188,12 @@ const OrderList = () => {
           Number(row.is_complete_order) === 1 ||
           efbSentOrderIds.includes(orderId);
         const isCompleted = queryStatus === "complete" && isCompletedOrder(row);
-        const isFbSentList = queryStatus === "fb-sent";
+        const isFbSentList =
+          queryStatus === "fb-sent" ||
+          String(row?.status?.slug || row?.status?.name || "")
+            .toLowerCase()
+            .replace(/[_\s]+/g, "-") === "fb-sent";
+
         const mobileMenuItems = [
           {
             key: `invoice-${orderId}`,
@@ -1280,21 +1285,25 @@ const OrderList = () => {
                   Invoice
                 </AntButton>
               </Link>
-              <Link to={`/orders/edit/${row.invoice_id}`}>
+              {!isFbSentList && (
+                <Link to={`/orders/edit/${row.invoice_id}`}>
+                  <AntButton
+                    size="small"
+                    icon={<FiEdit2 size={13} />}
+                    className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
+                    Edit
+                  </AntButton>
+                </Link>
+              )}
+              {!isFbSentList && (
                 <AntButton
                   size="small"
-                  icon={<FiEdit2 size={13} />}
-                  className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
-                  Edit
+                  icon={<FiRefreshCw size={13} />}
+                  onClick={() => openStatusUpdateModal(row)}
+                  disabled={statusUpdateOptions.length === 0}>
+                  Update
                 </AntButton>
-              </Link>
-              <AntButton
-                size="small"
-                icon={<FiRefreshCw size={13} />}
-                onClick={() => openStatusUpdateModal(row)}
-                disabled={statusUpdateOptions.length === 0}>
-                Update
-              </AntButton>
+              )}
 
               {isNewOrder && (
                 <AntButton
@@ -1322,6 +1331,7 @@ const OrderList = () => {
                 </AntButton>
               ) : null}
             </div>
+
             <div className="md:hidden">
               <Dropdown
                 trigger={["click"]}
