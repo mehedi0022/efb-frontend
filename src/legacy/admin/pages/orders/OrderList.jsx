@@ -113,7 +113,7 @@ const OrderList = () => {
     total: 0,
   });
   const [filters, setFilters] = useState({
-    name: "",
+    keyword: "",
     tracking_code: "",
     start_date: "",
     end_date: "",
@@ -1395,7 +1395,9 @@ const OrderList = () => {
               </p>
               <h4 className="text-2xl font-semibold text-admin-dark">
                 {statusLabel}{" "}
-                <span className="text-admin-gray-500">({orders.length})</span>
+                <span className="text-admin-gray-500">
+                  ({pagination.total || 0})
+                </span>
               </h4>
             </div>
           </div>
@@ -1436,14 +1438,14 @@ const OrderList = () => {
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Filter by Name
+                  Filter by Customer Name, phone, Order Invoice ID
                 </label>
                 <AntInput
                   size="large"
-                  placeholder="Enter customer name"
-                  value={filters.name}
+                  placeholder="Type customer name, phone, or invoice ID"
+                  value={filters.keyword}
                   onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, name: e.target.value }))
+                    setFilters((prev) => ({ ...prev, keyword: e.target.value }))
                   }
                 />
               </div>
