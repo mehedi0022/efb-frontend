@@ -567,8 +567,31 @@ const OrderEdit = () => {
             <Input
               label="Phone"
               value={formData.shipping_phone}
-              onChange={(e) => handleChange("shipping_phone", e.target.value)}
-              error={errors.shipping_phone}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+                handleChange("shipping_phone", raw);
+              }}
+              onKeyDown={(e) => {
+                if (
+                  !/^\d$/.test(e.key) &&
+                  ![
+                    "Backspace",
+                    "Delete",
+                    "ArrowLeft",
+                    "ArrowRight",
+                    "Tab",
+                  ].includes(e.key)
+                ) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="01XXXXXXXXX"
+              error={
+                formData.shipping_phone &&
+                !/^01[3-9]\d{8}$/.test(formData.shipping_phone)
+                  ? "Enter a valid Bangladeshi number (e.g. 01XXXXXXXXX)"
+                  : errors.shipping_phone
+              }
               required
             />
           </div>
