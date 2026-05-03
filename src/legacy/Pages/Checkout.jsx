@@ -361,10 +361,8 @@ const Checkout = () => {
       const tracked = trackEvent(
         "InitiateCheckout",
         {
-          content_ids:
-            snapshotItemIds.length > 0 ? snapshotItemIds : undefined,
-          content_type:
-            snapshotItemIds.length > 0 ? "product" : undefined,
+          content_ids: snapshotItemIds.length > 0 ? snapshotItemIds : undefined,
+          content_type: snapshotItemIds.length > 0 ? "product" : undefined,
           value: snapshotValue,
           currency: "BDT",
           num_items: snapshotQty,
@@ -454,14 +452,42 @@ const Checkout = () => {
 
         if (response?.order_id) {
           const orderId = String(response.order_id).trim();
+          const eventId = `purchase_${orderId}`;
+
+          // CAPI — Laravel এ background এ পাঠান
+          const apiBase = String(
+            process.env.NEXT_PUBLIC_API_BASE_URL || "",
+          ).replace(/\/+$/, "");
+
+          if (apiBase) {
+            fetch(`${apiBase}/api/v1/facebook/track-purchase`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                event_id: eventId,
+                order_id: orderId,
+                value: parseMoney(total, 0),
+                currency: "BDT",
+                item_ids: cartItemContentIds,
+                quantity: totalQuantity,
+                fbp: document.cookie.match(/_fbp=([^;]+)/)?.[1] || null,
+                fbc: document.cookie.match(/_fbc=([^;]+)/)?.[1] || null,
+              }),
+            }).catch(() => {});
+            // error হলেও order flow block হবে না
+          }
+
           const purchaseTrackingPayload = {
             orderId,
             itemIds: cartItemContentIds,
             value: parseMoney(total, 0),
             quantity: totalQuantity,
             currency: "BDT",
+            eventId, // OrderSuccess এ browser pixel এ same event_id use হবে
           };
-          const orderSuccessAccessToken = createOrderSuccessAccessToken(orderId);
+
+          const orderSuccessAccessToken =
+            createOrderSuccessAccessToken(orderId);
 
           if (typeof window !== "undefined") {
             try {

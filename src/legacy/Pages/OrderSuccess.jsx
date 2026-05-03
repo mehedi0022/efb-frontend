@@ -1,64 +1,75 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Link, Navigate, useLocation } from 'react-router-dom';
-import { FiCheckCircle, FiHome, FiPhoneCall } from 'react-icons/fi';
-import { useSettings } from '../context/SettingsContext';
-import { useSiteData } from '../context/SiteDataContext';
+import React, { useEffect, useMemo, useRef } from "react";
+import { Link, Navigate, useLocation } from "react-router-dom";
+import { FiCheckCircle, FiHome, FiPhoneCall } from "react-icons/fi";
+import { useSettings } from "../context/SettingsContext";
+import { useSiteData } from "../context/SiteDataContext";
+import { trackOrderEvent } from "@/lib/pixel";
 
-const FALLBACK_HOTLINE = process.env.NEXT_PUBLIC_CONTACT_PHONE || '01700-000000';
-const ORDER_SUCCESS_ACCESS_KEY = 'order_success_access_token';
+const FALLBACK_HOTLINE =
+  process.env.NEXT_PUBLIC_CONTACT_PHONE || "01700-000000";
+const ORDER_SUCCESS_ACCESS_KEY = "order_success_access_token";
 
-const toDigits = (value) => String(value || '').replace(/\D/g, '');
-const normalizeOrderSuccessAccessToken = (value) => String(value || '').trim();
+const toDigits = (value) => String(value || "").replace(/\D/g, "");
+const normalizeOrderSuccessAccessToken = (value) => String(value || "").trim();
 
 const pickFirstValue = (...candidates) => {
   for (const candidate of candidates) {
-    const value = String(candidate || '').trim();
+    const value = String(candidate || "").trim();
     if (value) return value;
   }
-  return '';
+  return "";
 };
 
 const normalizePurchaseTrackingPayload = (payload) => {
-  if (!payload || typeof payload !== 'object') return null;
+  if (!payload || typeof payload !== "object") return null;
 
-  const orderId = String(payload.orderId || '').trim();
+  const orderId = String(payload.orderId || "").trim();
   if (!orderId) return null;
 
   const itemIds = Array.isArray(payload.itemIds)
-    ? payload.itemIds.map((itemId) => String(itemId || '').trim()).filter(Boolean)
+    ? payload.itemIds
+        .map((itemId) => String(itemId || "").trim())
+        .filter(Boolean)
     : [];
   const parsedValue = Number(payload.value);
   const parsedQuantity = Number(payload.quantity);
 
+  // ← eventId যোগ হয়েছে — Checkout.jsx থেকে আসবে
+  const eventId =
+    String(payload.eventId || "").trim() ||
+    `purchase_${orderId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+
   return {
     orderId,
     itemIds,
+    eventId, // ← যোগ হয়েছে
     value: Number.isFinite(parsedValue) ? parsedValue : 0,
     quantity:
       Number.isFinite(parsedQuantity) && parsedQuantity > 0
         ? parsedQuantity
-        : (itemIds.length || 1),
-    currency: String(payload.currency || 'BDT').trim() || 'BDT',
+        : itemIds.length || 1,
+    currency: String(payload.currency || "BDT").trim() || "BDT",
   };
 };
 
 const clearPurchaseTrackingHistoryState = () => {
-  if (typeof window === 'undefined') return;
-  if (!window.history || typeof window.history.replaceState !== 'function') return;
+  if (typeof window === "undefined") return;
+  if (!window.history || typeof window.history.replaceState !== "function")
+    return;
 
   const currentHistoryState = window.history.state;
-  if (!currentHistoryState || typeof currentHistoryState !== 'object') return;
+  if (!currentHistoryState || typeof currentHistoryState !== "object") return;
 
   const currentUserState = currentHistoryState.usr;
-  if (!currentUserState || typeof currentUserState !== 'object') return;
+  if (!currentUserState || typeof currentUserState !== "object") return;
 
   const hasPurchaseTracking = Object.prototype.hasOwnProperty.call(
     currentUserState,
-    'purchaseTracking',
+    "purchaseTracking",
   );
   const hasOrderSuccessAccessToken = Object.prototype.hasOwnProperty.call(
     currentUserState,
-    'orderSuccessAccessToken',
+    "orderSuccessAccessToken",
   );
   if (!hasPurchaseTracking && !hasOrderSuccessAccessToken) return;
 
@@ -88,13 +99,15 @@ const OrderSuccess = () => {
     [location.state],
   );
   const orderSuccessAccessToken = useMemo(
-    () => normalizeOrderSuccessAccessToken(location.state?.orderSuccessAccessToken),
+    () =>
+      normalizeOrderSuccessAccessToken(location.state?.orderSuccessAccessToken),
     [location.state],
   );
+
   const canAccessOrderSuccess = useMemo(() => {
     if (!purchaseTrackingPayload) return false;
     if (!orderSuccessAccessToken) return false;
-    if (typeof window === 'undefined') return false;
+    if (typeof window === "undefined") return false;
 
     try {
       const storedToken = normalizeOrderSuccessAccessToken(
@@ -102,7 +115,6 @@ const OrderSuccess = () => {
       );
       return storedToken ? storedToken === orderSuccessAccessToken : true;
     } catch {
-      // Fall back to state-based access if storage is unavailable.
       return true;
     }
   }, [purchaseTrackingPayload, orderSuccessAccessToken]);
@@ -118,7 +130,9 @@ const OrderSuccess = () => {
       ),
     [contact?.hotline, contact?.phone, setting?.hotline, setting?.phone],
   );
-  const hotlineHref = toDigits(hotlineNumber) ? `tel:${toDigits(hotlineNumber)}` : '#';
+  const hotlineHref = toDigits(hotlineNumber)
+    ? `tel:${toDigits(hotlineNumber)}`
+    : "#";
 
   useEffect(() => {
     if (!canAccessOrderSuccess) return;
@@ -126,29 +140,26 @@ const OrderSuccess = () => {
     hasTrackedPurchaseRef.current = true;
     clearPurchaseTrackingHistoryState();
 
-    // TEMP DISABLED: Manual Purchase Event
-    // trackOrderEvent(
-    //   'Purchase',
-    //   purchaseTrackingPayload.orderId,
-    //   {
-    //     order_id: purchaseTrackingPayload.orderId,
-    //     content_ids:
-    //       purchaseTrackingPayload.itemIds.length > 0
-    //         ? purchaseTrackingPayload.itemIds
-    //         : undefined,
-    //     content_type:
-    //       purchaseTrackingPayload.itemIds.length > 0 ? 'product' : undefined,
-    //     value: purchaseTrackingPayload.value,
-    //     currency: purchaseTrackingPayload.currency,
-    //     num_items: purchaseTrackingPayload.quantity,
-    //   },
-    //   {
-    //     eventId:
-    //       `purchase_${String(purchaseTrackingPayload.orderId || '')
-    //         .trim()
-    //         .replace(/[^a-zA-Z0-9_-]/g, '_')}` || undefined,
-    //   },
-    // );
+    // Browser Pixel Purchase — CAPI এর সাথে same eventId দিয়ে deduplicate হবে
+    trackOrderEvent(
+      "Purchase",
+      purchaseTrackingPayload.orderId,
+      {
+        order_id: purchaseTrackingPayload.orderId,
+        content_ids:
+          purchaseTrackingPayload.itemIds.length > 0
+            ? purchaseTrackingPayload.itemIds
+            : undefined,
+        content_type:
+          purchaseTrackingPayload.itemIds.length > 0 ? "product" : undefined,
+        value: purchaseTrackingPayload.value,
+        currency: purchaseTrackingPayload.currency,
+        num_items: purchaseTrackingPayload.quantity,
+      },
+      {
+        eventId: purchaseTrackingPayload.eventId, // ← CAPI এর সাথে match করবে
+      },
+    );
   }, [canAccessOrderSuccess, purchaseTrackingPayload]);
 
   if (!canAccessOrderSuccess) {
@@ -164,16 +175,17 @@ const OrderSuccess = () => {
           </div>
         </div>
 
-        <h2 className="text-3xl font-bold text-[#111827] md:text-4xl">Order Successful!</h2>
+        <h2 className="text-3xl font-bold text-[#111827] md:text-4xl">
+          Order Successful!
+        </h2>
 
         <div className="mt-5 space-y-3 rounded-2xl border border-[#d7e6ff] bg-gradient-to-br from-[#f8fbff] to-[#eef5ff] px-4 py-5 text-left text-[15px] leading-relaxed text-[#1f2937] md:px-6">
           <p>Your order has been successfully received.</p>
           <p>
-            One of our representatives will contact you shortly at:{' '}
+            One of our representatives will contact you shortly at:{" "}
             <a
               href={hotlineHref}
-              className="inline-flex items-center gap-1.5 font-bold text-[#1d4ed8] hover:text-[#1e40af]"
-            >
+              className="inline-flex items-center gap-1.5 font-bold text-[#1d4ed8] hover:text-[#1e40af]">
               <FiPhoneCall className="text-sm" />
               {hotlineNumber}
             </a>
@@ -184,8 +196,7 @@ const OrderSuccess = () => {
         <div className="mt-7">
           <Link
             to="/"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#111827] bg-[#111827] px-6 py-3 font-semibold text-white transition hover:bg-[#1f2937] md:w-auto"
-          >
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#111827] bg-[#111827] px-6 py-3 font-semibold text-white transition hover:bg-[#1f2937] md:w-auto">
             <FiHome />
             Back to Home
           </Link>
