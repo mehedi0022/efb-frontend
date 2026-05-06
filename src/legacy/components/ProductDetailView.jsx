@@ -624,7 +624,7 @@ const ProductDetailView = ({
                   type="button"
                   disabled={outOfStock}
                   onClick={onBuyNow}
-                  className={`theme-btn-primary flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-bold transition ${
+                  className={`bg-blue-600 text-white flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-bold transition ${
                     outOfStock
                       ? "cursor-not-allowed bg-gray-400 text-white"
                       : ""
@@ -636,7 +636,7 @@ const ProductDetailView = ({
                   type="button"
                   disabled={outOfStock}
                   onClick={onAddToCart}
-                  className={`theme-btn-secondary flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-semibold transition ${
+                  className={`bg-[#041f1e] text-white flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-semibold transition ${
                     outOfStock
                       ? "cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500"
                       : ""
@@ -648,14 +648,14 @@ const ProductDetailView = ({
                   href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#28a745] py-3 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1f9a3f]">
-                  <FaWhatsapp className="text-sm" /> WhatsApp: {whatsappLabel}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1dab62] py-3 text-xs font-semibold text-white hover:text-white shadow-sm transition">
+                  <FaWhatsapp className="text-sm" /> Order On WhatsApp
                 </a>
 
                 <a
                   href={hotlineHref}
-                  className="theme-btn-info flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-xs font-semibold shadow-sm transition">
-                  <FiPhoneCall className="text-sm" /> Hotline: {hotline}
+                  className="bg-[#1e3b8a] text-white flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-xs font-semibold shadow-sm transition">
+                  <FiPhoneCall className="text-sm" /> Call For Order
                 </a>
               </div>
 
