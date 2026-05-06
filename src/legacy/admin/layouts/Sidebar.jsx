@@ -285,6 +285,27 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
     url: "/v1/settings",
     tags: ["admin-sidebar-setting"],
   });
+
+  const { data: dashboardData } = useAdminFetchQuery({
+    url: "/admin/dashboard",
+    params: { hours: 24 },
+    tags: ["dashboard"],
+  });
+
+  const orderCounts = useMemo(() => {
+    const s = dashboardData?.stats || {};
+    return {
+      "/orders/all": Number(s.total_order?.count || 0),
+      "/orders/new-order": Number(s.active_order?.count || 0),
+      "/orders/complete": Number(s.completed_order?.count || 0),
+      "/orders/no-response": Number(s.no_response_order?.count || 0),
+      "/orders/cancel": Number(s.cancelled_order?.count || 0),
+      "/orders/in-courier": Number(s.in_courier_order?.count || 0),
+      "/orders/hold": Number(s.hold_order?.count || 0),
+      "/orders/fb-sent": Number(s.fb_sent_order?.count || 0),
+    };
+  }, [dashboardData]);
+
   const authUser = user || getStoredAdminUser();
   const displayName = authUser?.name || "Admin User";
   const displayRole =
@@ -474,6 +495,19 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                                   />
                                   {child.title}
                                 </span>
+
+                                {orderCounts[child.path] > 0 && (
+                                  <span
+                                    className={clsx(
+                                      "inline-flex items-center justify-center min-w-[20px] py-0.5 px-2.5 rounded-full text-[11px] font-bold",
+                                      isActive(child.path)
+                                        ? "bg-red-600 text-white"
+                                        : "bg-red-500 text-white",
+                                    )}>
+                                    {orderCounts[child.path].toLocaleString()}
+                                  </span>
+                                )}
+
                                 {child.badge && (
                                   <span
                                     className={clsx(

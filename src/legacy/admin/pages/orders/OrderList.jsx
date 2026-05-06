@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   FiFilter,
@@ -107,23 +107,29 @@ const OrderList = () => {
   const { status } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
+
+  const initialFilters = useMemo(
+    () => ({
+      keyword: searchParams.get("keyword") || "",
+      tracking_code: searchParams.get("tracking_code") || "",
+      start_date: searchParams.get("start_date") || "",
+      end_date: searchParams.get("end_date") || "",
+    }),
+    [searchParams],
+  );
+
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
     total: 0,
   });
-  const [filters, setFilters] = useState({
-    keyword: "",
-    tracking_code: "",
-    start_date: "",
-    end_date: "",
-  });
-  const [appliedFilters, setAppliedFilters] = useState({
-    name: "",
-    tracking_code: "",
-    start_date: "",
-    end_date: "",
-  });
+  const [filters, setFilters] = useState(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusModalOrder, setStatusModalOrder] = useState(null);
   const [statusModalValue, setStatusModalValue] = useState(undefined);
@@ -451,6 +457,13 @@ const OrderList = () => {
   const handleFilterSubmit = () => {
     setPagination((prev) => ({ ...prev, current_page: 1 }));
     setAppliedFilters(filters);
+    const params = new URLSearchParams();
+    if (filters.keyword) params.set("keyword", filters.keyword);
+    if (filters.tracking_code)
+      params.set("tracking_code", filters.tracking_code);
+    if (filters.start_date) params.set("start_date", filters.start_date);
+    if (filters.end_date) params.set("end_date", filters.end_date);
+    navigate({ search: params.toString() }, { replace: true });
   };
 
   const handleFilterReset = () => {
@@ -458,6 +471,7 @@ const OrderList = () => {
     setFilters(reset);
     setAppliedFilters(reset);
     setPagination((prev) => ({ ...prev, current_page: 1 }));
+    navigate({ search: "" }, { replace: true });
   };
 
   const handlePageChange = (page) => {

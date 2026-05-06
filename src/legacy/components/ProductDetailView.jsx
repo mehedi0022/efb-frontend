@@ -154,8 +154,7 @@ const RelatedProductCard = ({ product }) => {
   return (
     <Link
       to={href}
-      className="theme-product-card group rounded-xl border border-gray-200 bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-md"
-    >
+      className="theme-product-card group rounded-xl border border-gray-200 bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
         <img
           src={image}
@@ -238,7 +237,8 @@ const ProductDetailView = ({
   const currentPrice = Number(price);
   const oldPrice = Number(previousPrice);
   const selectedQty = Number(qty);
-  const safeQty = Number.isFinite(selectedQty) && selectedQty > 0 ? selectedQty : 1;
+  const safeQty =
+    Number.isFinite(selectedQty) && selectedQty > 0 ? selectedQty : 1;
   const eventValue = toTrackingMoney(
     Number.isFinite(currentPrice) ? currentPrice * safeQty : 0,
   );
@@ -414,8 +414,7 @@ const ProductDetailView = ({
               <div
                 className="relative overflow-hidden rounded-xl bg-[#efe3d9]"
                 onMouseEnter={() => setIsSliderPaused(true)}
-                onMouseLeave={() => setIsSliderPaused(false)}
-              >
+                onMouseLeave={() => setIsSliderPaused(false)}>
                 <img
                   src={gallery[activeImage]}
                   alt={product.name}
@@ -428,16 +427,14 @@ const ProductDetailView = ({
                       type="button"
                       onClick={goToPreviousImage}
                       className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
-                      aria-label="Previous image"
-                    >
+                      aria-label="Previous image">
                       <FiChevronLeft />
                     </button>
                     <button
                       type="button"
                       onClick={goToNextImage}
                       className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
-                      aria-label="Next image"
-                    >
+                      aria-label="Next image">
                       <FiChevronRight />
                     </button>
                   </>
@@ -470,8 +467,7 @@ const ProductDetailView = ({
                   onClick={goToPreviousThumbs}
                   disabled={thumbStartIndex <= 0}
                   className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-white text-gray-600 shadow-sm disabled:opacity-40"
-                  aria-label="Previous thumbnails"
-                >
+                  aria-label="Previous thumbnails">
                   <FiChevronLeft className="text-sm" />
                 </button>
 
@@ -488,8 +484,7 @@ const ProductDetailView = ({
                             imageIndex === activeImage
                               ? "border-blue-500 ring-1 ring-blue-300"
                               : "border-gray-300"
-                          }`}
-                        >
+                          }`}>
                           <img
                             src={img}
                             alt="Thumbnail"
@@ -506,8 +501,7 @@ const ProductDetailView = ({
                   onClick={goToNextThumbs}
                   disabled={thumbStartIndex >= maxThumbStartIndex}
                   className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-white text-gray-600 shadow-sm disabled:opacity-40"
-                  aria-label="Next thumbnails"
-                >
+                  aria-label="Next thumbnails">
                   <FiChevronRight className="text-sm" />
                 </button>
               </div>
@@ -536,13 +530,10 @@ const ProductDetailView = ({
               ) : null}
             </div>
 
-       
-
             <div className="mt-2">
               <Tag
                 color={outOfStock ? "error" : "success"}
-                className="!m-0 !rounded-full !border-0 !px-3 !py-1 !text-[13px] !font-semibold"
-              >
+                className="!m-0 !rounded-full !border-0 !px-3 !py-1 !text-[13px] !font-semibold">
                 <span className="inline-flex items-center gap-1.5">
                   <FiPackage className="text-[12px]" />
                   {stockText}
@@ -576,8 +567,7 @@ const ProductDetailView = ({
                         String(selectedColor) === String(item.id)
                           ? "border-[#2f3642] bg-[#2f3642] text-white"
                           : "border-gray-300 bg-white text-gray-700"
-                      }`}
-                    >
+                      }`}>
                       {item.name}
                     </button>
                   ))}
@@ -600,8 +590,7 @@ const ProductDetailView = ({
                         String(selectedSize) === String(item.id)
                           ? "border-[#2f3642] bg-[#2f3642] text-white"
                           : "border-gray-300 bg-white text-gray-700"
-                      }`}
-                    >
+                      }`}>
                       {item.name}
                     </button>
                   ))}
@@ -613,8 +602,7 @@ const ProductDetailView = ({
               <button
                 type="button"
                 onClick={onDecreaseQty}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800"
-              >
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800">
                 <FiMinus />
               </button>
               <input
@@ -625,62 +613,57 @@ const ProductDetailView = ({
               <button
                 type="button"
                 onClick={onIncreaseQty}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800"
-              >
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800">
                 <FiPlus />
               </button>
             </div>
 
             <div className="mt-3 space-y-2">
-              <button
-                type="button"
-                disabled={outOfStock}
-                onClick={onBuyNow}
-                className={`theme-btn-primary flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-bold transition ${
-                  outOfStock
-                    ? "cursor-not-allowed bg-gray-400 text-white"
-                    : ""
-                }`}
-              >
-                <FiShoppingBag /> Order Now
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  disabled={outOfStock}
+                  onClick={onBuyNow}
+                  className={`theme-btn-primary flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-bold transition ${
+                    outOfStock
+                      ? "cursor-not-allowed bg-gray-400 text-white"
+                      : ""
+                  }`}>
+                  <FiShoppingBag /> Order Now
+                </button>
 
-              <button
-                type="button"
-                disabled={outOfStock}
-                onClick={onAddToCart}
-                className={`theme-btn-secondary flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-semibold transition ${
-                  outOfStock
-                    ? "cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500"
-                    : ""
-                }`}
-              >
-                <FiShoppingBag /> Add to Cart
-              </button>
+                <button
+                  type="button"
+                  disabled={outOfStock}
+                  onClick={onAddToCart}
+                  className={`theme-btn-secondary flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-semibold transition ${
+                    outOfStock
+                      ? "cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500"
+                      : ""
+                  }`}>
+                  <FiShoppingBag /> Add to Cart
+                </button>
 
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#28a745] py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1f9a3f]"
-              >
-                <FaWhatsapp className="text-sm" /> WhatsApp Message:{" "}
-                {whatsappLabel}
-              </a>
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#28a745] py-3 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1f9a3f]">
+                  <FaWhatsapp className="text-sm" /> WhatsApp: {whatsappLabel}
+                </a>
 
-              <a
-                href={hotlineHref}
-                className="theme-btn-info flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-xs font-semibold shadow-sm transition"
-              >
-                <FiPhoneCall className="text-sm" /> Hotline: {hotline}
-              </a>
+                <a
+                  href={hotlineHref}
+                  className="theme-btn-info flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-xs font-semibold shadow-sm transition">
+                  <FiPhoneCall className="text-sm" /> Hotline: {hotline}
+                </a>
+              </div>
 
               <a
                 href={messengerHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0876ff] via-[#9b34e9] to-[#ff5f66] py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-95"
-              >
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0876ff] via-[#9b34e9] to-[#ff5f66] py-3 text-xs font-semibold text-white shadow-sm transition hover:brightness-95">
                 <FaFacebookMessenger className="text-sm" /> Click to Message
               </a>
             </div>
@@ -700,8 +683,7 @@ const ProductDetailView = ({
                   shippingCharges.map((charge, index) => (
                     <div
                       key={charge.id || `${charge.name}-${index}`}
-                      className="flex items-center justify-between rounded-lg border border-[#dbe7fb] bg-white px-3 py-2"
-                    >
+                      className="flex items-center justify-between rounded-lg border border-[#dbe7fb] bg-white px-3 py-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#334155]">
                         <FiMapPin className="text-[13px] text-[#3b82f6]" />
                         {charge.name || "Courier Charge"}
@@ -740,8 +722,7 @@ const ProductDetailView = ({
                   activeTab === tab.key
                     ? "bg-[#333945] text-white"
                     : "bg-gray-100 text-gray-700"
-                }`}
-              >
+                }`}>
                 {tab.label}
               </button>
             ))}
