@@ -135,12 +135,11 @@ const menuItems = [
     ],
   },
   {
-    title: "Incomplete",
+    title: "Incomplete Orders",
     icon: FiClipboard,
     path: "/incomplete-orders",
     prefixes: ["/incomplete-orders"],
     permission: "incomplete-orders.view",
-    badge: "New",
   },
   {
     title: "Fraud Checker",
@@ -233,23 +232,6 @@ const menuItems = [
       },
     ],
   },
-
-  // // TEMP DISABLED: Pixel and GTM
-  // {
-  //   title: "Pixel and GTM",
-  //   icon: FiSave,
-  //   key: "pixel",
-  //   prefixes: ["/pixels", "/tag-managers"],
-  //   children: [
-  //     { title: "Pixels Setting", path: "/pixels", permission: "pixels.view" },
-  //     {
-  //       title: "GTM Setting",
-  //       path: "/tag-managers",
-  //       permission: "tag-managers.view",
-  //     },
-  //   ],
-  // },
-
   {
     title: "Banner & Ads",
     icon: FiImage,
@@ -281,17 +263,27 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
   const location = useLocation();
   const [openMenus, setOpenMenus] = useState({});
   const pathname = location.pathname;
+
   const { data: settingResponse } = useAdminFetchQuery({
     url: "/v1/settings",
     tags: ["admin-sidebar-setting"],
   });
 
+  // Dashboard data — order counts + incomplete count come from here
   const { data: dashboardData } = useAdminFetchQuery({
     url: "/admin/dashboard",
     params: { hours: 24 },
     tags: ["dashboard"],
   });
 
+  // Dedicated incomplete-orders count (uses the pagination.total from the list endpoint)
+  const { data: incompleteData } = useAdminFetchQuery({
+    url: "/admin/incomplete-orders",
+    params: { per_page: 1 }, // only need total, not all rows
+    tags: ["incomplete-orders"],
+  });
+
+  // Order sub-menu counts from dashboard stats
   const orderCounts = useMemo(() => {
     const s = dashboardData?.stats || {};
     return {
@@ -306,6 +298,13 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
     };
   }, [dashboardData]);
 
+  // Incomplete orders total — prefer pagination.total, fall back to data.length
+  const incompleteCount = useMemo(() => {
+    return Number(
+      incompleteData?.pagination?.total || incompleteData?.data?.length || 0,
+    );
+  }, [incompleteData]);
+
   const authUser = user || getStoredAdminUser();
   const displayName = authUser?.name || "Admin User";
   const displayRole =
@@ -316,10 +315,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
   const sidebarBrandName = settingResponse?.data?.name || appName;
 
   const toggleMenu = (key) => {
-    setOpenMenus((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const isActive = (path) => matchesPath(pathname, path);
@@ -327,9 +323,8 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
 
   const isMenuRouteActive = (item) => {
     if (item.path) return isActive(item.path);
-    if (item.prefixes?.length) {
+    if (item.prefixes?.length)
       return item.prefixes.some((prefix) => matchesPath(pathname, prefix));
-    }
     return item.children?.some((child) => isActive(child.path));
   };
 
@@ -341,21 +336,11 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
             (child) =>
               !child.permission || hasPermission(child.permission, authUser),
           );
-
-          if (visibleChildren.length === 0) {
-            return null;
-          }
-
-          return {
-            ...item,
-            children: visibleChildren,
-          };
+          if (visibleChildren.length === 0) return null;
+          return { ...item, children: visibleChildren };
         }
-
-        if (item.permission && !hasPermission(item.permission, authUser)) {
+        if (item.permission && !hasPermission(item.permission, authUser))
           return null;
-        }
-
         return item;
       })
       .filter(Boolean);
@@ -365,9 +350,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
     setOpenMenus((prev) => {
       const nextMenus = { ...prev };
       visibleMenuItems.forEach((item) => {
-        if (item.key && isMenuRouteActive(item)) {
-          nextMenus[item.key] = true;
-        }
+        if (item.key && isMenuRouteActive(item)) nextMenus[item.key] = true;
       });
       return nextMenus;
     });
@@ -380,7 +363,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
         isOpen ? "translate-x-0" : "-translate-x-full",
       )}>
       <div className="flex h-full min-h-0 flex-col" data-simplebar>
-        {/* Logo Box */}
+        {/* Logo */}
         <div className="h-16 flex items-center justify-center border-b border-gray-700 bg-admin-dark sticky top-0 z-10">
           <Link
             to={hasPermission("dashboard.view", authUser) ? "/dashboard" : "/"}
@@ -400,7 +383,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
           </Link>
         </div>
 
-        {/* User Info (Optional, but kept for structure) */}
+        {/* User info */}
         <div className="border-b border-gray-700 bg-white/5 p-3">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-admin-primary bg-admin-primary/20 text-[13px] font-bold text-white">
@@ -423,7 +406,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
           </div>
         </div>
 
-        {/* Sidebar Menu */}
+        {/* Menu */}
         <div
           id="sidebar-menu"
           className="min-h-0 flex-1 overflow-y-auto py-2.5 pb-24">
@@ -431,6 +414,10 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
             {visibleMenuItems.map((item, index) => {
               const isMenuActive = isMenuRouteActive(item);
               const menuOpen = item.key ? isMenuOpen(item.key) : false;
+
+              // Count badge for top-level leaf items (e.g. Incomplete)
+              const topLevelCount =
+                item.path === "/incomplete-orders" ? incompleteCount : 0;
 
               return (
                 <li key={index}>
@@ -468,6 +455,7 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                           <FiChevronRight className="h-4 w-4" />
                         )}
                       </button>
+
                       <motion.div
                         initial={false}
                         animate={{ height: menuOpen ? "auto" : 0 }}
@@ -530,29 +518,45 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
                       to={item.path}
                       onClick={onNavigate}
                       className={clsx(
-                        "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-all",
+                        "group flex items-center justify-between gap-3 rounded-lg px-3.5 py-2.5 transition-all",
                         isActive(item.path)
                           ? "bg-gradient-to-r from-admin-primary to-green-400 text-white shadow-lg"
                           : "text-gray-400 hover:bg-white/5 hover:text-white",
                       )}>
-                      <item.icon
-                        className={clsx(
-                          "h-5 w-5",
-                          isActive(item.path)
-                            ? "text-white"
-                            : item.iconClass
-                              ? `${item.iconClass} group-hover:text-emerald-300`
-                              : "text-gray-400 group-hover:text-white",
-                        )}
-                      />
-                      <span className="flex items-center gap-2 text-[13px] font-medium">
-                        {item.title}
-                        {item.badge && (
-                          <span className="inline-flex items-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
-                            {item.badge}
-                          </span>
-                        )}
+                      {/* Left: icon + title + text badge */}
+                      <span className="flex items-center gap-3">
+                        <item.icon
+                          className={clsx(
+                            "h-5 w-5",
+                            isActive(item.path)
+                              ? "text-white"
+                              : item.iconClass
+                                ? `${item.iconClass} group-hover:text-emerald-300`
+                                : "text-gray-400 group-hover:text-white",
+                          )}
+                        />
+                        <span className="flex items-center gap-2 text-[13px] font-medium">
+                          {item.title}
+                          {item.badge && (
+                            <span className="inline-flex items-center rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
+                              {item.badge}
+                            </span>
+                          )}
+                        </span>
                       </span>
+
+                      {/* Right: numeric count badge */}
+                      {topLevelCount > 0 && (
+                        <span
+                          className={clsx(
+                            "inline-flex items-center justify-center min-w-[20px] py-0.5 px-2.5 rounded-full text-[11px] font-bold",
+                            isActive(item.path)
+                              ? "bg-red-600 text-white"
+                              : "bg-orange-500 text-white",
+                          )}>
+                          {topLevelCount.toLocaleString()}
+                        </span>
+                      )}
                     </Link>
                   )}
                 </li>
