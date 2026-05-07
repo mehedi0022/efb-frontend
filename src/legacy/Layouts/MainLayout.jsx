@@ -18,7 +18,7 @@ const MainLayout = () => {
       <div className="sticky top-0 z-40">
         <Header />
       </div>
-      <main className="flex-grow pb-20 md:pb-8">
+      <main className="flex-grow">
         <Outlet />
       </main>
       <Footer />
