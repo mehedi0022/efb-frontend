@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   FiFilter,
@@ -107,23 +107,29 @@ const OrderList = () => {
   const { status } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
+
+  const initialFilters = useMemo(
+    () => ({
+      keyword: searchParams.get("keyword") || "",
+      tracking_code: searchParams.get("tracking_code") || "",
+      start_date: searchParams.get("start_date") || "",
+      end_date: searchParams.get("end_date") || "",
+    }),
+    [searchParams],
+  );
+
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
     total: 0,
   });
-  const [filters, setFilters] = useState({
-    name: "",
-    tracking_code: "",
-    start_date: "",
-    end_date: "",
-  });
-  const [appliedFilters, setAppliedFilters] = useState({
-    name: "",
-    tracking_code: "",
-    start_date: "",
-    end_date: "",
-  });
+  const [filters, setFilters] = useState(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusModalOrder, setStatusModalOrder] = useState(null);
   const [statusModalValue, setStatusModalValue] = useState(undefined);
@@ -306,6 +312,14 @@ const OrderList = () => {
   }, []);
 
   const handleSendToFb = async (order) => {
+    if (order.shipping_charge !== 120 && order.shipping_charge !== 70) {
+      return showErrorAlert({
+        title: "দুঃখিত!",
+        content:
+          "ফ্রিলান্সার বাংলাদেশ এ নিরধারিত ডেলিভারি চার্জ আপনার চার্জ এর সাথে মিল নেই ঢাকার ভিতরে ( ৭০ টাকা) ঢাকার বাহিরে ( ১২০ টাকা)  । অর্ডারটি FB-তে পাঠাতে ডেলিভারি চার্জ সমন্নয় করুন।",
+      });
+    }
+
     const orderId = Number(order.id);
     if (!Number.isFinite(orderId) || orderId <= 0) return;
     if (!isCompletedOrder(order)) {
@@ -528,6 +542,13 @@ const OrderList = () => {
   const handleFilterSubmit = () => {
     setPagination((prev) => ({ ...prev, current_page: 1 }));
     setAppliedFilters(filters);
+    const params = new URLSearchParams();
+    if (filters.keyword) params.set("keyword", filters.keyword);
+    if (filters.tracking_code)
+      params.set("tracking_code", filters.tracking_code);
+    if (filters.start_date) params.set("start_date", filters.start_date);
+    if (filters.end_date) params.set("end_date", filters.end_date);
+    navigate({ search: params.toString() }, { replace: true });
   };
 
   const handleFilterReset = () => {
@@ -535,6 +556,7 @@ const OrderList = () => {
     setFilters(reset);
     setAppliedFilters(reset);
     setPagination((prev) => ({ ...prev, current_page: 1 }));
+    navigate({ search: "" }, { replace: true });
   };
 
   const handlePageChange = (page) => {
@@ -1167,11 +1189,13 @@ const OrderList = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex"
-                title="Track order in courier portal">
+                title="Track order in courier portal"
+              >
                 <AntButton
                   size="small"
                   type="primary"
-                  icon={<FiTruck size={13} />}>
+                  icon={<FiTruck size={13} />}
+                >
                   Track
                 </AntButton>
               </a>
@@ -1190,11 +1214,13 @@ const OrderList = () => {
             row?.shipping?.phone || row?.customer?.phone
               ? `?phone=${encodeURIComponent(row?.shipping?.phone || row?.customer?.phone || "")}`
               : ""
-          }`}>
+          }`}
+        >
           <AntButton
             size="small"
             icon={<FiShield size={13} />}
-            className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
+            className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+          >
             Fraud Check
           </AntButton>
         </Link>
@@ -1266,8 +1292,12 @@ const OrderList = () => {
           Number(row.is_complete_order) === 1 ||
           efbSentOrderIds.includes(orderId);
         const isCompleted = queryStatus === "complete" && isCompletedOrder(row);
-        const isSteadfastSent = isCourierDispatchLocked(row);
-        const isFbSentList = queryStatus === "fb-sent";
+        const isFbSentList =
+          queryStatus === "fb-sent" ||
+          String(row?.status?.slug || row?.status?.name || "")
+            .toLowerCase()
+            .replace(/[_\s]+/g, "-") === "fb-sent";
+
         const mobileMenuItems = [
           {
             key: `invoice-${orderId}`,
@@ -1338,7 +1368,8 @@ const OrderList = () => {
                   <AntButton
                     size="small"
                     type="primary"
-                    icon={<FiEye size={13} />}>
+                    icon={<FiEye size={13} />}
+                  >
                     Invoice
                   </AntButton>
                 </Link>
@@ -1347,7 +1378,8 @@ const OrderList = () => {
                 <Dropdown
                   trigger={["click"]}
                   placement="bottomRight"
-                  menu={{ items: mobileMenuItems }}>
+                  menu={{ items: mobileMenuItems }}
+                >
                   <AntButton
                     size="small"
                     icon={<FiMoreVertical size={14} />}
@@ -1367,32 +1399,40 @@ const OrderList = () => {
                 <AntButton
                   size="small"
                   type="primary"
-                  icon={<FiEye size={13} />}>
+                  icon={<FiEye size={13} />}
+                >
                   Invoice
                 </AntButton>
               </Link>
-              <Link to={`/orders/edit/${row.invoice_id}`}>
+              {!isFbSentList && (
+                <Link to={`/orders/edit/${row.invoice_id}`}>
+                  <AntButton
+                    size="small"
+                    icon={<FiEdit2 size={13} />}
+                    className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+                  >
+                    Edit
+                  </AntButton>
+                </Link>
+              )}
+              {!isFbSentList && (
                 <AntButton
                   size="small"
-                  icon={<FiEdit2 size={13} />}
-                  className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
-                  Edit
+                  icon={<FiRefreshCw size={13} />}
+                  onClick={() => openStatusUpdateModal(row)}
+                  disabled={statusUpdateOptions.length === 0}
+                >
+                  Update
                 </AntButton>
-              </Link>
-              <AntButton
-                size="small"
-                icon={<FiRefreshCw size={13} />}
-                onClick={() => openStatusUpdateModal(row)}
-                disabled={statusUpdateOptions.length === 0}>
-                Update
-              </AntButton>
+              )}
 
               {isNewOrder && (
                 <AntButton
                   size="small"
                   danger
                   icon={<FiTrash2 size={13} />}
-                  onClick={() => handleDeleteOrder(row.id)}>
+                  onClick={() => handleDeleteOrder(row.id)}
+                >
                   Delete
                 </AntButton>
               )}
@@ -1409,8 +1449,13 @@ const OrderList = () => {
                         ? "!border-emerald-500 !text-emerald-600"
                         : "!bg-admin-accent hover:!bg-admin-accent/90"
                     }
-                    onClick={() => handleSendToFb(row)}>
-                    {isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB"}
+                    onClick={() => handleSendToFb(row)}
+                  >
+                    {isEfbSent
+                      ? "Sent"
+                      : isSendingEfb
+                        ? "Sending..."
+                        : "Send FB"}
                   </AntButton>
                   <AntButton
                     size="small"
@@ -1422,7 +1467,8 @@ const OrderList = () => {
                         ? "!border-sky-500 !text-sky-600"
                         : "!bg-sky-600 hover:!bg-sky-700"
                     }
-                    onClick={() => handleSendToSteadfast(row)}>
+                    onClick={() => handleSendToSteadfast(row)}
+                  >
                     {isSteadfastSent
                       ? "Steadfast Sent"
                       : isSendingSteadfast
@@ -1432,11 +1478,13 @@ const OrderList = () => {
                 </>
               ) : null}
             </div>
+
             <div className="md:hidden">
               <Dropdown
                 trigger={["click"]}
                 placement="bottomRight"
-                menu={{ items: mobileMenuItems }}>
+                menu={{ items: mobileMenuItems }}
+              >
                 <AntButton
                   size="small"
                   icon={<FiMoreVertical size={14} />}
@@ -1495,7 +1543,9 @@ const OrderList = () => {
               </p>
               <h4 className="text-2xl font-semibold text-admin-dark">
                 {statusLabel}{" "}
-                <span className="text-admin-gray-500">({orders.length})</span>
+                <span className="text-admin-gray-500">
+                  ({pagination.total || 0})
+                </span>
               </h4>
             </div>
           </div>
@@ -1523,12 +1573,14 @@ const OrderList = () => {
                 <AntButton
                   type="primary"
                   icon={<FiFilter size={13} />}
-                  onClick={handleFilterSubmit}>
+                  onClick={handleFilterSubmit}
+                >
                   Apply
                 </AntButton>
                 <AntButton
                   icon={<FiRotateCcw size={13} />}
-                  onClick={handleFilterReset}>
+                  onClick={handleFilterReset}
+                >
                   Reset
                 </AntButton>
               </div>
@@ -1536,14 +1588,14 @@ const OrderList = () => {
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Filter by Name
+                  Filter by Customer Name, phone, Order Invoice ID
                 </label>
                 <AntInput
                   size="large"
-                  placeholder="Enter customer name"
-                  value={filters.name}
+                  placeholder="Type customer name, phone, or invoice ID"
+                  value={filters.keyword}
                   onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, name: e.target.value }))
+                    setFilters((prev) => ({ ...prev, keyword: e.target.value }))
                   }
                 />
               </div>
@@ -1580,7 +1632,8 @@ const OrderList = () => {
                       danger
                       disabled={bulkSubmitting || selectedOrderIds.length === 0}
                       onClick={handleBulkDelete}
-                      icon={<FiTrash2 size={13} />}>
+                      icon={<FiTrash2 size={13} />}
+                    >
                       {bulkSubmitting && bulkSubmittingAction === "delete"
                         ? "Deleting..."
                         : `Delete Selected (${selectedOrderIds.length})`}
@@ -1607,7 +1660,8 @@ const OrderList = () => {
                       disabled={bulkSubmitting || selectedOrderIds.length === 0}
                       onClick={() => handleBulkCourierDispatch("steadfast")}
                       icon={<FiTruck size={13} />}
-                      className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
+                      className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+                    >
                       {bulkSubmitting &&
                       bulkSubmittingAction === "send_steadfast"
                         ? "Sending..."
@@ -1621,7 +1675,8 @@ const OrderList = () => {
                         pathaoModalBusy
                       }
                       onClick={() => handleBulkCourierDispatch("pathao")}
-                      icon={<FiSend size={13} />}>
+                      icon={<FiSend size={13} />}
+                    >
                       {isPathaoModalOpen &&
                       pathaoDispatchContext.mode === "bulk" &&
                       pathaoModalBusy
@@ -1641,7 +1696,8 @@ const OrderList = () => {
                     <AntButton
                       disabled={bulkSubmitting || selectedOrderIds.length === 0}
                       onClick={handleBulkPrintInvoices}
-                      icon={<FiPrinter size={13} />}>
+                      icon={<FiPrinter size={13} />}
+                    >
                       {bulkSubmitting &&
                       bulkSubmittingAction === "print_invoice"
                         ? "Preparing..."
@@ -1698,7 +1754,8 @@ const OrderList = () => {
           disabled: statusUpdating || !statusModalValue,
         }}
         cancelButtonProps={{ disabled: statusUpdating }}
-        destroyOnClose>
+        destroyOnClose
+      >
         <div className="space-y-3">
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             Invoice:{" "}
@@ -1729,7 +1786,8 @@ const OrderList = () => {
         isOpen={isPathaoModalOpen}
         onClose={closePathaoDispatchModal}
         title="Send To Pathao"
-        size="lg">
+        size="lg"
+      >
         <div className="space-y-4">
           <div className="rounded-md border border-admin-gray-200 bg-admin-gray-50 px-3 py-2 text-sm text-admin-gray-700">
             Dispatching completed order(s):{" "}
@@ -1860,7 +1918,8 @@ const OrderList = () => {
           <div className="flex justify-end gap-2">
             <AntButton
               onClick={closePathaoDispatchModal}
-              disabled={pathaoDispatching}>
+              disabled={pathaoDispatching}
+            >
               Cancel
             </AntButton>
             <AntButton
@@ -1873,7 +1932,8 @@ const OrderList = () => {
                 pathaoAreaLoading ||
                 !pathaoDispatchForm.recipient_city ||
                 !pathaoDispatchForm.recipient_zone
-              }>
+              }
+            >
               {pathaoDispatching ? "Sending..." : "Send To Pathao"}
             </AntButton>
           </div>

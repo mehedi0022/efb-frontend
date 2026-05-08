@@ -60,6 +60,7 @@ const OrderEdit = () => {
   const [apiError, setApiError] = useState("");
   const [productKeyword, setProductKeyword] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [productSource, setProductSource] = useState("fb");
 
   const {
     data: orderResponse,
@@ -128,35 +129,6 @@ const OrderEdit = () => {
       items: normalizeOrderItems(order.orderdetails || []),
     });
   }, [order]);
-
-  useEffect(() => {
-    if (!order || !shippingCharges.length) return;
-
-    setFormData((prev) => {
-      if (prev.shipping_charge_id) return prev;
-
-      const shippingArea = String(order?.shipping?.area || "")
-        .trim()
-        .toLowerCase();
-      const shippingChargeAmount = Number(order?.shipping_charge ?? 0);
-      const matched = shippingCharges.find(
-        (row) =>
-          String(row?.name || "")
-            .trim()
-            .toLowerCase() === shippingArea ||
-          Number(row?.amount ?? 0) === shippingChargeAmount,
-      );
-
-      if (!matched?.id) return prev;
-
-      return {
-        ...prev,
-        shipping_charge_id: String(matched.id),
-        shipping_charge: Number(matched.amount ?? prev.shipping_charge ?? 0),
-        shipping_area: prev.shipping_area || matched.name || "",
-      };
-    });
-  }, [order, shippingCharges]);
 
   const totals = useMemo(() => {
     const subTotal = (formData.items || []).reduce(
@@ -233,6 +205,150 @@ const OrderEdit = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
     setApiError("");
+  };
+
+  useEffect(() => {
+    if (!order) return;
+
+    const savedCity = order.shipping?.area || "";
+    const savedSource = order.product_source || "fb"; // adjust field name to match your backend
+
+    setProductSource(savedSource);
+    setSelectedCity(savedCity);
+
+    const chargeMap = savedSource === "fb" ? FB_CHARGE_MAP : OWN_CHARGE_MAP;
+
+    setFormData({
+      shipping_name: order.shipping?.name || "",
+      shipping_phone: order.shipping?.phone || "",
+      shipping_address: order.shipping?.address || "",
+      shipping_area: savedCity,
+      shipping_charge_id: "",
+      shipping_charge: savedCity
+        ? (chargeMap[savedCity] ?? chargeMap.default)
+        : Number(order.shipping_charge ?? 0),
+      discount_type: order.discount_type || "fixed",
+      discount_value: Number(order.discount_value ?? order.discount ?? 0),
+      order_status: Number.isFinite(Number(order.order_status))
+        ? Number(order.order_status)
+        : order.status?.id
+          ? Number(order.status.id)
+          : "",
+      note: order.note || "",
+      admin_note: order.admin_note || "",
+      items: normalizeOrderItems(order.orderdetails || []),
+    });
+  }, [order]);
+
+  // Add this constant outside the component (near the top of the file)
+  const BANGLADESH_DISTRICTS = [
+    "Bagerhat",
+    "Bandarban",
+    "Barguna",
+    "Barishal",
+    "Bhola",
+    "Bogura",
+    "Brahmanbaria",
+    "Chandpur",
+    "Chapai Nawabganj",
+    "Chattogram",
+    "Chuadanga",
+    "Cox's Bazar",
+    "Cumilla",
+    "Dhaka",
+    "Dinajpur",
+    "Faridpur",
+    "Feni",
+    "Gaibandha",
+    "Gazipur",
+    "Gopalganj",
+    "Habiganj",
+    "Jamalpur",
+    "Jashore",
+    "Jhalokathi",
+    "Jhenaidah",
+    "Joypurhat",
+    "Khagrachhari",
+    "Khulna",
+    "Kishoreganj",
+    "Kurigram",
+    "Kushtia",
+    "Lakshmipur",
+    "Lalmonirhat",
+    "Madaripur",
+    "Magura",
+    "Manikganj",
+    "Meherpur",
+    "Moulvibazar",
+    "Munshiganj",
+    "Mymensingh",
+    "Naogaon",
+    "Narail",
+    "Narayanganj",
+    "Narsingdi",
+    "Natore",
+    "Netrokona",
+    "Nilphamari",
+    "Noakhali",
+    "Pabna",
+    "Panchagarh",
+    "Patuakhali",
+    "Pirojpur",
+    "Rajbari",
+    "Rajshahi",
+    "Rangamati",
+    "Rangpur",
+    "Satkhira",
+    "Shariatpur",
+    "Sherpur",
+    "Sirajganj",
+    "Sunamganj",
+    "Sylhet",
+    "Tangail",
+    "Thakurgaon",
+  ];
+
+  const [selectedCity, setSelectedCity] = useState("");
+
+  const FB_CHARGE_MAP = { Dhaka: 70, default: 120 };
+  const OWN_CHARGE_MAP = { Dhaka: 70, default: 120 };
+
+  const handleCityChange = (city) => {
+    setSelectedCity(city);
+
+    const chargeMap = productSource === "fb" ? FB_CHARGE_MAP : OWN_CHARGE_MAP;
+    const charge = chargeMap[city] ?? chargeMap.default;
+
+    const matched = shippingCharges.find(
+      (row) =>
+        String(row.name || "")
+          .trim()
+          .toLowerCase() === (city === "Dhaka" ? "dhaka" : "outside dhaka"),
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      shipping_area: city,
+      shipping_charge_id: matched ? String(matched.id) : "",
+      shipping_charge: charge,
+    }));
+
+    setErrors((prev) => ({ ...prev, shipping_area: "" }));
+    setApiError("");
+  };
+
+  const handleSourceChange = (source) => {
+    setProductSource(source);
+
+    if (!selectedCity) return;
+
+    const chargeMap = source === "fb" ? FB_CHARGE_MAP : OWN_CHARGE_MAP;
+    const charge = chargeMap[selectedCity] ?? chargeMap.default;
+
+    setFormData((prev) => ({
+      ...prev,
+      shipping_charge: charge,
+    }));
   };
 
   const handleShippingChargeSelection = (shippingChargeId) => {
@@ -451,37 +567,144 @@ const OrderEdit = () => {
             <Input
               label="Phone"
               value={formData.shipping_phone}
-              onChange={(e) => handleChange("shipping_phone", e.target.value)}
-              error={errors.shipping_phone}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+                handleChange("shipping_phone", raw);
+              }}
+              onKeyDown={(e) => {
+                if (
+                  !/^\d$/.test(e.key) &&
+                  ![
+                    "Backspace",
+                    "Delete",
+                    "ArrowLeft",
+                    "ArrowRight",
+                    "Tab",
+                  ].includes(e.key)
+                ) {
+                  e.preventDefault();
+                }
+              }}
+              placeholder="01XXXXXXXXX"
+              error={
+                formData.shipping_phone &&
+                !/^01[3-9]\d{8}$/.test(formData.shipping_phone)
+                  ? "Enter a valid Bangladeshi number (e.g. 01XXXXXXXXX)"
+                  : errors.shipping_phone
+              }
               required
             />
           </div>
 
-          <Input
-            label="Address"
-            value={formData.shipping_address}
-            onChange={(e) => handleChange("shipping_address", e.target.value)}
-            error={errors.shipping_address}
-            required
-          />
+          {/* FB / Own Product Toggle */}
+          <div className="md:col-span-2 xl:col-span-3">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Product Source
+            </label>
+            <div className="flex rounded-lg border border-gray-300 overflow-hidden w-fit">
+              <button
+                type="button"
+                onClick={() => handleSourceChange("fb")}
+                className={`px-5 py-2 text-sm font-medium transition-colors ${
+                  productSource === "fb"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}>
+                FB Product
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSourceChange("own")}
+                className={`px-5 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${
+                  productSource === "own"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}>
+                Own Product
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              {productSource === "fb"
+                ? "Fixed rates: Inside Dhaka ৳70 · Outside Dhaka ৳130"
+                : "Fixed rates: Inside Dhaka ৳70 · Outside Dhaka ৳130 — editable"}
+            </p>
+          </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {/* City / District Dropdown */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Delivery Charge Option
+                City / District
               </label>
               <select
                 className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary"
-                value={formData.shipping_charge_id}
-                onChange={(e) => handleShippingChargeSelection(e.target.value)}>
-                <option value="">Select delivery charge</option>
-                {shippingCharges.map((charge) => (
-                  <option key={charge.id} value={charge.id}>
-                    {charge.name} - {formatCurrency(Number(charge.amount || 0))}
+                value={selectedCity}
+                onChange={(e) => handleCityChange(e.target.value)}>
+                <option value="">Select city</option>
+                {BANGLADESH_DISTRICTS.map((district) => (
+                  <option key={district} value={district}>
+                    {district}
                   </option>
                 ))}
               </select>
             </div>
+
+            <div>
+              <Input
+                label="Address"
+                value={formData.shipping_address}
+                onChange={(e) =>
+                  handleChange("shipping_address", e.target.value)
+                }
+                error={errors.shipping_address}
+                required
+              />
+            </div>
+
+            {/* Delivery Charge */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Delivery Charge
+                {selectedCity ? (
+                  <span className="ml-2 text-xs font-normal text-gray-400">
+                    (
+                    {selectedCity === "Dhaka"
+                      ? "Inside Dhaka"
+                      : "Outside Dhaka"}
+                    )
+                  </span>
+                ) : null}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                readOnly={productSource === "fb"}
+                className={`w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-admin-primary ${
+                  productSource === "fb"
+                    ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                    : "bg-white"
+                }`}
+                value={formData.shipping_charge}
+                onChange={(e) => {
+                  if (productSource === "own") {
+                    handleChange(
+                      "shipping_charge",
+                      Math.max(0, Number(e.target.value) || 0),
+                    );
+                  }
+                }}
+              />
+              {productSource === "fb" ? (
+                <p className="mt-1 text-xs text-gray-400">
+                  Fixed for FB products. Switch to Own Product to edit.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {/* Discount Type */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Discount Type
@@ -494,6 +717,8 @@ const OrderEdit = () => {
                 <option value="percentage">Percentage (%)</option>
               </select>
             </div>
+
+            {/* Discount Value */}
             <Input
               label={
                 formData.discount_type === "percentage"
@@ -507,6 +732,8 @@ const OrderEdit = () => {
               onChange={(e) => handleChange("discount_value", e.target.value)}
               error={errors.discount_value}
             />
+
+            {/* Order Status */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Order Status

@@ -17,7 +17,7 @@ import { resolveBrowserTabTitle } from "../utils/tabTitle";
 const IMAGE_BASE =
   process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE ||
   "https://freelancerbangladesh.com/";
-const CATEGORY_PRODUCTS_PER_PAGE = 5;
+const CATEGORY_PRODUCTS_PER_PAGE = 6;
 
 const resolveImage = (src, base = IMAGE_BASE) => {
   if (!src) return "https://placehold.co/600x600?text=Product";
@@ -314,9 +314,9 @@ const Home = () => {
 
   return (
     <div className="bg-[#f3f4f6]">
-      <section className="max-w-[1200px] mx-auto pt-3">
+      <section className="container mx-auto px-4 pt-3">
         <div className="bg-white rounded-lg overflow-hidden shadow-sm relative">
-          <div className="h-48 sm:h-[350px] md:h-[480px] overflow-hidden">
+          <div className="h-48 sm:h-[400px] md:h-[550px] overflow-hidden">
             {normalizedBannerLink ? (
               isExternalHttpUrl(normalizedBannerLink) ? (
                 <a
@@ -387,7 +387,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 mt-5">
+      <section className="container mx-auto px-4 mt-5">
         <div className="relative">
           <button
             type="button"
@@ -408,7 +408,7 @@ const Home = () => {
 
           <div
             ref={featuredTrackRef}
-            className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-3 px-10">
+            className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-3">
             {loadingFeatured ? (
               Array.from({ length: 8 }).map((_, idx) => (
                 <div
@@ -452,7 +452,7 @@ const Home = () => {
 
       {/* Show on Home Categories */}
       {(loadingHomeCategories || homeCategories.length > 0) && (
-        <section className="max-w-6xl mx-auto px-4 mt-10">
+        <section className="container mx-auto mt-10">
           <div className="space-y-8">
             {(loadingHomeCategories
               ? Array.from({ length: 2 })
@@ -478,7 +478,7 @@ const Home = () => {
                       </Link>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {(loadingHomeCategories
                       ? Array.from({ length: CATEGORY_PRODUCTS_PER_PAGE })
                       : catProducts
@@ -537,7 +537,7 @@ const Home = () => {
         />
       </section> */}
 
-      <section className="max-w-6xl mx-auto px-4 mt-12 pb-16">
+      <section className="container mx-auto px-4 mt-12 pb-10">
         {error && (
           <div className="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3 rounded mb-4 text-sm">
             {error}
@@ -569,7 +569,7 @@ const Home = () => {
                     SEE MORE
                   </Link>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {(loadingCategories
                     ? Array.from({ length: CATEGORY_PRODUCTS_PER_PAGE })
                     : products

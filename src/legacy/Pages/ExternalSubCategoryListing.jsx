@@ -1,10 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import {
-  useGetExternalCategoryBySlugQuery,
-  useGetExternalSubCategoryProductsQuery,
-} from "../store/publicApi";
+import { useGetExternalSubCategoryProductsQuery } from "../store/publicApi";
 import StorefrontProductCard from "../components/StorefrontProductCard";
 
 const toTitle = (value) =>
@@ -46,7 +43,11 @@ const Pagination = ({ current, last, onPage }) => {
         type="button"
         onClick={() => onPage(Math.max(1, current - 1))}
         disabled={current <= 1}
-        className={`px-3 py-1 rounded border text-sm ${current <= 1 ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
+        className={`px-3 py-1 rounded border text-sm ${
+          current <= 1
+            ? "text-gray-400 border-gray-200"
+            : "border-gray-300 text-gray-700 hover:border-gray-500"
+        }`}
       >
         <FiChevronLeft />
       </button>
@@ -60,7 +61,11 @@ const Pagination = ({ current, last, onPage }) => {
             key={page}
             type="button"
             onClick={() => onPage(page)}
-            className={`px-3 py-1 rounded border text-sm ${page === current ? "bg-black text-white border-black" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
+            className={`px-3 py-1 rounded border text-sm ${
+              page === current
+                ? "bg-black text-white border-black"
+                : "border-gray-300 text-gray-700 hover:border-gray-500"
+            }`}
           >
             {page}
           </button>
@@ -70,7 +75,11 @@ const Pagination = ({ current, last, onPage }) => {
         type="button"
         onClick={() => onPage(Math.min(last, current + 1))}
         disabled={current >= last}
-        className={`px-3 py-1 rounded border text-sm ${current >= last ? "text-gray-400 border-gray-200" : "border-gray-300 text-gray-700 hover:border-gray-500"}`}
+        className={`px-3 py-1 rounded border text-sm ${
+          current >= last
+            ? "text-gray-400 border-gray-200"
+            : "border-gray-300 text-gray-700 hover:border-gray-500"
+        }`}
       >
         <FiChevronRight />
       </button>
@@ -78,71 +87,33 @@ const Pagination = ({ current, last, onPage }) => {
   );
 };
 
-const ExternalCategoryListing = () => {
+const ExternalSubCategoryListing = () => {
   const { slug } = useParams();
-  const [searchParams] = useSearchParams();
-
-  // ?type=sub  → use subcategory API
-  const isSubcategory = searchParams.get("type") === "sub";
-  const categoryId = searchParams.get("category_id") || null;
-
   const normalizedSlug = useMemo(() => normalizeCategorySlug(slug), [slug]);
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // Reset to page 1 whenever slug / type changes
   useEffect(() => {
     setPage(1);
-  }, [normalizedSlug, isSubcategory, categoryId]);
+  }, [normalizedSlug]);
 
-  // ── Category API (parent) ──────────────────────────────────────────────────
   const {
-    data: categoryResponse,
-    isLoading: isCategoryLoading,
-    isFetching: isCategoryFetching,
-    error: categoryError,
-  } = useGetExternalCategoryBySlugQuery(
-    normalizedSlug
-      ? {
-          slug: normalizedSlug,
-          page,
-          limit,
-          ...(categoryId && { category_id: categoryId }),
-        }
-      : { slug: "", page, limit },
-    { skip: !normalizedSlug || isSubcategory },
-  );
-
-  // ── Subcategory API ────────────────────────────────────────────────────────
-  const {
-    data: subCategoryResponse,
-    isLoading: isSubLoading,
-    isFetching: isSubFetching,
-    error: subCategoryError,
+    data: response,
+    isLoading,
+    isFetching,
+    error,
   } = useGetExternalSubCategoryProductsQuery(
     normalizedSlug
-      ? {
-          slug: normalizedSlug,
-          page,
-          limit,
-          ...(categoryId && { category_id: categoryId }),
-        }
+      ? { slug: normalizedSlug, page, limit }
       : { slug: "", page, limit },
-    { skip: !normalizedSlug || !isSubcategory },
+    { skip: !normalizedSlug },
   );
-
-  // ── Resolve active data ────────────────────────────────────────────────────
-  const response = isSubcategory ? subCategoryResponse : categoryResponse;
-  const loading = isSubcategory
-    ? isSubLoading || isSubFetching
-    : isCategoryLoading || isCategoryFetching;
-  const error = isSubcategory ? subCategoryError : categoryError;
 
   const products = Array.isArray(response?.data) ? response.data : [];
   const meta = response?.meta || {};
   const currentPage = meta.page || page;
   const lastPage = meta.last_page || 1;
-
+  const loading = isLoading || isFetching;
   const title = useMemo(
     () => toTitle(normalizedSlug || slug || "Category"),
     [normalizedSlug, slug],
@@ -152,9 +123,7 @@ const ExternalCategoryListing = () => {
     <div className="container mx-auto px-4 py-10">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        <p className="text-sm text-gray-500">
-          {isSubcategory ? "Subcategory products" : "Category products"}
-        </p>
+        <p className="text-sm text-gray-500">Subcategory products</p>
       </div>
 
       {loading ? (
@@ -182,4 +151,4 @@ const ExternalCategoryListing = () => {
   );
 };
 
-export default ExternalCategoryListing;
+export default ExternalSubCategoryListing;

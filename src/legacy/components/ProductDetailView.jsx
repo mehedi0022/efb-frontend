@@ -9,6 +9,8 @@ import {
   FiPhoneCall,
   FiPlus,
   FiShoppingBag,
+  FiChevronUp,
+  FiChevronDown,
 } from "react-icons/fi";
 import { FaFacebookMessenger, FaWhatsapp } from "react-icons/fa";
 import { Tag } from "antd";
@@ -154,8 +156,7 @@ const RelatedProductCard = ({ product }) => {
   return (
     <Link
       to={href}
-      className="theme-product-card group rounded-xl border border-gray-200 bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-md"
-    >
+      className="theme-product-card group rounded-xl border border-gray-200 bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
         <img
           src={image}
@@ -238,7 +239,8 @@ const ProductDetailView = ({
   const currentPrice = Number(price);
   const oldPrice = Number(previousPrice);
   const selectedQty = Number(qty);
-  const safeQty = Number.isFinite(selectedQty) && selectedQty > 0 ? selectedQty : 1;
+  const safeQty =
+    Number.isFinite(selectedQty) && selectedQty > 0 ? selectedQty : 1;
   const eventValue = toTrackingMoney(
     Number.isFinite(currentPrice) ? currentPrice * safeQty : 0,
   );
@@ -384,7 +386,7 @@ const ProductDetailView = ({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-10">
+      <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="h-[520px] rounded-2xl bg-white animate-pulse" />
           <div className="h-[520px] rounded-2xl bg-white animate-pulse" />
@@ -395,7 +397,7 @@ const ProductDetailView = ({
 
   if (error || !product?.name) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12 text-center">
+      <div className="container mx-auto px-4 py-12 text-center">
         <div className="rounded-xl bg-white p-10 shadow-sm">
           <p className="font-semibold text-red-600">
             Failed to load product details.
@@ -407,76 +409,15 @@ const ProductDetailView = ({
 
   return (
     <div className="bg-[#edf1f7]">
-      <div className="mx-auto max-w-[1120px] px-3 py-4 md:py-5">
-        <div className="grid grid-cols-1 gap-3 lg:auto-rows-auto lg:grid-cols-[minmax(0,1fr)_640px] lg:items-start">
-          <div className="min-w-0 self-start">
-            <div className="rounded-2xl border border-[#d7dee9] bg-[#f3f6fb] p-2 shadow-sm">
-              <div
-                className="relative overflow-hidden rounded-xl bg-[#efe3d9]"
-                onMouseEnter={() => setIsSliderPaused(true)}
-                onMouseLeave={() => setIsSliderPaused(false)}
-              >
-                <img
-                  src={gallery[activeImage]}
-                  alt={product.name}
-                  className="h-[260px] w-full object-cover transition duration-500 sm:h-[420px] lg:h-[500px]"
-                />
-
-                {hasMultipleImages ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={goToPreviousImage}
-                      className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
-                      aria-label="Previous image"
-                    >
-                      <FiChevronLeft />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={goToNextImage}
-                      className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
-                      aria-label="Next image"
-                    >
-                      <FiChevronRight />
-                    </button>
-                  </>
-                ) : null}
-
-                {hasMultipleImages ? (
-                  <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 backdrop-blur-sm">
-                    {gallery.map((_, idx) => (
-                      <button
-                        key={`dot-${idx}`}
-                        type="button"
-                        onClick={() => setActiveImage(idx)}
-                        className={`h-1.5 rounded-full transition ${
-                          idx === activeImage
-                            ? "w-5 bg-white"
-                            : "w-1.5 bg-white/60"
-                        }`}
-                        aria-label={`Go to image ${idx + 1}`}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="mt-2 rounded-xl border border-[#d7dee9] bg-[#f3f6fb] p-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={goToPreviousThumbs}
-                  disabled={thumbStartIndex <= 0}
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-white text-gray-600 shadow-sm disabled:opacity-40"
-                  aria-label="Previous thumbnails"
-                >
-                  <FiChevronLeft className="text-sm" />
-                </button>
-
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-7">
+      <div className="container mx-auto px-3 py-4 md:py-5">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[2.5fr_3fr] lg:items-stretch">
+          {/* LEFT: Vertical thumbs + Main image side by side */}
+          <div className="min-w-0">
+            <div className="rounded-2xl border border-[#d7dee9] bg-[#f3f6fb] p-2 shadow-sm h-full">
+              <div className="flex flex-col md:flex-row gap-2 p-2 md:p-5">
+                {/* Vertical thumbnail strip */}
+                <div className="hidden md:flex flex-col items-center gap-1.5">
+                  <div className="flex flex-row md:flex-col gap-1.5">
                     {visibleThumbs.map((img, idx) => {
                       const imageIndex = thumbStartIndex + idx;
                       return (
@@ -484,16 +425,15 @@ const ProductDetailView = ({
                           key={`${img}-${imageIndex}`}
                           type="button"
                           onClick={() => setActiveImage(imageIndex)}
-                          className={`aspect-square overflow-hidden rounded-md border bg-white p-0.5 transition ${
+                          className={`h-20 w-20 shrink-0 overflow-hidden rounded-lg border bg-white transition ${
                             imageIndex === activeImage
                               ? "border-blue-500 ring-1 ring-blue-300"
-                              : "border-gray-300"
-                          }`}
-                        >
+                              : "border-gray-200 hover:border-gray-400"
+                          }`}>
                           <img
                             src={img}
                             alt="Thumbnail"
-                            className="h-full w-full rounded object-cover"
+                            className="h-full w-full rounded object-contain"
                           />
                         </button>
                       );
@@ -501,20 +441,88 @@ const ProductDetailView = ({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={goToNextThumbs}
-                  disabled={thumbStartIndex >= maxThumbStartIndex}
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-white text-gray-600 shadow-sm disabled:opacity-40"
-                  aria-label="Next thumbnails"
-                >
-                  <FiChevronRight className="text-sm" />
-                </button>
+                {/* Main image — square, full product visible */}
+                <div
+                  className="relative flex-1 overflow-hidden rounded-xl bg-white"
+                  onMouseEnter={() => setIsSliderPaused(true)}
+                  onMouseLeave={() => setIsSliderPaused(false)}>
+                  <div className="aspect-square w-full">
+                    <img
+                      src={gallery[activeImage]}
+                      alt={product.name}
+                      className="h-full w-full object-contain transition duration-500"
+                    />
+                  </div>
+
+                  {hasMultipleImages ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={goToPreviousImage}
+                        className="absolute left-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
+                        aria-label="Previous image">
+                        <FiChevronLeft />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goToNextImage}
+                        className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/70"
+                        aria-label="Next image">
+                        <FiChevronRight />
+                      </button>
+                    </>
+                  ) : null}
+
+                  {hasMultipleImages ? (
+                    <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 backdrop-blur-sm">
+                      {gallery.map((_, idx) => (
+                        <button
+                          key={`dot-${idx}`}
+                          type="button"
+                          onClick={() => setActiveImage(idx)}
+                          className={`h-1.5 rounded-full transition ${
+                            idx === activeImage
+                              ? "w-5 bg-white"
+                              : "w-1.5 bg-white/60"
+                          }`}
+                          aria-label={`Go to image ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Vertical thumbnail strip */}
+                <div className="flex md:hidden flex-col items-start gap-1.5">
+                  <div className="flex flex-row md:flex-col gap-1.5">
+                    {visibleThumbs.map((img, idx) => {
+                      const imageIndex = thumbStartIndex + idx;
+                      return (
+                        <button
+                          key={`${img}-${imageIndex}`}
+                          type="button"
+                          onClick={() => setActiveImage(imageIndex)}
+                          className={`h-20 w-20 shrink-0 overflow-hidden rounded-lg border bg-white transition ${
+                            imageIndex === activeImage
+                              ? "border-blue-500 ring-1 ring-blue-300"
+                              : "border-gray-200 hover:border-gray-400"
+                          }`}>
+                          <img
+                            src={img}
+                            alt="Thumbnail"
+                            className="h-full w-full rounded object-contain"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="min-w-0 w-full max-w-full self-start rounded-2xl border border-[#d7dee9] bg-white p-3 shadow-sm md:p-4 lg:h-auto lg:w-[640px]">
+          {/* RIGHT: Product details */}
+          <div className="min-w-0 w-full rounded-2xl border border-[#d7dee9] bg-white p-3 shadow-sm md:p-4">
             <h1 className="text-[18px] font-bold leading-tight text-[#161f2d] md:text-[24px] md:leading-[1.25]">
               {product.name}
             </h1>
@@ -536,13 +544,10 @@ const ProductDetailView = ({
               ) : null}
             </div>
 
-       
-
             <div className="mt-2">
               <Tag
                 color={outOfStock ? "error" : "success"}
-                className="!m-0 !rounded-full !border-0 !px-3 !py-1 !text-[13px] !font-semibold"
-              >
+                className="!m-0 !rounded-full !border-0 !px-3 !py-1 !text-[13px] !font-semibold">
                 <span className="inline-flex items-center gap-1.5">
                   <FiPackage className="text-[12px]" />
                   {stockText}
@@ -576,8 +581,7 @@ const ProductDetailView = ({
                         String(selectedColor) === String(item.id)
                           ? "border-[#2f3642] bg-[#2f3642] text-white"
                           : "border-gray-300 bg-white text-gray-700"
-                      }`}
-                    >
+                      }`}>
                       {item.name}
                     </button>
                   ))}
@@ -600,8 +604,7 @@ const ProductDetailView = ({
                         String(selectedSize) === String(item.id)
                           ? "border-[#2f3642] bg-[#2f3642] text-white"
                           : "border-gray-300 bg-white text-gray-700"
-                      }`}
-                    >
+                      }`}>
                       {item.name}
                     </button>
                   ))}
@@ -609,12 +612,11 @@ const ProductDetailView = ({
               </div>
             ) : null}
 
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#d6deeb] bg-[#f7f9fc] px-2 py-1">
+            <div className="mt-3 ml-2 inline-flex items-center gap-2 rounded-full border border-[#d6deeb] bg-[#f7f9fc] px-2 py-1">
               <button
                 type="button"
                 onClick={onDecreaseQty}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800"
-              >
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800">
                 <FiMinus />
               </button>
               <input
@@ -625,62 +627,57 @@ const ProductDetailView = ({
               <button
                 type="button"
                 onClick={onIncreaseQty}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800"
-              >
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-[#f2f2f2] text-gray-800">
                 <FiPlus />
               </button>
             </div>
 
             <div className="mt-3 space-y-2">
-              <button
-                type="button"
-                disabled={outOfStock}
-                onClick={onBuyNow}
-                className={`theme-btn-primary flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-bold transition ${
-                  outOfStock
-                    ? "cursor-not-allowed bg-gray-400 text-white"
-                    : ""
-                }`}
-              >
-                <FiShoppingBag /> Order Now
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  disabled={outOfStock}
+                  onClick={onBuyNow}
+                  className={`bg-blue-600 text-white flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-bold transition ${
+                    outOfStock
+                      ? "cursor-not-allowed bg-gray-400 text-white"
+                      : ""
+                  }`}>
+                  <FiShoppingBag /> Order Now
+                </button>
 
-              <button
-                type="button"
-                disabled={outOfStock}
-                onClick={onAddToCart}
-                className={`theme-btn-secondary flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-sm font-semibold transition ${
-                  outOfStock
-                    ? "cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500"
-                    : ""
-                }`}
-              >
-                <FiShoppingBag /> Add to Cart
-              </button>
+                <button
+                  type="button"
+                  disabled={outOfStock}
+                  onClick={onAddToCart}
+                  className={`bg-[#041f1e] text-white flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-sm font-semibold transition ${
+                    outOfStock
+                      ? "cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500"
+                      : ""
+                  }`}>
+                  <FiShoppingBag /> Add to Cart
+                </button>
 
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#28a745] py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1f9a3f]"
-              >
-                <FaWhatsapp className="text-sm" /> WhatsApp Message:{" "}
-                {whatsappLabel}
-              </a>
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1dab62] py-3 text-xs font-semibold text-white hover:text-white shadow-sm transition">
+                  <FaWhatsapp className="text-sm" /> Order On WhatsApp
+                </a>
 
-              <a
-                href={hotlineHref}
-                className="theme-btn-info flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-xs font-semibold shadow-sm transition"
-              >
-                <FiPhoneCall className="text-sm" /> Hotline: {hotline}
-              </a>
+                <a
+                  href={hotlineHref}
+                  className="bg-[#1e3b8a] text-white flex w-full items-center justify-center gap-2 rounded-lg border py-3 text-xs font-semibold shadow-sm transition">
+                  <FiPhoneCall className="text-sm" /> Call For Order
+                </a>
+              </div>
 
               <a
                 href={messengerHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0876ff] via-[#9b34e9] to-[#ff5f66] py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-95"
-              >
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0876ff] via-[#9b34e9] to-[#ff5f66] py-3 text-xs font-semibold text-white shadow-sm transition hover:brightness-95">
                 <FaFacebookMessenger className="text-sm" /> Click to Message
               </a>
             </div>
@@ -700,8 +697,7 @@ const ProductDetailView = ({
                   shippingCharges.map((charge, index) => (
                     <div
                       key={charge.id || `${charge.name}-${index}`}
-                      className="flex items-center justify-between rounded-lg border border-[#dbe7fb] bg-white px-3 py-2"
-                    >
+                      className="flex items-center justify-between rounded-lg border border-[#dbe7fb] bg-white px-3 py-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#334155]">
                         <FiMapPin className="text-[13px] text-[#3b82f6]" />
                         {charge.name || "Courier Charge"}
@@ -740,8 +736,7 @@ const ProductDetailView = ({
                   activeTab === tab.key
                     ? "bg-[#333945] text-white"
                     : "bg-gray-100 text-gray-700"
-                }`}
-              >
+                }`}>
                 {tab.label}
               </button>
             ))}
