@@ -1,7 +1,18 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiEye, FiFilter, FiRefreshCw, FiRotateCcw, FiTruck } from "react-icons/fi";
-import { Button as AntButton, DatePicker, Input as AntInput, Table } from "antd";
+import {
+  FiEye,
+  FiFilter,
+  FiRefreshCw,
+  FiRotateCcw,
+  FiTruck,
+} from "react-icons/fi";
+import {
+  Button as AntButton,
+  DatePicker,
+  Input as AntInput,
+  Table,
+} from "antd";
 import dayjs from "dayjs";
 import Badge from "../../components/common/Badge";
 import {
@@ -230,13 +241,11 @@ const CourierOrderList = () => {
                 href={trackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex"
-              >
+                className="inline-flex">
                 <AntButton
                   size="small"
                   type="primary"
-                  icon={<FiTruck size={13} />}
-                >
+                  icon={<FiTruck size={13} />}>
                   Track
                 </AntButton>
               </a>
@@ -299,8 +308,7 @@ const CourierOrderList = () => {
             type="primary"
             icon={<FiRefreshCw size={13} />}
             onClick={handleSyncStatus}
-            disabled={syncing || selectedOrderIds.length === 0}
-          >
+            disabled={syncing || selectedOrderIds.length === 0}>
             {syncing
               ? "Syncing..."
               : `Sync Status (${selectedOrderIds.length})`}
@@ -321,12 +329,11 @@ const CourierOrderList = () => {
                   value={filters.courier}
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, courier: e.target.value }))
-                  }
-                >
+                  }>
                   <option value="">All</option>
                   <option value="pathao">Pathao</option>
                   <option value="steadfast">Steadfast</option>
-                  </select>
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -393,11 +400,12 @@ const CourierOrderList = () => {
               <AntButton
                 type="primary"
                 icon={<FiFilter size={13} />}
-                onClick={handleApplyFilter}
-              >
+                onClick={handleApplyFilter}>
                 Apply
               </AntButton>
-              <AntButton icon={<FiRotateCcw size={13} />} onClick={handleResetFilter}>
+              <AntButton
+                icon={<FiRotateCcw size={13} />}
+                onClick={handleResetFilter}>
                 Reset
               </AntButton>
             </div>

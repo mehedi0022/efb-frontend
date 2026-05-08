@@ -734,6 +734,7 @@ const Dashboard = () => {
       completed: toMetric(apiStats.completed_order),
       noResponse: toMetric(apiStats.no_response_order),
       inCourier: toMetric(apiStats.in_courier_order),
+      fbSent: toMetric(apiStats.fb_sent_order),
       cancelled: toMetric(apiStats.cancelled_order),
     };
   }, [response]);
@@ -846,7 +847,7 @@ const Dashboard = () => {
           />
           <DashboardCard
             title="In Courier"
-            metric={stats.noResponse}
+            metric={stats.inCourier}
             icon={FiTruck}
             loading={loading}
             url="/orders/in-courier"
@@ -855,7 +856,7 @@ const Dashboard = () => {
           />
           <DashboardCard
             title="FB Sent"
-            metric={stats.inCourier}
+            metric={stats.fbSent}
             icon={FiCheckCircle}
             loading={loading}
             url="/orders/fb-sent"
