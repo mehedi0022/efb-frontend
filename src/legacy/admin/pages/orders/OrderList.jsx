@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   FiFilter,
@@ -107,28 +107,35 @@ const OrderList = () => {
   const { status } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
+
+  const initialFilters = useMemo(
+    () => ({
+      keyword: searchParams.get("keyword") || "",
+      tracking_code: searchParams.get("tracking_code") || "",
+      start_date: searchParams.get("start_date") || "",
+      end_date: searchParams.get("end_date") || "",
+    }),
+    [searchParams],
+  );
+
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
     total: 0,
   });
-  const [filters, setFilters] = useState({
-    keyword: "",
-    tracking_code: "",
-    start_date: "",
-    end_date: "",
-  });
-  const [appliedFilters, setAppliedFilters] = useState({
-    name: "",
-    tracking_code: "",
-    start_date: "",
-    end_date: "",
-  });
+  const [filters, setFilters] = useState(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusModalOrder, setStatusModalOrder] = useState(null);
   const [statusModalValue, setStatusModalValue] = useState(undefined);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [sendingEfbOrderIds, setSendingEfbOrderIds] = useState([]);
+  const [sendingSteadfastOrderIds, setSendingSteadfastOrderIds] = useState([]);
   const [efbSentOrderIds, setEfbSentOrderIds] = useState([]);
   const [selectedOrderIds, setSelectedOrderIds] = useState([]);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
@@ -249,6 +256,8 @@ const OrderList = () => {
   };
 
   const orders = response?.data || [];
+
+  console.log(orders);
   const loading = (isLoading && !response) || isFetching;
 
   useEffect(() => {
@@ -361,6 +370,90 @@ const OrderList = () => {
     }
   };
 
+  const isCourierDispatchLocked = (order) => {
+    const trackingCode = String(order?.courier_order_id || "").trim();
+    if (trackingCode) {
+      return true;
+    }
+
+    const courierName = String(order?.courier_name || "")
+      .trim()
+      .toLowerCase();
+    if (!courierName) {
+      return false;
+    }
+
+    const courierStatus = String(order?.courier_status || "")
+      .trim()
+      .toLowerCase();
+
+    return [
+      "sent",
+      "booked",
+      "created",
+      "processing",
+      "in_transit",
+      "in-transit",
+      "pending_pickup",
+      "picked",
+    ].includes(courierStatus);
+  };
+
+  const handleSendToSteadfast = async (order) => {
+    const orderId = Number(order?.id || 0);
+    if (!Number.isFinite(orderId) || orderId <= 0) return;
+
+    if (!isCompletedOrder(order)) {
+      showErrorMessage(
+        "Send to Steadfast is available for completed orders only.",
+      );
+      return;
+    }
+
+    if (isCourierDispatchLocked(order)) {
+      showErrorMessage(
+        order?.courier_order_id
+          ? `Order already sent to courier. Tracking code: ${order.courier_order_id}.`
+          : "Order already sent to courier.",
+      );
+      return;
+    }
+
+    const confirmed = await showConfirmAlert({
+      title: "Send to Steadfast?",
+      content: "You are about to send this completed order to Steadfast.",
+      okText: "Yes, Send",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    setSendingSteadfastOrderIds((prev) => [...new Set([...prev, orderId])]);
+
+    try {
+      const result = await adminAction({
+        url: "/admin/orders/courier/steadfast",
+        method: "POST",
+        body: { order_id: orderId },
+        invalidates: [tagKey, "orders", "courier-orders"],
+        notifySuccess: false,
+      }).unwrap();
+
+      showSuccessAlert({
+        title: "Steadfast Dispatch Complete",
+        content: result?.message || "Order sent to Steadfast successfully.",
+      });
+    } catch (submitError) {
+      showErrorMessage(
+        submitError?.data?.message || "Failed to send order to Steadfast.",
+      );
+    } finally {
+      setSendingSteadfastOrderIds((prev) =>
+        prev.filter((id) => id !== orderId),
+      );
+    }
+  };
+
   const openStatusUpdateModal = (order) => {
     const orderId = Number(order?.id || 0);
     if (!Number.isFinite(orderId) || orderId <= 0) {
@@ -451,6 +544,13 @@ const OrderList = () => {
   const handleFilterSubmit = () => {
     setPagination((prev) => ({ ...prev, current_page: 1 }));
     setAppliedFilters(filters);
+    const params = new URLSearchParams();
+    if (filters.keyword) params.set("keyword", filters.keyword);
+    if (filters.tracking_code)
+      params.set("tracking_code", filters.tracking_code);
+    if (filters.start_date) params.set("start_date", filters.start_date);
+    if (filters.end_date) params.set("end_date", filters.end_date);
+    navigate({ search: params.toString() }, { replace: true });
   };
 
   const handleFilterReset = () => {
@@ -458,6 +558,7 @@ const OrderList = () => {
     setFilters(reset);
     setAppliedFilters(reset);
     setPagination((prev) => ({ ...prev, current_page: 1 }));
+    navigate({ search: "" }, { replace: true });
   };
 
   const handlePageChange = (page) => {
@@ -1184,9 +1285,11 @@ const OrderList = () => {
         const isNewOrder =
           String(row?.status?.name || "").toLowerCase() === "new order";
         const isSendingEfb = sendingEfbOrderIds.includes(orderId);
+        const isSendingSteadfast = sendingSteadfastOrderIds.includes(orderId);
         const isEfbSent =
           Number(row.is_complete_order) === 1 ||
           efbSentOrderIds.includes(orderId);
+        const isSteadfastSent = isCourierDispatchLocked(row);
         const isCompleted = queryStatus === "complete" && isCompletedOrder(row);
         const isFbSentList =
           queryStatus === "fb-sent" ||
@@ -1240,6 +1343,18 @@ const OrderList = () => {
               icon: <FiSend size={14} />,
               disabled: isEfbSent || isSendingEfb,
               onClick: () => handleSendToFb(row),
+            });
+
+            mobileMenuItems.push({
+              key: `send-steadfast-${orderId}`,
+              label: isSteadfastSent
+                ? "Steadfast Sent"
+                : isSendingSteadfast
+                  ? "Sending..."
+                  : "Send Steadfast",
+              icon: <FiTruck size={14} />,
+              disabled: isSteadfastSent || isSendingSteadfast,
+              onClick: () => handleSendToSteadfast(row),
             });
           }
         }
@@ -1316,19 +1431,42 @@ const OrderList = () => {
               )}
 
               {isCompleted ? (
-                <AntButton
-                  size="small"
-                  type={isEfbSent ? "default" : "primary"}
-                  icon={<FiSend size={13} />}
-                  disabled={isSendingEfb}
-                  className={
-                    isEfbSent
-                      ? "!border-emerald-500 !text-emerald-600"
-                      : "!bg-admin-accent hover:!bg-admin-accent/90"
-                  }
-                  onClick={() => handleSendToFb(row)}>
-                  {isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB"}
-                </AntButton>
+                <>
+                  <AntButton
+                    size="small"
+                    type={isEfbSent ? "default" : "primary"}
+                    icon={<FiSend size={13} />}
+                    disabled={isSendingEfb}
+                    className={
+                      isEfbSent
+                        ? "!border-emerald-500 !text-emerald-600"
+                        : "!bg-admin-accent hover:!bg-admin-accent/90"
+                    }
+                    onClick={() => handleSendToFb(row)}>
+                    {isEfbSent
+                      ? "Sent"
+                      : isSendingEfb
+                        ? "Sending..."
+                        : "Send FB"}
+                  </AntButton>
+                  <AntButton
+                    size="small"
+                    type={isSteadfastSent ? "default" : "primary"}
+                    icon={<FiTruck size={13} />}
+                    disabled={isSteadfastSent || isSendingSteadfast}
+                    className={
+                      isSteadfastSent
+                        ? "!border-sky-500 !text-sky-600"
+                        : "!bg-sky-600 hover:!bg-sky-700"
+                    }
+                    onClick={() => handleSendToSteadfast(row)}>
+                    {isSteadfastSent
+                      ? "Steadfast Sent"
+                      : isSendingSteadfast
+                        ? "Sending..."
+                        : "Send Steadfast"}
+                  </AntButton>
+                </>
               ) : null}
             </div>
 
@@ -1600,7 +1738,7 @@ const OrderList = () => {
           disabled: statusUpdating || !statusModalValue,
         }}
         cancelButtonProps={{ disabled: statusUpdating }}
-        destroyOnClose>
+        destroyOnHidden>
         <div className="space-y-3">
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             Invoice:{" "}

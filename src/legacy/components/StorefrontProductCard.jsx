@@ -215,7 +215,7 @@ const StorefrontProductCard = ({ item, product }) => {
       <div className="px-3 pb-2">
         <Link
           to={detailPath}
-          className="min-h-[2.8rem] text-[15px] font-semibold leading-5 text-[#111827]"
+          className="min-h-[2.8rem] text-[14px] font-semibold leading-5 text-[#111827]"
           title={name}>
           <span className="line-clamp-2">{name}</span>
         </Link>
@@ -246,7 +246,7 @@ const StorefrontProductCard = ({ item, product }) => {
 
         <div className="mt-1.5 flex items-end gap-2">
           <span
-            className="text-[22px] md:text-[24px] font-extrabold leading-none text-[#111827]"
+            className="text-[20px] md:text-[22px] font-extrabold leading-none text-[#111827]"
             data-meta-event-value={toTrackingMoney(price)}
             data-meta-currency="BDT"
             data-meta-value-source="product-card-price">

@@ -45,6 +45,7 @@ import IpBlockSettings from "./pages/settings/IpBlockSettings";
 import PaymentGatewaySettings from "./pages/integrations/PaymentGatewaySettings";
 import SmsGatewaySettings from "./pages/integrations/SmsGatewaySettings";
 import CourierApiSettings from "./pages/integrations/CourierApiSettings";
+import SteadfastSettings from "./pages/integrations/SteadfastSettings";
 import IncompleteOrderList from "./pages/incomplete-orders/IncompleteOrderList";
 import OrderReport from "./pages/reports/OrderReport";
 import {
@@ -508,9 +509,17 @@ const App = () => {
               </RequirePermission>
             }
           />
+          <Route
+            path="integrations/steadfast"
+            element={
+              <RequirePermission permission="integrations.view">
+                <SteadfastSettings />
+              </RequirePermission>
+            }
+          />
           {/* Pixels & Tag Managers */}
 
-          {/* <Route
+          <Route
             path="pixels"
             element={
               <RequirePermission permission="pixels.view">
@@ -519,7 +528,7 @@ const App = () => {
             }
           />
 
-          <Route
+          {/* <Route
             path="tag-managers"
             element={
               <RequirePermission permission="tag-managers.view">

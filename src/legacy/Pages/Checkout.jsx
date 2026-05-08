@@ -565,13 +565,13 @@ const Checkout = () => {
 
   return (
     <div className="bg-[#f9fafb] min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 py-8 lg:py-12">
+      <div className="container mx-auto px-4 py-8 lg:py-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col min-[900px]:flex-row gap-6 lg:gap-8 items-start">
+          className="grid grid-cols-1 min-[900px]:grid-cols-[3fr_2fr] gap-6 lg:gap-8 items-stretch">
           {/* Left Column: Form Section */}
-          <div className="flex-1 w-full space-y-6">
+          <div className="space-y-6">
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-3 bg-brand-50 rounded-xl text-brand-600">
@@ -673,7 +673,7 @@ const Checkout = () => {
                     <span className="text-red-500">*</span>
                   </label>
                   <div
-                    className={`grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl ${
+                    className={`grid grid-cols-1 gap-3 rounded-xl ${
                       formErrors.area
                         ? "border border-red-200 bg-red-50 p-2"
                         : ""
@@ -757,7 +757,7 @@ const Checkout = () => {
           </div>
 
           {/* Right Column: Order Summary Section */}
-          <div className="w-full min-[900px]:w-[340px] lg:w-[420px] min-[900px]:sticky min-[900px]:top-4 lg:top-8 space-y-6">
+          <div className="w-full min-[900px]:sticky min-[900px]:top-4 lg:top-8 space-y-6">
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-50">
                 <div className="flex items-center justify-between">

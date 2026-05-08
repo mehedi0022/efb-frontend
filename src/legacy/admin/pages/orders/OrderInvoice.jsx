@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAdminFetchQuery } from "../../../store/adminApi";
 import { resolveMediaUrl } from "../../../utils/media";
+import { BiBook } from "react-icons/bi";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -558,6 +559,28 @@ const OrderInvoice = () => {
                   * This is a computer generated invoice, does not require any
                   signature.
                 </p>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-amber-200 text-amber-700">
+                    <BiBook />
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-amber-700">
+                      Note
+                    </p>
+
+                    <p className="text-sm leading-6 text-slate-700">
+                      <b>Customer Note:</b> {order?.note || ""}
+                    </p>
+
+                    <p className="text-sm leading-6 text-slate-700">
+                      <b>Admin Note:</b> {order?.admin_note || ""}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

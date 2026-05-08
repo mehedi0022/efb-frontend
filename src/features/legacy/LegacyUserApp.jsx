@@ -7,6 +7,7 @@ import { AuthProvider } from '@/legacy/context/AuthContext';
 import { SettingsProvider } from '@/legacy/context/SettingsContext';
 import { SiteDataProvider } from '@/legacy/context/SiteDataContext';
 import { CartProvider } from '@/legacy/context/CartContext';
+import PixelCodeInjector from '@/legacy/components/PixelCodeInjector';
 
 export default function LegacyUserApp() {
   const isBlockedRoute =
@@ -28,6 +29,7 @@ export default function LegacyUserApp() {
     <AuthProvider>
       <SettingsProvider>
         <SiteDataProvider>
+          <PixelCodeInjector />
           <CartProvider>
             <RouterProvider router={router} />
           </CartProvider>
