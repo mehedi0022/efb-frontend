@@ -135,6 +135,7 @@ const OrderList = () => {
   const [statusModalValue, setStatusModalValue] = useState(undefined);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [sendingEfbOrderIds, setSendingEfbOrderIds] = useState([]);
+  const [sendingSteadfastOrderIds, setSendingSteadfastOrderIds] = useState([]);
   const [efbSentOrderIds, setEfbSentOrderIds] = useState([]);
   const [selectedOrderIds, setSelectedOrderIds] = useState([]);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
@@ -366,6 +367,90 @@ const OrderList = () => {
       });
     } finally {
       setSendingEfbOrderIds((prev) => prev.filter((id) => id !== orderId));
+    }
+  };
+
+  const isCourierDispatchLocked = (order) => {
+    const trackingCode = String(order?.courier_order_id || "").trim();
+    if (trackingCode) {
+      return true;
+    }
+
+    const courierName = String(order?.courier_name || "")
+      .trim()
+      .toLowerCase();
+    if (!courierName) {
+      return false;
+    }
+
+    const courierStatus = String(order?.courier_status || "")
+      .trim()
+      .toLowerCase();
+
+    return [
+      "sent",
+      "booked",
+      "created",
+      "processing",
+      "in_transit",
+      "in-transit",
+      "pending_pickup",
+      "picked",
+    ].includes(courierStatus);
+  };
+
+  const handleSendToSteadfast = async (order) => {
+    const orderId = Number(order?.id || 0);
+    if (!Number.isFinite(orderId) || orderId <= 0) return;
+
+    if (!isCompletedOrder(order)) {
+      showErrorMessage(
+        "Send to Steadfast is available for completed orders only.",
+      );
+      return;
+    }
+
+    if (isCourierDispatchLocked(order)) {
+      showErrorMessage(
+        order?.courier_order_id
+          ? `Order already sent to courier. Tracking code: ${order.courier_order_id}.`
+          : "Order already sent to courier.",
+      );
+      return;
+    }
+
+    const confirmed = await showConfirmAlert({
+      title: "Send to Steadfast?",
+      content: "You are about to send this completed order to Steadfast.",
+      okText: "Yes, Send",
+      cancelText: "Cancel",
+    });
+
+    if (!confirmed) return;
+
+    setSendingSteadfastOrderIds((prev) => [...new Set([...prev, orderId])]);
+
+    try {
+      const result = await adminAction({
+        url: "/admin/orders/courier/steadfast",
+        method: "POST",
+        body: { order_id: orderId },
+        invalidates: [tagKey, "orders", "courier-orders"],
+        notifySuccess: false,
+      }).unwrap();
+
+      showSuccessAlert({
+        title: "Steadfast Dispatch Complete",
+        content: result?.message || "Order sent to Steadfast successfully.",
+      });
+    } catch (submitError) {
+      showErrorMessage(
+        submitError?.data?.message || "Failed to send order to Steadfast.",
+      );
+    } finally {
+      setSendingSteadfastOrderIds((prev) =>
+        prev.filter((id) => id !== orderId),
+      );
     }
   };
 
@@ -1106,11 +1191,13 @@ const OrderList = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex"
-                title="Track order in courier portal">
+                title="Track order in courier portal"
+              >
                 <AntButton
                   size="small"
                   type="primary"
-                  icon={<FiTruck size={13} />}>
+                  icon={<FiTruck size={13} />}
+                >
                   Track
                 </AntButton>
               </a>
@@ -1129,11 +1216,13 @@ const OrderList = () => {
             row?.shipping?.phone || row?.customer?.phone
               ? `?phone=${encodeURIComponent(row?.shipping?.phone || row?.customer?.phone || "")}`
               : ""
-          }`}>
+          }`}
+        >
           <AntButton
             size="small"
             icon={<FiShield size={13} />}
-            className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
+            className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+          >
             Fraud Check
           </AntButton>
         </Link>
@@ -1200,6 +1289,7 @@ const OrderList = () => {
         const isNewOrder =
           String(row?.status?.name || "").toLowerCase() === "new order";
         const isSendingEfb = sendingEfbOrderIds.includes(orderId);
+        const isSendingSteadfast = sendingSteadfastOrderIds.includes(orderId);
         const isEfbSent =
           Number(row.is_complete_order) === 1 ||
           efbSentOrderIds.includes(orderId);
@@ -1257,6 +1347,18 @@ const OrderList = () => {
               disabled: isEfbSent || isSendingEfb,
               onClick: () => handleSendToFb(row),
             });
+
+            mobileMenuItems.push({
+              key: `send-steadfast-${orderId}`,
+              label: isSteadfastSent
+                ? "Steadfast Sent"
+                : isSendingSteadfast
+                  ? "Sending..."
+                  : "Send Steadfast",
+              icon: <FiTruck size={14} />,
+              disabled: isSteadfastSent || isSendingSteadfast,
+              onClick: () => handleSendToSteadfast(row),
+            });
           }
         }
 
@@ -1268,7 +1370,8 @@ const OrderList = () => {
                   <AntButton
                     size="small"
                     type="primary"
-                    icon={<FiEye size={13} />}>
+                    icon={<FiEye size={13} />}
+                  >
                     Invoice
                   </AntButton>
                 </Link>
@@ -1277,7 +1380,8 @@ const OrderList = () => {
                 <Dropdown
                   trigger={["click"]}
                   placement="bottomRight"
-                  menu={{ items: mobileMenuItems }}>
+                  menu={{ items: mobileMenuItems }}
+                >
                   <AntButton
                     size="small"
                     icon={<FiMoreVertical size={14} />}
@@ -1297,7 +1401,8 @@ const OrderList = () => {
                 <AntButton
                   size="small"
                   type="primary"
-                  icon={<FiEye size={13} />}>
+                  icon={<FiEye size={13} />}
+                >
                   Invoice
                 </AntButton>
               </Link>
@@ -1306,7 +1411,8 @@ const OrderList = () => {
                   <AntButton
                     size="small"
                     icon={<FiEdit2 size={13} />}
-                    className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
+                    className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+                  >
                     Edit
                   </AntButton>
                 </Link>
@@ -1316,7 +1422,8 @@ const OrderList = () => {
                   size="small"
                   icon={<FiRefreshCw size={13} />}
                   onClick={() => openStatusUpdateModal(row)}
-                  disabled={statusUpdateOptions.length === 0}>
+                  disabled={statusUpdateOptions.length === 0}
+                >
                   Update
                 </AntButton>
               )}
@@ -1326,25 +1433,51 @@ const OrderList = () => {
                   size="small"
                   danger
                   icon={<FiTrash2 size={13} />}
-                  onClick={() => handleDeleteOrder(row.id)}>
+                  onClick={() => handleDeleteOrder(row.id)}
+                >
                   Delete
                 </AntButton>
               )}
 
               {isCompleted ? (
-                <AntButton
-                  size="small"
-                  type={isEfbSent ? "default" : "primary"}
-                  icon={<FiSend size={13} />}
-                  disabled={isSendingEfb}
-                  className={
-                    isEfbSent
-                      ? "!border-emerald-500 !text-emerald-600"
-                      : "!bg-admin-accent hover:!bg-admin-accent/90"
-                  }
-                  onClick={() => handleSendToFb(row)}>
-                  {isEfbSent ? "Sent" : isSendingEfb ? "Sending..." : "Send FB"}
-                </AntButton>
+                <>
+                  <AntButton
+                    size="small"
+                    type={isEfbSent ? "default" : "primary"}
+                    icon={<FiSend size={13} />}
+                    disabled={isSendingEfb}
+                    className={
+                      isEfbSent
+                        ? "!border-emerald-500 !text-emerald-600"
+                        : "!bg-admin-accent hover:!bg-admin-accent/90"
+                    }
+                    onClick={() => handleSendToFb(row)}
+                  >
+                    {isEfbSent
+                      ? "Sent"
+                      : isSendingEfb
+                        ? "Sending..."
+                        : "Send FB"}
+                  </AntButton>
+                  <AntButton
+                    size="small"
+                    type={isSteadfastSent ? "default" : "primary"}
+                    icon={<FiTruck size={13} />}
+                    disabled={isSteadfastSent || isSendingSteadfast}
+                    className={
+                      isSteadfastSent
+                        ? "!border-sky-500 !text-sky-600"
+                        : "!bg-sky-600 hover:!bg-sky-700"
+                    }
+                    onClick={() => handleSendToSteadfast(row)}
+                  >
+                    {isSteadfastSent
+                      ? "Steadfast Sent"
+                      : isSendingSteadfast
+                        ? "Sending..."
+                        : "Send Steadfast"}
+                  </AntButton>
+                </>
               ) : null}
             </div>
 
@@ -1352,7 +1485,8 @@ const OrderList = () => {
               <Dropdown
                 trigger={["click"]}
                 placement="bottomRight"
-                menu={{ items: mobileMenuItems }}>
+                menu={{ items: mobileMenuItems }}
+              >
                 <AntButton
                   size="small"
                   icon={<FiMoreVertical size={14} />}
@@ -1441,12 +1575,14 @@ const OrderList = () => {
                 <AntButton
                   type="primary"
                   icon={<FiFilter size={13} />}
-                  onClick={handleFilterSubmit}>
+                  onClick={handleFilterSubmit}
+                >
                   Apply
                 </AntButton>
                 <AntButton
                   icon={<FiRotateCcw size={13} />}
-                  onClick={handleFilterReset}>
+                  onClick={handleFilterReset}
+                >
                   Reset
                 </AntButton>
               </div>
@@ -1498,7 +1634,8 @@ const OrderList = () => {
                       danger
                       disabled={bulkSubmitting || selectedOrderIds.length === 0}
                       onClick={handleBulkDelete}
-                      icon={<FiTrash2 size={13} />}>
+                      icon={<FiTrash2 size={13} />}
+                    >
                       {bulkSubmitting && bulkSubmittingAction === "delete"
                         ? "Deleting..."
                         : `Delete Selected (${selectedOrderIds.length})`}
@@ -1525,7 +1662,8 @@ const OrderList = () => {
                       disabled={bulkSubmitting || selectedOrderIds.length === 0}
                       onClick={() => handleBulkCourierDispatch("steadfast")}
                       icon={<FiTruck size={13} />}
-                      className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700">
+                      className="!border-amber-400 !text-amber-600 hover:!border-amber-500 hover:!text-amber-700"
+                    >
                       {bulkSubmitting &&
                       bulkSubmittingAction === "send_steadfast"
                         ? "Sending..."
@@ -1539,7 +1677,8 @@ const OrderList = () => {
                         pathaoModalBusy
                       }
                       onClick={() => handleBulkCourierDispatch("pathao")}
-                      icon={<FiSend size={13} />}>
+                      icon={<FiSend size={13} />}
+                    >
                       {isPathaoModalOpen &&
                       pathaoDispatchContext.mode === "bulk" &&
                       pathaoModalBusy
@@ -1559,7 +1698,8 @@ const OrderList = () => {
                     <AntButton
                       disabled={bulkSubmitting || selectedOrderIds.length === 0}
                       onClick={handleBulkPrintInvoices}
-                      icon={<FiPrinter size={13} />}>
+                      icon={<FiPrinter size={13} />}
+                    >
                       {bulkSubmitting &&
                       bulkSubmittingAction === "print_invoice"
                         ? "Preparing..."
@@ -1616,7 +1756,8 @@ const OrderList = () => {
           disabled: statusUpdating || !statusModalValue,
         }}
         cancelButtonProps={{ disabled: statusUpdating }}
-        destroyOnClose>
+        destroyOnClose
+      >
         <div className="space-y-3">
           <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             Invoice:{" "}
@@ -1647,7 +1788,8 @@ const OrderList = () => {
         isOpen={isPathaoModalOpen}
         onClose={closePathaoDispatchModal}
         title="Send To Pathao"
-        size="lg">
+        size="lg"
+      >
         <div className="space-y-4">
           <div className="rounded-md border border-admin-gray-200 bg-admin-gray-50 px-3 py-2 text-sm text-admin-gray-700">
             Dispatching completed order(s):{" "}
@@ -1778,7 +1920,8 @@ const OrderList = () => {
           <div className="flex justify-end gap-2">
             <AntButton
               onClick={closePathaoDispatchModal}
-              disabled={pathaoDispatching}>
+              disabled={pathaoDispatching}
+            >
               Cancel
             </AntButton>
             <AntButton
@@ -1791,7 +1934,8 @@ const OrderList = () => {
                 pathaoAreaLoading ||
                 !pathaoDispatchForm.recipient_city ||
                 !pathaoDispatchForm.recipient_zone
-              }>
+              }
+            >
               {pathaoDispatching ? "Sending..." : "Send To Pathao"}
             </AntButton>
           </div>
