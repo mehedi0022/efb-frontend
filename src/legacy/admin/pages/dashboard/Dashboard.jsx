@@ -145,8 +145,7 @@ const FbSentProductTable = ({ isFetching: parentFetching }) => {
               <tr>
                 <td
                   className="px-6 py-6 text-center text-sm text-gray-500"
-                  colSpan="3"
-                >
+                  colSpan="3">
                   Loading FB Sent data...
                 </td>
               </tr>
@@ -156,22 +155,20 @@ const FbSentProductTable = ({ isFetching: parentFetching }) => {
               <tr>
                 <td
                   className="px-6 py-6 text-center text-sm text-gray-500"
-                  colSpan="3"
-                >
+                  colSpan="3">
                   No FB Sent orders found in the last 30 days
                 </td>
               </tr>
             )}
 
-            {rows.map((item) => (
+            {rows.map((item, index) => (
               <tr
-                key={item.order_date}
+                key={index}
                 className={`transition-colors ${
                   item.is_today
                     ? "bg-blue-50 hover:bg-blue-100/70"
                     : "hover:bg-gray-50"
-                }`}
-              >
+                }`}>
                 <td className="px-6 py-3">
                   <div className="flex items-center gap-2">
                     {item.is_today && (
@@ -180,8 +177,7 @@ const FbSentProductTable = ({ isFetching: parentFetching }) => {
                       </span>
                     )}
                     <span
-                      className={`text-base font-medium ${item.is_today ? "text-blue-700" : "text-gray-700"}`}
-                    >
+                      className={`text-base font-medium ${item.is_today ? "text-blue-700" : "text-gray-700"}`}>
                       {dayjs(item.sent_date).format("DD MMM YYYY")}
                     </span>
                   </div>
@@ -198,8 +194,7 @@ const FbSentProductTable = ({ isFetching: parentFetching }) => {
                         `/orders/fb-sent?start_date=${item.sent_date}&end_date=${item.sent_date}`,
                       )
                     }
-                    className="text-blue-600 hover:text-blue-800 text-base font-medium hover:underline transition-colors"
-                  >
+                    className="text-blue-600 hover:text-blue-800 text-base font-medium hover:underline transition-colors">
                     View
                   </button>
                 </td>
@@ -210,8 +205,7 @@ const FbSentProductTable = ({ isFetching: parentFetching }) => {
               <tr>
                 <td
                   className="px-6 py-2 text-center text-xs text-gray-400"
-                  colSpan="3"
-                >
+                  colSpan="3">
                   Refreshing...
                 </td>
               </tr>
@@ -314,8 +308,7 @@ const ProductOverviewTable = ({ isFetching: parentFetching }) => {
                   return (
                     <tr
                       key={product.product_sku}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
+                      className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-3">
                         <span
                           className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
@@ -326,8 +319,7 @@ const ProductOverviewTable = ({ isFetching: parentFetching }) => {
                                 : rank === 2
                                   ? "bg-orange-100 text-orange-600"
                                   : "bg-gray-50 text-gray-500"
-                          }`}
-                        >
+                          }`}>
                           {rank + 1}
                         </span>
                       </td>
@@ -383,8 +375,7 @@ const ProductOverviewTable = ({ isFetching: parentFetching }) => {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
+                  className="px-3 py-1 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                   Previous
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(
@@ -396,8 +387,7 @@ const ProductOverviewTable = ({ isFetching: parentFetching }) => {
                         page === currentPage
                           ? "bg-admin-primary text-white"
                           : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
+                      }`}>
                       {page}
                     </button>
                   ),
@@ -407,8 +397,7 @@ const ProductOverviewTable = ({ isFetching: parentFetching }) => {
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
+                  className="px-3 py-1 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                   Next
                 </button>
               </div>
@@ -438,12 +427,10 @@ const DashboardCard = ({
         if (url) {
           navigate(url);
         }
-      }}
-    >
+      }}>
       <div className="flex items-center gap-4">
         <div
-          className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} shadow-inner`}
-        >
+          className={`w-14 h-14 rounded-full flex items-center justify-center ${iconBgClass} shadow-inner`}>
           <Icon className="w-7 h-7 text-white" />
         </div>
         <div>
@@ -503,8 +490,7 @@ const HourlyOrdersChart = ({ data = [], loading, windowHours = 24 }) => {
               return (
                 <div
                   key={point.hour_start}
-                  className="flex-1 min-w-[48px] flex flex-col items-center gap-2"
-                >
+                  className="flex-1 min-w-[48px] flex flex-col items-center gap-2">
                   <div className="relative h-52 w-full flex items-end">
                     <div
                       className="w-full rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-300 transition-all duration-300"
@@ -590,8 +576,7 @@ const MonthlyOrdersPieChart = ({ data = [], loading }) => {
           <div className="relative mx-auto h-[188px] w-[188px] shrink-0 2xl:mx-0">
             <svg
               viewBox={`0 0 ${chartSize} ${chartSize}`}
-              className="h-full w-full"
-            >
+              className="h-full w-full">
               <circle
                 cx={chartSize / 2}
                 cy={chartSize / 2}
@@ -638,8 +623,7 @@ const MonthlyOrdersPieChart = ({ data = [], loading }) => {
                 return (
                   <li
                     key={item.month || index}
-                    className="rounded-md bg-gray-50 px-3 py-2 text-sm"
-                  >
+                    className="rounded-md bg-gray-50 px-3 py-2 text-sm">
                     <div className="flex items-start gap-2">
                       <span
                         className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
