@@ -291,10 +291,27 @@ const Sidebar = ({ isOpen, onNavigate, user = null }) => {
   // Order sub-menu counts from dashboard stats
   const orderCounts = useMemo(() => {
     const s = dashboardData?.stats || {};
+    const breakdown = Array.isArray(dashboardData?.order_status_breakdown)
+      ? dashboardData.order_status_breakdown
+      : [];
+    const newOrderOnlyCount =
+      Number(
+        breakdown.find((item) => item?.key === "new_order")?.count ??
+          s.new_order?.count ??
+          s.active_order?.count ??
+          0,
+      ) || 0;
+    const completeOnlyCount =
+      Number(
+        breakdown.find((item) => item?.key === "complete")?.count ??
+          s.completed_order?.count ??
+          0,
+      ) || 0;
+
     return {
       "/orders/all": Number(s.total_order?.count || 0),
-      "/orders/new-order": Number(s.active_order?.count || 0),
-      "/orders/complete": Number(s.completed_order?.count || 0),
+      "/orders/new-order": newOrderOnlyCount,
+      "/orders/complete": completeOnlyCount,
       "/orders/no-response": Number(s.no_response_order?.count || 0),
       "/orders/cancel": Number(s.cancelled_order?.count || 0),
       "/orders/in-courier": Number(s.in_courier_order?.count || 0),

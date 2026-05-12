@@ -727,11 +727,32 @@ const Dashboard = () => {
 
   const stats = useMemo(() => {
     const apiStats = response?.stats || {};
+    const statusBreakdown = Array.isArray(response?.order_status_breakdown)
+      ? response.order_status_breakdown
+      : [];
+    const completeBucket = statusBreakdown.find(
+      (item) => item?.key === "complete",
+    );
+    const newOrderBucket = statusBreakdown.find(
+      (item) => item?.key === "new_order",
+    );
+    const activeMetric = newOrderBucket
+      ? {
+          count: toNumber(newOrderBucket.count),
+          amount: toNumber(newOrderBucket.amount),
+        }
+      : toMetric(apiStats.new_order || apiStats.active_order);
+    const completeMetric = completeBucket
+      ? {
+          count: toNumber(completeBucket.count),
+          amount: toNumber(completeBucket.amount),
+        }
+      : toMetric(apiStats.completed_order);
 
     return {
       total: toMetric(apiStats.total_order),
-      active: toMetric(apiStats.active_order),
-      completed: toMetric(apiStats.completed_order),
+      active: activeMetric,
+      completed: completeMetric,
       noResponse: toMetric(apiStats.no_response_order),
       inCourier: toMetric(apiStats.in_courier_order),
       fbSent: toMetric(apiStats.fb_sent_order),
