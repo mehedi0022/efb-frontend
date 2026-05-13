@@ -423,6 +423,19 @@ const IncompleteOrderList = () => {
           admin_note: formData.admin_note || "",
           items: cartItems.map((item) => ({
             product_id: item.product_id ? Number(item.product_id) : undefined,
+            external_product_id:
+              item.external_product_id != null &&
+              String(item.external_product_id).trim() !== ""
+                ? String(item.external_product_id).trim()
+                : undefined,
+            product_sku:
+              String(
+                item.product_sku ??
+                  item.sku ??
+                  item?.options?.product_sku ??
+                  item?.options?.sku ??
+                  "",
+              ).trim() || undefined,
             product_name: String(item.name || "").trim(),
             qty: Math.max(1, Number(item.qty) || 1),
             sale_price: Math.max(0, Number(item.price ?? item.sale_price) || 0),
