@@ -295,10 +295,18 @@ const IncompleteOrderList = () => {
       (p) => String(p.id) === String(selectedProductId),
     );
     if (!selected) return;
+    const resolvedSku =
+      String(
+        selected.sku ??
+          selected.product_sku ??
+          selected.product_code ??
+          "",
+      ).trim() || null;
     setCartItems((prev) => [
       ...prev,
       {
         row_id: `new-${Date.now()}`,
+        product_id: selected.id ? Number(selected.id) : undefined,
         name: selected.name || "",
         qty: 1,
         price: toNumber(
@@ -310,6 +318,8 @@ const IncompleteOrderList = () => {
         ),
         purchase_price: toNumber(selected.purchase_price, 0),
         image: selected.image || "",
+        sku: resolvedSku,
+        product_sku: resolvedSku,
         product_size: "",
         product_color: "",
         isNew: true,
@@ -423,6 +433,19 @@ const IncompleteOrderList = () => {
           admin_note: formData.admin_note || "",
           items: cartItems.map((item) => ({
             product_id: item.product_id ? Number(item.product_id) : undefined,
+            external_product_id:
+              item.external_product_id != null &&
+              String(item.external_product_id).trim() !== ""
+                ? String(item.external_product_id).trim()
+                : undefined,
+            product_sku:
+              String(
+                item.product_sku ??
+                  item.sku ??
+                  item?.options?.product_sku ??
+                  item?.options?.sku ??
+                  "",
+              ).trim() || undefined,
             product_name: String(item.name || "").trim(),
             qty: Math.max(1, Number(item.qty) || 1),
             sale_price: Math.max(0, Number(item.price ?? item.sale_price) || 0),
