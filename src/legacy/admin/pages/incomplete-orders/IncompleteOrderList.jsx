@@ -295,10 +295,18 @@ const IncompleteOrderList = () => {
       (p) => String(p.id) === String(selectedProductId),
     );
     if (!selected) return;
+    const resolvedSku =
+      String(
+        selected.sku ??
+          selected.product_sku ??
+          selected.product_code ??
+          "",
+      ).trim() || null;
     setCartItems((prev) => [
       ...prev,
       {
         row_id: `new-${Date.now()}`,
+        product_id: selected.id ? Number(selected.id) : undefined,
         name: selected.name || "",
         qty: 1,
         price: toNumber(
@@ -310,6 +318,8 @@ const IncompleteOrderList = () => {
         ),
         purchase_price: toNumber(selected.purchase_price, 0),
         image: selected.image || "",
+        sku: resolvedSku,
+        product_sku: resolvedSku,
         product_size: "",
         product_color: "",
         isNew: true,
