@@ -385,9 +385,29 @@ const Header = () => {
     return slug ? slug.replace(/-/g, " ") : "Category";
   };
 
-  const mobileDrawerCategories = Array.isArray(menuCategories)
-    ? menuCategories
-    : [];
+  const sortByName = (items, getName) =>
+    [...items].sort((a, b) =>
+      getName(a).localeCompare(getName(b), undefined, { sensitivity: "base" }),
+    );
+
+  const sortedExternalMenuCategories = useMemo(
+    () =>
+      sortByName(externalMenuCategories, (category) =>
+        resolveExternalCategoryName(category),
+      ),
+    [externalMenuCategories],
+  );
+
+  const sortedDesktopMenuCategories = useMemo(
+    () =>
+      sortByName(
+        Array.isArray(menuCategories) ? menuCategories : [],
+        (category) => category?.name || "",
+      ),
+    [menuCategories],
+  );
+
+  const mobileDrawerCategories = sortedDesktopMenuCategories;
 
   const toggleCategoryPanel = (event) => {
     event.preventDefault();
@@ -477,22 +497,23 @@ const Header = () => {
         <div className="py-8 text-center text-sm text-red-500">
           Failed to load categories.
         </div>
-      ) : externalMenuCategories.length === 0 ? (
+      ) : sortedExternalMenuCategories.length === 0 ? (
         <div className="py-8 text-center text-sm text-gray-400">
           No categories found.
         </div>
       ) : (
         /* 2 cols on mobile, 3 on sm, 4 on desktop */
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {externalMenuCategories.map((category, index) => {
+          {sortedExternalMenuCategories.map((category, index) => {
             const slug = resolveExternalCategorySlug(category);
             const name = resolveExternalCategoryName(category);
             const categoryPath = slug
               ? `/category/external/${encodeURIComponent(slug)}`
               : "#";
-            const children = Array.isArray(category.childern)
-              ? category.childern
-              : [];
+            const children = sortByName(
+              Array.isArray(category.childern) ? category.childern : [],
+              (child) => resolveExternalCategoryName(child),
+            );
 
             const isOdd = index % 2 === 0;
             const colBg = isOdd ? "#f5f7ff" : "#fffdf9";
@@ -894,7 +915,7 @@ const Header = () => {
             </div>
 
             <ul className="hidden lg:flex flex-1 items-center gap-4 m-0">
-              {menuCategories.map((category) => (
+              {sortedDesktopMenuCategories.map((category) => (
                 <li
                   key={category.id}
                   className="relative"
@@ -919,7 +940,12 @@ const Header = () => {
                       onMouseEnter={() => openDesktopSubmenu(category.id)}
                       onMouseLeave={closeDesktopSubmenuWithDelay}>
                       <div className="rounded-md border border-gray-200 bg-white p-4 shadow-xl">
-                        {category.subcategories.map((sub) => (
+                        {sortByName(
+                          Array.isArray(category.subcategories)
+                            ? category.subcategories
+                            : [],
+                          (sub) => sub?.subcategoryName || "",
+                        ).map((sub) => (
                           <div key={sub.id} className="mb-3 last:mb-0">
                             <Link
                               to={`/subcategory/${sub.slug}`}
@@ -928,7 +954,12 @@ const Header = () => {
                             </Link>
                             {sub.childcategories?.length > 0 && (
                               <div className="mt-1 flex flex-col gap-1 pl-3 text-xs text-gray-600">
-                                {sub.childcategories.map((child) => (
+                                {sortByName(
+                                  Array.isArray(sub.childcategories)
+                                    ? sub.childcategories
+                                    : [],
+                                  (child) => child?.childcategoryName || "",
+                                ).map((child) => (
                                   <Link
                                     key={child.id}
                                     to={`/childcategory/${child.slug}`}
@@ -1027,11 +1058,12 @@ const Header = () => {
                         ? String(category.slug).trim()
                         : "";
                       const categoryName = category?.name || "Category";
-                      const subcategories = Array.isArray(
-                        category?.subcategories,
-                      )
-                        ? category.subcategories
-                        : [];
+                      const subcategories = sortByName(
+                        Array.isArray(category?.subcategories)
+                          ? category.subcategories
+                          : [],
+                        (sub) => sub?.subcategoryName || "",
+                      );
                       return (
                         <div
                           key={categoryKey}
@@ -1076,11 +1108,13 @@ const Header = () => {
                                     : "";
                                   const subName =
                                     sub?.subcategoryName || "Subcategory";
-                                  const childcategories = Array.isArray(
-                                    sub?.childcategories,
-                                  )
-                                    ? sub.childcategories
-                                    : [];
+                                  const childcategories = sortByName(
+                                    Array.isArray(sub?.childcategories)
+                                      ? sub.childcategories
+                                      : [],
+                                    (child) =>
+                                      child?.childcategoryName || "",
+                                  );
                                   return (
                                     <div key={subKey}>
                                       <div className="flex items-center justify-between">
@@ -1178,7 +1212,7 @@ const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             />
             {/* Modal panel */}
-            <div className="fixed inset-0 z-50 md:hidden flex flex-col bg-white overflow-hidden">
+            <div className="fixed inset-x-0 top-0 z-50 h-[100dvh] md:hidden flex flex-col bg-white overflow-hidden">
               {/* Modal header */}
               <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 shrink-0">
                 <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
@@ -1193,7 +1227,7 @@ const Header = () => {
                 </button>
               </div>
               {/* Scrollable category grid */}
-              <div className="flex-1 min-h-full overflow-y-auto overscroll-contain">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                 {renderExternalCategoryPanelContent(() =>
                   setMobileMenuOpen(false),
                 )}
