@@ -4,6 +4,7 @@ import * as Yup from "yup";
 import {
   useCheckoutMutation,
   useDeleteCartItemMutation,
+  useGetExternalShippingChargesQuery,
   useGetCartQuery,
   useGetShippingChargesQuery,
   useTrackIncompleteOrderMutation,
@@ -65,6 +66,14 @@ const Checkout = () => {
   const { data: cart, isLoading: cartLoading } = useGetCartQuery();
   const { data: shippingResponse, isLoading: shippingLoading } =
     useGetShippingChargesQuery();
+  const items = cart?.items || [];
+  const hasExternalItems = items.some((item) => Boolean(item?.external_product_id));
+  const hasLocalItems = items.some((item) => !item?.external_product_id);
+  const isDropshippingOnlyCart = hasExternalItems && !hasLocalItems;
+  const { data: externalShippingResponse, isLoading: externalShippingLoading } =
+    useGetExternalShippingChargesQuery(undefined, {
+      skip: !isDropshippingOnlyCart,
+    });
   const [updateCartItem] = useUpdateCartItemMutation();
   const [deleteCartItem] = useDeleteCartItemMutation();
   const [checkoutMutation] = useCheckoutMutation();
@@ -82,7 +91,9 @@ const Checkout = () => {
   }, [cart?.id]);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-  const shippingCharges = shippingResponse?.data || [];
+  const shippingCharges = isDropshippingOnlyCart
+    ? externalShippingResponse?.data || []
+    : shippingResponse?.data || [];
 
   const resolveCheckoutImage = (item) => {
     const featureImage =
@@ -103,7 +114,6 @@ const Checkout = () => {
     return resolveMediaUrl(found, "https://placehold.co/80x80?text=Product");
   };
 
-  const items = cart?.items || [];
   const shippingChargeIds = useMemo(
     () =>
       shippingCharges.map((charge) => String(charge?.id || "")).filter(Boolean),
@@ -451,6 +461,13 @@ const Checkout = () => {
         }).unwrap();
 
         if (response?.order_id) {
+          if (response?.panel_sync_status === "failed") {
+            const syncMessage =
+              response?.panel_sync_error ||
+              "Order placed, but panel sync failed. Please contact support.";
+            showErrorMessage(syncMessage);
+          }
+
           const orderId = String(response.order_id).trim();
           const eventId = `purchase_${orderId}`;
 
@@ -544,7 +561,9 @@ const Checkout = () => {
   };
 
   const isInitialCartLoad = cartLoading && !cart;
-  const isInitialShippingLoad = shippingLoading && !shippingResponse;
+  const isInitialShippingLoad = isDropshippingOnlyCart
+    ? externalShippingLoading && !externalShippingResponse
+    : shippingLoading && !shippingResponse;
 
   const primaryColor = setting?.button_primary_color || "#10b981";
   const secondaryColor = setting?.button_secondary_color || "#059669";
@@ -907,3 +926,8 @@ const Checkout = () => {
 };
 
 export default Checkout;
+  useEffect(() => {
+    if (!shippingChargeIds.length) return;
+    if (shippingChargeIds.includes(String(formData.area || ""))) return;
+    setFormData((prev) => ({ ...prev, area: shippingChargeIds[0] }));
+  }, [shippingChargeIds, formData.area]);

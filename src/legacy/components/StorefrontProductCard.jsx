@@ -11,9 +11,10 @@ import {
 import { resolveMediaUrl } from "../utils/media";
 import {
   resolveExternalProductSlug,
+  resolvePanelOrderMeta,
   toExternalProductPath,
 } from "../utils/externalProduct";
-import { showSmartSuccessToast } from "../admin/utils/alerts";
+import { showErrorMessage, showSmartSuccessToast } from "../admin/utils/alerts";
 
 const toNumber = (value, fallback = 0) => {
   const parsed = Number(value);
@@ -119,6 +120,7 @@ const StorefrontProductCard = ({ item, product }) => {
     () => resolveCardImage(source, info, isExternal),
     [source, info, isExternal],
   );
+  const panelMeta = useMemo(() => resolvePanelOrderMeta(source), [source]);
 
   const isBusy = actionInFlight !== null;
   const isOrderNowLoading = actionInFlight === "order-now";
@@ -146,6 +148,9 @@ const StorefrontProductCard = ({ item, product }) => {
           price,
           quantity: 1,
           options: {
+            panel_product_id: panelMeta.panelProductId,
+            panel_variant_id: panelMeta.panelVariantId,
+            panel_seller_product_id: panelMeta.panelSellerProductId,
             size_id: null,
             size_name: null,
             color_id: null,
@@ -177,7 +182,7 @@ const StorefrontProductCard = ({ item, product }) => {
         error?.data?.errors?.message ||
         error?.data?.message ||
         "Failed to add cart.";
-      window.alert(message);
+      showErrorMessage(message);
     } finally {
       setActionInFlight(null);
     }

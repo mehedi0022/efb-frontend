@@ -165,6 +165,10 @@ export const publicApi = createApi({
     getShippingCharges: builder.query({
       query: () => "/shipping-charges",
     }),
+    getExternalShippingCharges: builder.query({
+      query: () => "/external/shipping-charges",
+      providesTags: ["External"],
+    }),
     checkout: builder.mutation({
       query: (payload) => ({
         url: "/checkout",
@@ -280,6 +284,7 @@ export const {
   useAddToCartMutation,
   useAddExternalToCartMutation,
   useGetShippingChargesQuery,
+  useGetExternalShippingChargesQuery,
   useCheckoutMutation,
   useTrackIncompleteOrderMutation,
   useGetUserQuery,

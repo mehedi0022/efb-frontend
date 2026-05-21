@@ -3,8 +3,28 @@ const trimTrailingSlash = (value = '') => String(value).replace(/\/+$/, '');
 const isAbsoluteUrl = (value) => /^(https?:)?\/\//i.test(value);
 const isInlineUrl = (value) => /^(data:|blob:)/i.test(value);
 
-const API_BASE_URL = trimTrailingSlash(process.env.NEXT_PUBLIC_API_BASE_URL || '');
-const EXTERNAL_IMAGE_BASE = trimTrailingSlash(process.env.NEXT_PUBLIC_EXTERNAL_IMAGE_BASE || '');
+const readEnv = (viteKey, nextKey, fallback = '') => {
+  const viteValue =
+    typeof import.meta !== 'undefined' &&
+    import.meta?.env &&
+    import.meta.env[viteKey];
+  if (viteValue !== undefined && viteValue !== null && String(viteValue).trim() !== '') {
+    return String(viteValue);
+  }
+
+  const nextValue =
+    typeof process !== 'undefined' && process.env ? process.env[nextKey] : undefined;
+  if (nextValue !== undefined && nextValue !== null && String(nextValue).trim() !== '') {
+    return String(nextValue);
+  }
+
+  return fallback;
+};
+
+const API_BASE_URL = trimTrailingSlash(readEnv('VITE_API_BASE_URL', 'NEXT_PUBLIC_API_BASE_URL', ''));
+const EXTERNAL_IMAGE_BASE = trimTrailingSlash(
+  readEnv('VITE_EXTERNAL_IMAGE_BASE', 'NEXT_PUBLIC_EXTERNAL_IMAGE_BASE', '')
+);
 
 export const resolveMediaUrl = (path, fallback = null) => {
   if (!path) return fallback;

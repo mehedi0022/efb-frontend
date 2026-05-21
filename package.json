@@ -6,10 +6,10 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "install": "if [ \"$npm_command\" = \"run-script\" ]; then npm ci --include=dev; else echo \"Skipping install lifecycle for npm $npm_command\"; fi",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "next lint",
     "build:standalone": "rm -rf .next && next build && mkdir -p .next/standalone/.next && cp -R .next/static .next/standalone/.next/static && cp -R public .next/standalone/public",
     "start:standalone": "PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/server.js"

@@ -212,6 +212,8 @@ const ProductDetailView = ({
   relatedProducts = [],
   relatedTitle = "Related Products",
   contact = {},
+  shippingChargesOverride = null,
+  shippingLoadingOverride = null,
 }) => {
   const {
     data: shippingResponse,
@@ -279,9 +281,11 @@ const ProductDetailView = ({
       ? "Facebook"
       : "";
   const shippingCharges = useMemo(() => {
-    const rows = Array.isArray(shippingResponse?.data)
-      ? shippingResponse.data
-      : [];
+    const rows = Array.isArray(shippingChargesOverride)
+      ? shippingChargesOverride
+      : Array.isArray(shippingResponse?.data)
+        ? shippingResponse.data
+        : [];
 
     return rows.filter((row) => {
       const status = Number(row?.status ?? 1);
@@ -293,7 +297,11 @@ const ProductDetailView = ({
 
       return status === 1 && showOnFront;
     });
-  }, [shippingResponse?.data]);
+  }, [shippingResponse?.data, shippingChargesOverride]);
+  const isShippingLoading =
+    typeof shippingLoadingOverride === "boolean"
+      ? shippingLoadingOverride
+      : shippingLoading || shippingFetching;
 
   useEffect(() => {
     if (activeImage > gallery.length - 1) {
@@ -714,7 +722,7 @@ const ProductDetailView = ({
                       Courier Charge
                     </span>
                     <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-bold text-gray-600">
-                      {shippingLoading || shippingFetching
+                      {isShippingLoading
                         ? "Loading..."
                         : "Not set"}
                     </span>

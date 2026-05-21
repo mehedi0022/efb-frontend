@@ -551,8 +551,9 @@ const Header = () => {
                     {children.map((child, idx) => {
                       const childSlug = resolveExternalCategorySlug(child);
                       const childName = resolveExternalCategoryName(child);
+                      const parentCategoryId = category?.id || category?.category_id;
                       const childPath = childSlug
-                        ? `/subcategory/external/${encodeURIComponent(childSlug)}`
+                        ? `/subcategory/external/${encodeURIComponent(childSlug)}${parentCategoryId ? `?category_id=${encodeURIComponent(String(parentCategoryId))}` : ""}`
                         : "#";
                       return (
                         <li key={child.id || childSlug || idx}>

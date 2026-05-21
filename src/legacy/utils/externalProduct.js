@@ -59,8 +59,43 @@ const toExternalProductPath = (slug) => {
   return normalized ? `/products/external/${encodeURIComponent(normalized)}` : '/products';
 };
 
+const toPositiveInt = (value) => {
+  if (!Number.isFinite(Number(value))) return null;
+  const num = Number(value);
+  return num > 0 ? Math.trunc(num) : null;
+};
+
+const resolvePanelOrderMeta = (source) => {
+  const info = source?.product_info || source || {};
+  return {
+    panelProductId: toPositiveInt(
+      info?.panel_product_id ??
+        source?.panel_product_id ??
+        info?.product_id ??
+        source?.product_id ??
+        info?.id ??
+        source?.id
+    ),
+    panelVariantId: toPositiveInt(
+      info?.panel_variant_id ??
+        source?.panel_variant_id ??
+        info?.variant_id ??
+        source?.variant_id ??
+        info?.default_variant_id ??
+        source?.default_variant_id
+    ),
+    panelSellerProductId: toPositiveInt(
+      info?.panel_seller_product_id ??
+        source?.panel_seller_product_id ??
+        info?.seller_product_id ??
+        source?.seller_product_id
+    ),
+  };
+};
+
 export {
   normalizeExternalProductSlug,
   resolveExternalProductSlug,
   toExternalProductPath,
+  resolvePanelOrderMeta,
 };
